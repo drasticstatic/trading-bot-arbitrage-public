@@ -194,11 +194,8 @@ Be sure to check their documentation for latest updates regarding their contract
 
 ### To Do
 - Add support for more EVM chains
-- Add support for more exchanges
+- Add support for more pools
+- Add support for more exchanges, currently programmed for Uniswap style exchanges
 - Add support for more tokens
-- Add support for more flashloan providers
+- Add support for more flashloan providers, currently utilizing Balancer
 - Add support for more blockchains (e.g. Solana, Terra, etc.)
-
-Using balance, alchemy
-Currently programmed for Uniswap style exchanges
-Add more pools# trading-bot_arbitrage_DAPPUv3_hardhat_UNI-CAKE
