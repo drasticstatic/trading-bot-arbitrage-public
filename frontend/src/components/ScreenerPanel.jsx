@@ -7,6 +7,7 @@ function ScreenerPanel() {
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
   const [hideFailedPairs, setHideFailedPairs] = useState(false)
+  const [localLoading, setLocalLoading] = useState(null) // 'test' | 'reset' | 'refresh' | 'restart' | null
 
   // Trade button - show confirmation modal first
   const handleTrade = (pairName) => {
@@ -31,9 +32,27 @@ function ScreenerPanel() {
     setPendingTrade(null)
   }
 
-  const handleManipulate = () => sendMessage('RUN_MANIPULATION')
-  const handleClearTest = () => sendMessage('CLEAR_MANIPULATION')
-  const handleRestartBot = () => sendMessage('RESTART_BOT')
+  // Button handlers with loading states
+  const handleManipulate = () => {
+    setLocalLoading('test')
+    sendMessage('RUN_MANIPULATION')
+    setTimeout(() => setLocalLoading(null), 3000)
+  }
+  const handleClearTest = () => {
+    setLocalLoading('reset')
+    sendMessage('CLEAR_MANIPULATION')
+    setTimeout(() => setLocalLoading(null), 2000)
+  }
+  const handleRefresh = () => {
+    setLocalLoading('refresh')
+    checkPrices()
+    setTimeout(() => setLocalLoading(null), 1500)
+  }
+  const handleRestartBot = () => {
+    setLocalLoading('restart')
+    sendMessage('RESTART_BOT')
+    setTimeout(() => setLocalLoading(null), 3000)
+  }
 
   // Filter pairs based on toggle
   const displayedPairs = hideFailedPairs
@@ -43,7 +62,7 @@ function ScreenerPanel() {
   const hiddenCount = screenerPairs.length - displayedPairs.length
 
   return (
-    <div className="screener-card">
+    <div className="screener-card" style={{ position: 'relative' }}>
       {/* Confirmation Modal */}
       {showConfirmModal && pendingTrade && (
         <div className="modal-overlay" style={{
@@ -142,12 +161,39 @@ function ScreenerPanel() {
             {hideFailedPairs ? `👁 Show All (${hiddenCount} hidden)` : '🚫 Hide Failed'}
           </button>
           <span className="block-info" title="Current blockchain block number">Block #{screenerBlock || '---'}</span>
-          <button onClick={handleManipulate} className="btn-test" title="🧪 Creates artificial price differences between DEXs for testing arbitrage">🧪 Test</button>
-          <button onClick={handleClearTest} className="btn-clear" title="🔄 Resets the Hardhat fork to original state, clearing all test manipulations">🔄 Reset</button>
-          <button onClick={checkPrices} className="btn-refresh" title="↻ Fetches latest prices from all DEX pools">↻ Refresh</button>
-          <button onClick={handleRestartBot} className="btn-restart" title="⟳ Fully restarts the bot and re-initializes all pairs">⟳ Restart</button>
+          <button onClick={handleManipulate} disabled={localLoading} className="btn-test" title="🧪 Creates artificial price differences between DEXs for testing arbitrage" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            {localLoading === 'test' ? '⏳' : '🧪'} Test
+          </button>
+          <button onClick={handleClearTest} disabled={localLoading} className="btn-clear" title="🔄 Resets the Hardhat fork to original state, clearing all test manipulations" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            {localLoading === 'reset' ? '⏳' : '🔄'} Reset
+          </button>
+          <button onClick={handleRefresh} disabled={localLoading} className="btn-refresh" title="↻ Fetches latest prices from all DEX pools" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            {localLoading === 'refresh' ? '⏳' : '↻'} Refresh
+          </button>
+          <button onClick={handleRestartBot} disabled={localLoading} className="btn-restart" title="⟳ Fully restarts the bot and re-initializes all pairs" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            {localLoading === 'restart' ? '⏳' : '⟳'} Restart
+          </button>
         </div>
       </div>
+
+      {/* Loading Overlay */}
+      {localLoading && (
+        <div style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.7)', borderRadius: '16px',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10
+        }}>
+          <div style={{ textAlign: 'center' }}>
+            <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px', border: '3px solid rgba(99,102,241,0.3)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+            <div style={{ color: '#a5b4fc', fontSize: '14px', fontWeight: '600' }}>
+              {localLoading === 'test' && 'Running manipulation...'}
+              {localLoading === 'reset' && 'Resetting fork...'}
+              {localLoading === 'refresh' && 'Fetching prices...'}
+              {localLoading === 'restart' && 'Restarting bot...'}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div className="stats-bar">
