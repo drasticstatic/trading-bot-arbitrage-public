@@ -1,5 +1,26 @@
 # Trading Bot Demo
 
+I am at a point in my life I NEED to take immediate action to find ways to make money FAST for life is at stake.
+
+I have a lot of people depeneding on me but I am losing hope, steam, faith, and almost out of all resources.
+
+This bot has been given to me 3 times now and I have failed to make it a reality in my life.
+
+I've been pushing this project off becasue I felt inadeqate that I could actaully pull it off. But I NEED to pull this off and right NOW.
+
+I am in curent mentorship to become a succesful trader and web3 developer but I have a large family to feed and serve in minsitry full-time but I need a way to make way more income.
+I have children to feed, two families to provide for and even some expecting me to fail and stay in their comisery but those are the same people I intend to bless.
+I'm not going to let anyone down and most of all not myself or our children...
+
+I want to create a full front-end application I can use to monitor and execute arbitrage trades. I need a way to find opportunitys, quickly adjust parameters and teach this to others for where there is liquidity there is opportunity and why not let the marktet bless us as our friend when we are hurting andd in need instead of the remaining scared the market may hurt us for we only need to front the gas fees and let the abundance flow through us onto others :-)
+
+You have helped my greatly before building a captsone for web3 with a docusuaurs site and even further helped me build a resume/porotfilio site with is getting attention in the community so I know you are up to the task but I am still learning all this with you :-)
+
+Help me please and thank you always!
+
+This is a simple trading bot demo that monitors swap events on Uniswap V3 and Pancakeswap V3 exchanges. When a swap event occurs, it checks the price difference between the two exchanges for a specified token pair. If a significant price difference is detected, it executes an arbitrage trade using a flash loan from Balancer but feel free to add customization to our project if youknow of ways to make it better and more profitable :-)
+
+
 ## Technology Stack & Tools
 
 - Solidity (Writing Smart Contract)
