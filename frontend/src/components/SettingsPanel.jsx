@@ -71,8 +71,25 @@ function SettingsPanel() {
 
         <div className="data-row p-3 flex items-center justify-between">
           <div>
+            <div className="text-white text-sm font-medium">Skip Confirmation</div>
+            <div className="text-muted text-xs">Fast manual trading</div>
+          </div>
+          <button
+            onClick={() => handleChange('skipConfirmation', !localSettings.skipConfirmation)}
+            className={`relative w-11 h-6 rounded-full transition-all ${
+              localSettings.skipConfirmation ? 'bg-yellow-500' : 'bg-gray-600'
+            }`}
+          >
+            <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-transform ${
+              localSettings.skipConfirmation ? 'translate-x-6' : 'translate-x-1'
+            }`} />
+          </button>
+        </div>
+
+        <div className="data-row p-3 flex items-center justify-between">
+          <div>
             <div className="text-white text-sm font-medium">Auto Execute</div>
-            <div className="text-muted text-xs">Trade automatically</div>
+            <div className="text-muted text-xs">Fully automated</div>
           </div>
           <button
             onClick={() => handleChange('autoExecute', !localSettings.autoExecute)}

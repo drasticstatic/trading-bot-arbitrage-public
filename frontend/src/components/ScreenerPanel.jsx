@@ -1,51 +1,159 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
-import { selectPair, executeTrade, checkPrices, sendMessage } from '../store/websocket'
+import { selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
 
 function ScreenerPanel() {
-  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting } = useSelector(state => state.bot)
+  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting, isTestMode } = useSelector(state => state.bot)
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [pendingTrade, setPendingTrade] = useState(null)
+  const [hideFailedPairs, setHideFailedPairs] = useState(false)
 
+  // Trade button - show confirmation modal first
   const handleTrade = (pairName) => {
-    selectPair(pairName)
-    setTimeout(() => executeTrade(), 100)
+    const pair = screenerPairs.find(p => p.name === pairName)
+    setPendingTrade(pair)
+    setShowConfirmModal(true)
   }
 
-  const handleExecute = () => {
-    if (selectedPair && !isExecuting) {
-      executeTrade()
+  // Confirm and execute trade
+  const confirmTrade = () => {
+    if (pendingTrade) {
+      selectPair(pendingTrade.name)
+      setTimeout(() => executeTrade(), 100)
     }
+    setShowConfirmModal(false)
+    setPendingTrade(null)
   }
 
-  const handleManipulate = () => {
-    sendMessage('RUN_MANIPULATION')
+  // Cancel trade
+  const cancelTrade = () => {
+    setShowConfirmModal(false)
+    setPendingTrade(null)
   }
 
-  const opportunities = screenerPairs.filter(p => p.hasOpportunity)
+  const handleManipulate = () => sendMessage('RUN_MANIPULATION')
+  const handleClearTest = () => sendMessage('CLEAR_MANIPULATION')
+  const handleRestartBot = () => sendMessage('RESTART_BOT')
+
+  // Filter pairs based on toggle
+  const displayedPairs = hideFailedPairs
+    ? screenerPairs.filter(p => p.dexCount >= 2)
+    : screenerPairs
+  const opportunities = displayedPairs.filter(p => p.hasOpportunity)
+  const hiddenCount = screenerPairs.length - displayedPairs.length
 
   return (
     <div className="screener-card">
+      {/* Confirmation Modal */}
+      {showConfirmModal && pendingTrade && (
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div className="modal-content" style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            border: '2px solid #6366f1', borderRadius: '16px',
+            padding: '24px', maxWidth: '420px', width: '90%'
+          }}>
+            <h3 style={{ color: '#fff', fontSize: '20px', marginBottom: '16px', textAlign: 'center' }}>
+              ⚡ Confirm Trade Execution
+            </h3>
+            <div style={{ background: 'rgba(99,102,241,0.1)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Pair:</span>
+                <span style={{ color: '#fff', fontWeight: '600' }}>{pendingTrade.symbol}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Route:</span>
+                <span style={{ color: '#10b981' }}>{pendingTrade.buyDex}</span>
+                <span style={{ color: '#64748b' }}>→</span>
+                <span style={{ color: '#f59e0b' }}>{pendingTrade.sellDex}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ color: '#94a3b8' }}>Spread:</span>
+                <span style={{ color: parseFloat(pendingTrade.difference) > 0 ? '#10b981' : '#ef4444', fontWeight: '600' }}>
+                  {pendingTrade.difference}%
+                </span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span style={{ color: '#94a3b8' }}>DEXs Available:</span>
+                <span style={{ color: '#a5b4fc' }}>{pendingTrade.dexCount}</span>
+              </div>
+            </div>
+            {!pendingTrade.hasOpportunity && (
+              <div style={{
+                background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444',
+                borderRadius: '8px', padding: '12px', marginBottom: '16px', textAlign: 'center'
+              }}>
+                <span style={{ color: '#f87171', fontSize: '14px' }}>
+                  ⚠️ Warning: Spread is below threshold - trade may not be profitable
+                </span>
+              </div>
+            )}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={cancelTrade} style={{
+                flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #374151',
+                background: 'transparent', color: '#94a3b8', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+              }}>
+                ✕ Cancel
+              </button>
+              <button onClick={confirmTrade} style={{
+                flex: 1, padding: '12px', borderRadius: '8px', border: 'none',
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+              }}>
+                ✓ Execute Trade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="screener-header">
         <div className="screener-title">
           <span className="screener-icon">⚡</span>
-          <h2>Arbitrage Screener</h2>
-          <span className="live-badge">
-            <span className="live-dot"></span>
-            LIVE
-          </span>
+          <h2>Multi-DEX Screener</h2>
+          {isTestMode ? (
+            <span className="test-badge" title="Test mode active - prices are manipulated">
+              <span className="test-dot"></span>
+              TEST MODE
+            </span>
+          ) : (
+            <span className="live-badge" title="Connected to live forked network">
+              <span className="live-dot"></span>
+              LIVE
+            </span>
+          )}
         </div>
         <div className="screener-actions">
-          <span className="block-info">Block #{screenerBlock || '---'}</span>
-          <button onClick={handleManipulate} className="btn-test">🧪 Test</button>
-          <button onClick={checkPrices} className="btn-refresh">↻ Refresh</button>
+          <button
+            onClick={() => setHideFailedPairs(!hideFailedPairs)}
+            className={hideFailedPairs ? 'btn-filter-active' : 'btn-filter'}
+            title={hideFailedPairs ? 'Show all pairs including those with errors' : 'Hide pairs with fee tier/pool errors'}
+            style={{
+              background: hideFailedPairs ? 'rgba(168,85,247,0.2)' : 'rgba(100,116,139,0.1)',
+              border: `1px solid ${hideFailedPairs ? '#a855f7' : '#374151'}`,
+              color: hideFailedPairs ? '#c4b5fd' : '#94a3b8',
+              padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer'
+            }}
+          >
+            {hideFailedPairs ? `👁 Show All (${hiddenCount} hidden)` : '🚫 Hide Failed'}
+          </button>
+          <span className="block-info" title="Current blockchain block number">Block #{screenerBlock || '---'}</span>
+          <button onClick={handleManipulate} className="btn-test" title="🧪 Creates artificial price differences between DEXs for testing arbitrage">🧪 Test</button>
+          <button onClick={handleClearTest} className="btn-clear" title="🔄 Resets the Hardhat fork to original state, clearing all test manipulations">🔄 Reset</button>
+          <button onClick={checkPrices} className="btn-refresh" title="↻ Fetches latest prices from all DEX pools">↻ Refresh</button>
+          <button onClick={handleRestartBot} className="btn-restart" title="⟳ Fully restarts the bot and re-initializes all pairs">⟳ Restart</button>
         </div>
       </div>
 
       {/* Stats Bar */}
       <div className="stats-bar">
         <div className="stat">
-          <span className="stat-value">{screenerPairs.length}</span>
-          <span className="stat-label">Pairs</span>
+          <span className="stat-value">{displayedPairs.length}{hiddenCount > 0 ? ` / ${screenerPairs.length}` : ''}</span>
+          <span className="stat-label">Pairs{hiddenCount > 0 ? ' (filtered)' : ''}</span>
         </div>
         <div className="stat stat-highlight">
           <span className="stat-value">{opportunities.length}</span>
@@ -58,10 +166,10 @@ function ScreenerPanel() {
       </div>
 
       {/* Table */}
-      {screenerPairs.length === 0 ? (
+      {displayedPairs.length === 0 ? (
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Loading pairs...</p>
+          <p>{screenerPairs.length > 0 ? 'All pairs filtered out - click "Show All" above' : 'Loading pairs...'}</p>
         </div>
       ) : (
         <div className="table-wrapper">
@@ -69,14 +177,14 @@ function ScreenerPanel() {
             <thead>
               <tr>
                 <th>Pair</th>
-                <th className="text-right">Uniswap</th>
-                <th className="text-right">PancakeSwap</th>
+                <th className="text-right">Best Route</th>
                 <th className="text-right">Spread</th>
+                <th className="text-center">DEXs</th>
                 <th className="text-center">Action</th>
               </tr>
             </thead>
             <tbody>
-              {screenerPairs.map((pair) => (
+              {displayedPairs.map((pair) => (
                 <tr
                   key={pair.name}
                   className={`${selectedPair?.pairName === pair.name ? 'row-selected' : ''} ${pair.hasOpportunity ? 'row-opportunity' : ''}`}
@@ -88,10 +196,22 @@ function ScreenerPanel() {
                       {pair.hasOpportunity && <span className="opp-indicator"></span>}
                     </div>
                   </td>
-                  <td className="price-cell">{pair.uniswap}</td>
-                  <td className="price-cell">{pair.pancakeswap}</td>
+                  <td className="price-cell">
+                    {pair.buyDex && pair.sellDex ? (
+                      <span style={{ fontSize: '12px' }}>
+                        <span style={{ color: '#10b981' }}>{pair.buyDex}</span>
+                        <span style={{ color: '#64748b' }}> → </span>
+                        <span style={{ color: '#f59e0b' }}>{pair.sellDex}</span>
+                      </span>
+                    ) : '—'}
+                  </td>
                   <td className={`spread-cell ${pair.hasOpportunity ? 'spread-positive' : Math.abs(parseFloat(pair.difference)) >= threshold * 0.5 ? 'spread-warn' : ''}`}>
                     {parseFloat(pair.difference) > 0 ? '+' : ''}{pair.difference}%
+                  </td>
+                  <td className="text-center">
+                    <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                      {pair.dexCount || 2} DEXs
+                    </span>
                   </td>
                   <td className="action-cell">
                     {pair.hasOpportunity ? (
@@ -120,19 +240,30 @@ function ScreenerPanel() {
             <span className="analysis-icon">
               {analysisResult.status === 'profitable' ? '✅' :
                analysisResult.status === 'not_profitable' ? '❌' :
+               analysisResult.status === 'simulation_failed' ? '🔬' :
                analysisResult.status === 'no_opportunity' ? '⚠️' : '🔴'}
             </span>
             <span className="analysis-title">
               {analysisResult.symbol} - {analysisResult.status === 'profitable' ? 'Profitable!' :
                analysisResult.status === 'not_profitable' ? 'Not Profitable' :
+               analysisResult.status === 'simulation_failed' ? 'Pre-flight Failed' :
                analysisResult.status === 'no_opportunity' ? 'No Opportunity' : 'Error'}
             </span>
+            {analysisResult.simulationPassed !== undefined && (
+              <span style={{
+                marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
+                background: analysisResult.simulationPassed ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
+                color: analysisResult.simulationPassed ? '#10b981' : '#ef4444'
+              }}>
+                {analysisResult.simulationPassed ? '✓ Sim Passed' : '✗ Sim Failed'}
+              </span>
+            )}
           </div>
           <div className="analysis-message">{analysisResult.message}</div>
           {analysisResult.direction && (
             <div className="analysis-details">
               <div className="detail-row">
-                <span>Direction:</span>
+                <span>Route:</span>
                 <span>{analysisResult.direction}</span>
               </div>
               <div className="detail-row">
@@ -161,27 +292,6 @@ function ScreenerPanel() {
               )}
             </div>
           )}
-        </div>
-      )}
-
-      {/* Selected Pair Panel */}
-      {selectedPair && (
-        <div className="selected-panel">
-          <div className="selected-info">
-            <div className="selected-pair">{selectedPair.symbol || selectedPair.pairName}</div>
-            <div className="selected-meta">Fee: {selectedPair.fee / 10000}% • Ready to execute</div>
-          </div>
-          <button
-            onClick={handleExecute}
-            disabled={isExecuting}
-            className="execute-btn"
-          >
-            {isExecuting ? (
-              <><span className="spinner-sm"></span> Analyzing...</>
-            ) : (
-              <>🚀 Execute Trade</>
-            )}
-          </button>
         </div>
       )}
 

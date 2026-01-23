@@ -106,6 +106,32 @@
       }
       .btn-test:hover { background: rgba(245, 158, 11, 0.2); }
 
+      .btn-clear {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: var(--red);
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-clear:hover { background: rgba(239, 68, 68, 0.2); }
+
+      .btn-restart {
+        background: rgba(168, 85, 247, 0.1);
+        border: 1px solid rgba(168, 85, 247, 0.3);
+        color: #a855f7;
+        padding: 8px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .btn-restart:hover { background: rgba(168, 85, 247, 0.2); }
+
       .btn-refresh {
         background: var(--accent);
         color: white;
@@ -118,6 +144,28 @@
         transition: all 0.2s;
       }
       .btn-refresh:hover { background: #5558e3; box-shadow: 0 0 20px var(--accent-glow); }
+
+      .test-badge {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(245, 158, 11, 0.15);
+        border: 1px solid rgba(245, 158, 11, 0.3);
+        color: var(--yellow);
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .test-dot {
+        width: 6px;
+        height: 6px;
+        background: var(--yellow);
+        border-radius: 50%;
+        animation: pulse 1.5s infinite;
+      }
 
       /* Stats Bar */
       .stats-bar {
@@ -258,6 +306,17 @@
         transform: none;
       }
 
+      .trade-btn-confirm {
+        background: linear-gradient(135deg, var(--yellow) 0%, #d97706 100%) !important;
+        box-shadow: 0 2px 10px rgba(245, 158, 11, 0.4) !important;
+        animation: pulse-confirm 0.5s infinite;
+      }
+
+      @keyframes pulse-confirm {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+      }
+
       .no-action { color: #2d3748; }
 
       /* Selected Panel */
@@ -306,6 +365,12 @@
         opacity: 0.6;
         cursor: not-allowed;
         transform: none;
+      }
+
+      .execute-btn-confirm {
+        background: linear-gradient(135deg, var(--yellow) 0%, #d97706 100%) !important;
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.4) !important;
+        animation: pulse-confirm 0.5s infinite;
       }
 
       /* Footer */
@@ -470,7 +535,7 @@
       ::-webkit-scrollbar-track { background: var(--bg-card); }
       ::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 3px; }
     </style>
-    <script type="module" crossorigin src="/assets/index-B_KG-cAg.js"></script>
+    <script type="module" crossorigin src="/assets/index-5S_vNlOn.js"></script>
   </head>
   <body>
     <div id="root"></div>
