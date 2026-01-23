@@ -4,6 +4,7 @@ const initialState = {
   connected: false,
   isRunning: false,
   isExecuting: false,
+  isTestMode: false,
   wallet: null,
 
   // Screener data - all pairs
@@ -29,6 +30,7 @@ const initialState = {
     priceDifference: 0.5,
     gasLimit: 600000,
     gasPrice: 0.00000001,
+    skipConfirmation: false,
     autoExecute: false
   },
 
@@ -56,6 +58,7 @@ const botSlice = createSlice({
     setBotStatus: (state, action) => {
       if (action.payload.isRunning !== undefined) state.isRunning = action.payload.isRunning
       if (action.payload.isExecuting !== undefined) state.isExecuting = action.payload.isExecuting
+      if (action.payload.isTestMode !== undefined) state.isTestMode = action.payload.isTestMode
     },
     setWalletInfo: (state, action) => {
       state.wallet = action.payload
