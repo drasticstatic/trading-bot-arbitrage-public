@@ -6,55 +6,55 @@ function WalletPanel() {
   const { wallet } = useSelector(state => state.bot)
 
   return (
-    <div className="bg-gray-800 rounded-lg border border-gray-700 p-6">
+    <div className="glass rounded-2xl p-6 glow-purple">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-white">💰 Wallet</h2>
+        <h2 className="text-xl font-display font-bold gradient-text">💰 WALLET</h2>
         <button
           onClick={getWalletInfo}
-          className="text-sm text-purple-400 hover:text-purple-300"
+          className="text-sm text-fuchsia-400 hover:text-fuchsia-300 font-medium transition-colors"
         >
-          Refresh
+          ⟳ Sync
         </button>
       </div>
 
       {wallet ? (
         wallet.error ? (
-          <div className="text-red-400 text-sm">{wallet.error}</div>
+          <div className="text-red-400 text-sm glass p-3 rounded-lg">{wallet.error}</div>
         ) : (
           <div className="space-y-3">
             {/* Network Badge */}
             <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Network</span>
-              <span className={`px-2 py-1 rounded text-xs font-medium ${
+              <span className="text-purple-300/70 text-sm">Network</span>
+              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
                 wallet.network === 'localhost'
-                  ? 'bg-blue-900/50 text-blue-400'
-                  : 'bg-purple-900/50 text-purple-400'
+                  ? 'glass-cyan text-cyan-400'
+                  : 'glass-pink text-fuchsia-400'
               }`}>
-                {wallet.network === 'localhost' ? '🔵 Local' : '🟣 Arbitrum'}
+                {wallet.network === 'localhost' ? '🔵 TESTNET' : '🟣 ARBITRUM'}
               </span>
             </div>
 
             {/* Address */}
             <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">Address</span>
-              <span className="text-white font-mono text-sm">
+              <span className="text-purple-300/70 text-sm">Address</span>
+              <span className="text-cyan-400 font-mono text-sm font-medium">
                 {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
               </span>
             </div>
 
             {/* ETH Balance */}
-            <div className="flex items-center justify-between">
-              <span className="text-gray-400 text-sm">ETH Balance</span>
-              <span className="text-white font-bold">
-                {parseFloat(wallet.ethBalance).toFixed(6)} ETH
+            <div className="flex items-center justify-between glass-green rounded-lg px-3 py-2">
+              <span className="text-emerald-300/70 text-sm">ETH Balance</span>
+              <span className="text-emerald-400 font-bold font-display text-lg">
+                {parseFloat(wallet.ethBalance).toFixed(6)} Ξ
               </span>
             </div>
 
             {/* Token Balances */}
             {wallet.tokenBalances && Object.entries(wallet.tokenBalances).map(([symbol, balance]) => (
-              <div key={symbol} className="flex items-center justify-between">
-                <span className="text-gray-400 text-sm">{symbol}</span>
-                <span className="text-white font-medium">
+              <div key={symbol} className="flex items-center justify-between glass rounded-lg px-3 py-2">
+                <span className="text-purple-300/70 text-sm">{symbol}</span>
+                <span className="text-white font-medium font-display">
                   {parseFloat(balance).toFixed(4)}
                 </span>
               </div>
@@ -62,16 +62,16 @@ function WalletPanel() {
 
             {/* Warning for low balance */}
             {parseFloat(wallet.ethBalance) < 0.002 && wallet.network !== 'localhost' && (
-              <div className="mt-2 p-2 bg-yellow-900/30 border border-yellow-500/50 rounded text-yellow-400 text-xs text-center">
-                ⚠️ Low ETH balance - may not cover gas fees
+              <div className="mt-2 p-3 glass border border-yellow-500/50 rounded-lg text-yellow-400 text-xs text-center animate-pulse">
+                ⚠️ Low ETH - Gas fees may fail
               </div>
             )}
           </div>
         )
       ) : (
-        <div className="text-center py-4 text-gray-500">
-          <div className="text-2xl mb-2">💳</div>
-          <div className="text-sm">Loading wallet info...</div>
+        <div className="text-center py-6">
+          <div className="text-4xl mb-3 float">💳</div>
+          <div className="text-purple-300/70 text-sm">Syncing wallet...</div>
         </div>
       )}
     </div>
