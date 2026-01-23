@@ -5,9 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>DAPPU Arbitrage Bot Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-Db9nY2st.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --neon-pink: #ff00ff;
+        --neon-cyan: #00ffff;
+        --neon-purple: #bf00ff;
+        --neon-green: #00ff88;
+        --neon-orange: #ff6600;
+      }
+
+      body {
+        font-family: 'Rajdhani', sans-serif;
+        background: linear-gradient(135deg, #0a0015 0%, #1a0a2e 25%, #0f1629 50%, #0a0015 100%);
+        min-height: 100vh;
+      }
+
+      .font-display { font-family: 'Orbitron', sans-serif; }
+
+      /* Animated background */
+      .bg-animated {
+        background: linear-gradient(-45deg, #0a0015, #1a0a2e, #0f1629, #150a20);
+        background-size: 400% 400%;
+        animation: gradientBG 15s ease infinite;
+      }
+
+      @keyframes gradientBG {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+
+      /* Glass morphism */
+      .glass {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .glass-pink {
+        background: linear-gradient(135deg, rgba(255, 0, 255, 0.1), rgba(191, 0, 255, 0.05));
+        border: 1px solid rgba(255, 0, 255, 0.2);
+      }
+
+      .glass-cyan {
+        background: linear-gradient(135deg, rgba(0, 255, 255, 0.1), rgba(0, 200, 255, 0.05));
+        border: 1px solid rgba(0, 255, 255, 0.2);
+      }
+
+      .glass-green {
+        background: linear-gradient(135deg, rgba(0, 255, 136, 0.15), rgba(0, 200, 100, 0.05));
+        border: 1px solid rgba(0, 255, 136, 0.3);
+      }
+
+      /* Neon glow effects */
+      .glow-pink { box-shadow: 0 0 20px rgba(255, 0, 255, 0.3), 0 0 40px rgba(255, 0, 255, 0.1); }
+      .glow-cyan { box-shadow: 0 0 20px rgba(0, 255, 255, 0.3), 0 0 40px rgba(0, 255, 255, 0.1); }
+      .glow-green { box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1); }
+      .glow-purple { box-shadow: 0 0 20px rgba(191, 0, 255, 0.3), 0 0 40px rgba(191, 0, 255, 0.1); }
+
+      .text-glow-pink { text-shadow: 0 0 10px rgba(255, 0, 255, 0.8), 0 0 20px rgba(255, 0, 255, 0.4); }
+      .text-glow-cyan { text-shadow: 0 0 10px rgba(0, 255, 255, 0.8), 0 0 20px rgba(0, 255, 255, 0.4); }
+      .text-glow-green { text-shadow: 0 0 10px rgba(0, 255, 136, 0.8), 0 0 20px rgba(0, 255, 136, 0.4); }
+
+      /* Gradient text */
+      .gradient-text {
+        background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shimmer 3s linear infinite;
+      }
+
+      @keyframes shimmer {
+        0% { background-position: 0% center; }
+        100% { background-position: 200% center; }
+      }
+
+      /* Pulse animations */
+      .pulse-glow {
+        animation: pulseGlow 2s ease-in-out infinite;
+      }
+
+      @keyframes pulseGlow {
+        0%, 100% { opacity: 1; filter: brightness(1); }
+        50% { opacity: 0.8; filter: brightness(1.2); }
+      }
+
+      /* Floating animation */
+      .float {
+        animation: float 6s ease-in-out infinite;
+      }
+
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+
+      /* Button styles */
+      .btn-neon {
+        background: linear-gradient(135deg, #ff00ff, #bf00ff);
+        border: none;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+      }
+
+      .btn-neon:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0 30px rgba(255, 0, 255, 0.5);
+      }
+
+      .btn-neon-green {
+        background: linear-gradient(135deg, #00ff88, #00cc6a);
+      }
+
+      .btn-neon-green:hover {
+        box-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+      }
+
+      /* Scrollbar */
+      ::-webkit-scrollbar { width: 8px; }
+      ::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.05); }
+      ::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #ff00ff, #00ffff); border-radius: 4px; }
+
+      /* Connection dot */
+      .connection-dot {
+        animation: connectionPulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes connectionPulse {
+        0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7); }
+        50% { box-shadow: 0 0 0 10px rgba(0, 255, 136, 0); }
+      }
+    </style>
+    <script type="module" crossorigin src="/assets/index-CPL0tscL.js"></script>
   </head>
-  <body class="bg-gray-900 text-white">
+  <body class="bg-animated text-white">
     <div id="root"></div>
   </body>
 </html>

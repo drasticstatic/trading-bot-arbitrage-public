@@ -18,13 +18,13 @@ function App() {
   }, [dispatch])
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-animated">
       <Header />
 
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-6 py-8">
         {!connected && (
-          <div className="bg-red-900/50 border border-red-500 rounded-lg p-4 mb-6 text-center">
-            <span className="text-red-300">⚠️ Disconnected from server - Reconnecting...</span>
+          <div className="glass border border-red-500/50 glow-pink rounded-xl p-4 mb-6 text-center animate-pulse">
+            <span className="text-red-400 font-medium">⚠️ SIGNAL LOST - Reconnecting to the matrix...</span>
           </div>
         )}
 
@@ -45,8 +45,23 @@ function App() {
         </div>
       </main>
 
-      <footer className="text-center text-gray-500 py-4 text-sm">
-        DAPPU Arbitrage Bot v1.0 | Built with 💜 and faith
+      <footer className="text-center py-6 glass border-t border-purple-500/20 mt-8">
+        <div className="gradient-text font-display text-lg font-bold mb-2">
+          DAPPU Arbitrage Bot v3.0
+        </div>
+        <div className="text-purple-300/70 text-sm">
+          Augmented with <span className="text-fuchsia-400">@drasticstatic</span> | Built with 💜 and faith
+        </div>
+        <div className="mt-2">
+          <a
+            href="https://drasticstatic.github.io/resume/index.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
+          >
+            🚀 Meet the Developer
+          </a>
+        </div>
       </footer>
     </div>
   )
