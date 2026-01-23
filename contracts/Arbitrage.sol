@@ -5,59 +5,128 @@ import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+/**
+ * @title Arbitrage
+ * @notice Secure flash loan arbitrage contract for Uniswap V3 / Pancakeswap V3
+ * @dev Security features:
+ *   - Owner-only trade execution
+ *   - Reentrancy protection
+ *   - Whitelisted routers only
+ *   - Emergency withdrawal
+ *   - Ownership transfer with 2-step confirmation
+ */
 contract Arbitrage is IFlashLoanRecipient {
+    // ============ Constants ============
     IVault private constant vault =
         IVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
 
+    // ============ State Variables ============
     address public owner;
+    address public pendingOwner;
+    bool private locked;
+    bool public paused;
 
+    // Whitelisted routers - only these can be used for swaps
+    mapping(address => bool) public whitelistedRouters;
+
+    // ============ Structs ============
     struct Trade {
         address[] routerPath;
         address[] tokenPath;
         uint24 fee;
     }
 
-    constructor() {
-        owner = msg.sender;
+    // ============ Events ============
+    event TradeExecuted(
+        address indexed executor,
+        address tokenIn,
+        address tokenOut,
+        uint256 amountIn,
+        uint256 profit
+    );
+    event RouterWhitelisted(address indexed router, bool status);
+    event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event EmergencyWithdraw(address indexed token, uint256 amount);
+    event Paused(bool status);
+
+    // ============ Modifiers ============
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not owner");
+        _;
     }
 
+    modifier noReentrant() {
+        require(!locked, "Reentrant call");
+        locked = true;
+        _;
+        locked = false;
+    }
+
+    modifier whenNotPaused() {
+        require(!paused, "Contract paused");
+        _;
+    }
+
+    // ============ Constructor ============
+    constructor() {
+        owner = msg.sender;
+
+        // Whitelist known good routers (Arbitrum addresses)
+        // Uniswap V3 Router
+        whitelistedRouters[0xE592427A0AEce92De3Edee1F18E0157C05861564] = true;
+        // Pancakeswap V3 Router
+        whitelistedRouters[0x1b81D678ffb9C0263b24A97847620C99d213eB14] = true;
+    }
+
+    // ============ External Functions ============
+
+    /**
+     * @notice Execute an arbitrage trade using flash loan
+     * @dev Only owner can call, protected against reentrancy
+     */
     function executeTrade(
         address[] memory _routerPath,
         address[] memory _tokenPath,
         uint24 _fee,
         uint256 _flashAmount
-    ) external {
+    ) external onlyOwner noReentrant whenNotPaused {
+        // Validate routers are whitelisted
+        require(_routerPath.length == 2, "Invalid router path");
+        require(_tokenPath.length == 2, "Invalid token path");
+        require(whitelistedRouters[_routerPath[0]], "Router 0 not whitelisted");
+        require(whitelistedRouters[_routerPath[1]], "Router 1 not whitelisted");
+        require(_flashAmount > 0, "Amount must be > 0");
+
         bytes memory data = abi.encode(
             Trade({routerPath: _routerPath, tokenPath: _tokenPath, fee: _fee})
         );
 
-        // Token to flash loan, by default we are flash loaning 1 token.
         IERC20[] memory tokens = new IERC20[](1);
         tokens[0] = IERC20(_tokenPath[0]);
 
-        // Flash loan amount.
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = _flashAmount;
 
         vault.flashLoan(this, tokens, amounts, data);
     }
 
+    /**
+     * @notice Callback from Balancer vault after flash loan
+     * @dev Only callable by the Balancer vault
+     */
     function receiveFlashLoan(
-        IERC20[] memory tokens,
+        IERC20[] memory, /* tokens */
         uint256[] memory amounts,
         uint256[] memory feeAmounts,
         bytes memory userData
     ) external override {
-        require(msg.sender == address(vault));
+        require(msg.sender == address(vault), "Only vault");
 
-        // Decode our swap data so we can use it
         Trade memory trade = abi.decode(userData, (Trade));
         uint256 flashAmount = amounts[0];
 
-        // Since balancer called this function, we should have funds to begin swapping...
-
-        // We perform the 1st swap.
-        // We swap the flashAmount of token0 and expect to get X amount of token1
+        // First swap: token0 -> token1
         _swapOnV3(
             trade.routerPath[0],
             trade.tokenPath[0],
@@ -67,26 +136,90 @@ contract Arbitrage is IFlashLoanRecipient {
             trade.fee
         );
 
-        // We perform the 2nd swap.
-        // We swap the contract balance of token1 and
-        // expect to at least get the flashAmount of token0
+        // Second swap: token1 -> token0
+        uint256 token1Balance = IERC20(trade.tokenPath[1]).balanceOf(address(this));
         _swapOnV3(
             trade.routerPath[1],
             trade.tokenPath[1],
-            IERC20(trade.tokenPath[1]).balanceOf(address(this)),
+            token1Balance,
             trade.tokenPath[0],
-            flashAmount,
+            flashAmount, // Minimum we need to repay
             trade.fee
         );
 
-        // Transfer back what we flash loaned
-        IERC20(trade.tokenPath[0]).transfer(address(vault), flashAmount);
+        // Repay flash loan
+        uint256 amountOwed = flashAmount + feeAmounts[0];
+        uint256 currentBalance = IERC20(trade.tokenPath[0]).balanceOf(address(this));
+        require(currentBalance >= amountOwed, "Insufficient to repay");
 
-        // Transfer any excess tokens [i.e. profits] to owner
-        IERC20(trade.tokenPath[0]).transfer(
-            owner,
-            IERC20(trade.tokenPath[0]).balanceOf(address(this))
-        );
+        IERC20(trade.tokenPath[0]).transfer(address(vault), amountOwed);
+
+        // Transfer profits to owner
+        uint256 profit = IERC20(trade.tokenPath[0]).balanceOf(address(this));
+        if (profit > 0) {
+            IERC20(trade.tokenPath[0]).transfer(owner, profit);
+        }
+
+        emit TradeExecuted(owner, trade.tokenPath[0], trade.tokenPath[1], flashAmount, profit);
+    }
+
+    // ============ Admin Functions ============
+
+    /**
+     * @notice Whitelist or remove a router
+     */
+    function setRouterWhitelist(address _router, bool _status) external onlyOwner {
+        require(_router != address(0), "Invalid router");
+        whitelistedRouters[_router] = _status;
+        emit RouterWhitelisted(_router, _status);
+    }
+
+    /**
+     * @notice Pause/unpause the contract
+     */
+    function setPaused(bool _paused) external onlyOwner {
+        paused = _paused;
+        emit Paused(_paused);
+    }
+
+    /**
+     * @notice Initiate ownership transfer (2-step for safety)
+     */
+    function transferOwnership(address _newOwner) external onlyOwner {
+        require(_newOwner != address(0), "Invalid address");
+        require(_newOwner != owner, "Already owner");
+        pendingOwner = _newOwner;
+        emit OwnershipTransferInitiated(owner, _newOwner);
+    }
+
+    /**
+     * @notice Accept ownership (must be called by pending owner)
+     */
+    function acceptOwnership() external {
+        require(msg.sender == pendingOwner, "Not pending owner");
+        emit OwnershipTransferred(owner, pendingOwner);
+        owner = pendingOwner;
+        pendingOwner = address(0);
+    }
+
+    /**
+     * @notice Emergency withdraw any stuck tokens
+     */
+    function emergencyWithdraw(address _token) external onlyOwner {
+        uint256 balance = IERC20(_token).balanceOf(address(this));
+        require(balance > 0, "No balance");
+        IERC20(_token).transfer(owner, balance);
+        emit EmergencyWithdraw(_token, balance);
+    }
+
+    /**
+     * @notice Emergency withdraw ETH if any
+     */
+    function emergencyWithdrawETH() external onlyOwner {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH");
+        (bool success, ) = owner.call{value: balance}("");
+        require(success, "ETH transfer failed");
     }
 
     // -- INTERNAL FUNCTIONS -- //
@@ -126,4 +259,7 @@ contract Arbitrage is IFlashLoanRecipient {
         // Perform swap
         ISwapRouter(_router).exactInputSingle(params);
     }
+
+    // Allow contract to receive ETH
+    receive() external payable {}
 }
