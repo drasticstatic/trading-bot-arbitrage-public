@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { connectWebSocket } from './store/websocket'
 import Header from './components/Header'
-import PricePanel from './components/PricePanel'
+import ScreenerPanel from './components/ScreenerPanel'
 import OpportunityPanel from './components/OpportunityPanel'
 import WalletPanel from './components/WalletPanel'
 import SettingsPanel from './components/SettingsPanel'
@@ -18,49 +18,35 @@ function App() {
   }, [dispatch])
 
   return (
-    <div className="min-h-screen bg-animated">
+    <div className="min-h-screen">
       <Header />
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-6">
         {!connected && (
-          <div className="glass border border-red-500/50 glow-pink rounded-xl p-4 mb-6 text-center animate-pulse">
-            <span className="text-red-400 font-medium">⚠️ SIGNAL LOST - Reconnecting to the matrix...</span>
+          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6 text-center">
+            <span className="text-red-400">⚠️ Disconnected - Attempting to reconnect...</span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            <PricePanel />
-            <OpportunityPanel />
-            <TradeHistory />
-          </div>
+        {/* Main Screener Table */}
+        <ScreenerPanel />
 
-          {/* Right Column */}
-          <div className="space-y-6">
-            <WalletPanel />
-            <SettingsPanel />
-            <LogPanel />
-          </div>
+        {/* Bottom Row: Opportunity, Wallet, Settings, Logs, History */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mt-6">
+          <OpportunityPanel />
+          <WalletPanel />
+          <SettingsPanel />
+          <LogPanel />
+        </div>
+
+        <div className="mt-6">
+          <TradeHistory />
         </div>
       </main>
 
-      <footer className="text-center py-6 glass border-t border-purple-500/20 mt-8">
-        <div className="gradient-text font-display text-lg font-bold mb-2">
-          DAPPU Arbitrage Bot v3.0
-        </div>
-        <div className="text-purple-300/70 text-sm">
-          Augmented with <span className="text-fuchsia-400">@drasticstatic</span> | Built with 💜 and faith
-        </div>
-        <div className="mt-2">
-          <a
-            href="https://drasticstatic.github.io/resume/index.html"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-cyan-400 hover:text-cyan-300 text-sm font-medium transition-colors"
-          >
-            🚀 Meet the Developer
-          </a>
+      <footer className="text-center py-4 border-t border-[#2a2e37] mt-6">
+        <div className="text-gray-600 text-xs">
+          DAPPU Arbitrage Screener · <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:text-blue-400">@drasticstatic</a>
         </div>
       </footer>
     </div>

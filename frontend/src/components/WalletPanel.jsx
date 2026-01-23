@@ -6,72 +6,58 @@ function WalletPanel() {
   const { wallet } = useSelector(state => state.bot)
 
   return (
-    <div className="glass rounded-2xl p-6 glow-purple">
+    <div className="card p-5">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-display font-bold gradient-text">💰 WALLET</h2>
-        <button
-          onClick={getWalletInfo}
-          className="text-sm text-fuchsia-400 hover:text-fuchsia-300 font-medium transition-colors"
-        >
-          ⟳ Sync
+        <h2 className="text-base font-semibold text-white">Wallet</h2>
+        <button onClick={getWalletInfo} className="text-xs text-blue-400 hover:text-blue-300">
+          Refresh
         </button>
       </div>
 
       {wallet ? (
         wallet.error ? (
-          <div className="text-red-400 text-sm glass p-3 rounded-lg">{wallet.error}</div>
+          <div className="text-red-400 text-sm">{wallet.error}</div>
         ) : (
           <div className="space-y-3">
-            {/* Network Badge */}
             <div className="flex items-center justify-between">
-              <span className="text-purple-300/70 text-sm">Network</span>
-              <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                wallet.network === 'localhost'
-                  ? 'glass-cyan text-cyan-400'
-                  : 'glass-pink text-fuchsia-400'
-              }`}>
-                {wallet.network === 'localhost' ? '🔵 TESTNET' : '🟣 ARBITRUM'}
+              <span className="text-label text-sm">Network</span>
+              <span className={`badge ${wallet.network === 'localhost' ? 'badge-blue' : 'badge-purple'}`}>
+                {wallet.network === 'localhost' ? 'Testnet' : 'Arbitrum'}
               </span>
             </div>
 
-            {/* Address */}
             <div className="flex items-center justify-between">
-              <span className="text-purple-300/70 text-sm">Address</span>
-              <span className="text-cyan-400 font-mono text-sm font-medium">
+              <span className="text-label text-sm">Address</span>
+              <span className="text-gray-300 font-mono text-xs">
                 {wallet.address?.slice(0, 6)}...{wallet.address?.slice(-4)}
               </span>
             </div>
 
-            {/* ETH Balance */}
-            <div className="flex items-center justify-between glass-green rounded-lg px-3 py-2">
-              <span className="text-emerald-300/70 text-sm">ETH Balance</span>
-              <span className="text-emerald-400 font-bold font-display text-lg">
-                {parseFloat(wallet.ethBalance).toFixed(6)} Ξ
+            <div className="data-row p-3 flex items-center justify-between">
+              <span className="text-label text-sm">ETH Balance</span>
+              <span className="status-green font-semibold">
+                {parseFloat(wallet.ethBalance).toFixed(6)} ETH
               </span>
             </div>
 
-            {/* Token Balances */}
             {wallet.tokenBalances && Object.entries(wallet.tokenBalances).map(([symbol, balance]) => (
-              <div key={symbol} className="flex items-center justify-between glass rounded-lg px-3 py-2">
-                <span className="text-purple-300/70 text-sm">{symbol}</span>
-                <span className="text-white font-medium font-display">
-                  {parseFloat(balance).toFixed(4)}
-                </span>
+              <div key={symbol} className="flex items-center justify-between">
+                <span className="text-label text-sm">{symbol}</span>
+                <span className="text-white text-sm">{parseFloat(balance).toFixed(4)}</span>
               </div>
             ))}
 
-            {/* Warning for low balance */}
             {parseFloat(wallet.ethBalance) < 0.002 && wallet.network !== 'localhost' && (
-              <div className="mt-2 p-3 glass border border-yellow-500/50 rounded-lg text-yellow-400 text-xs text-center animate-pulse">
-                ⚠️ Low ETH - Gas fees may fail
+              <div className="p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 text-xs text-center">
+                ⚠️ Low ETH balance
               </div>
             )}
           </div>
         )
       ) : (
-        <div className="text-center py-6">
-          <div className="text-4xl mb-3 float">💳</div>
-          <div className="text-purple-300/70 text-sm">Syncing wallet...</div>
+        <div className="text-center py-6 text-muted">
+          <div className="text-2xl mb-2">💳</div>
+          <div className="text-sm">Loading wallet...</div>
         </div>
       )}
     </div>

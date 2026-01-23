@@ -2,9 +2,10 @@ import {
   setConnected,
   setInitialState,
   setBotStatus,
-  setPoolInfo,
   setWalletInfo,
-  updatePrices,
+  updateScreener,
+  setSelectedPair,
+  setAnalysisResult,
   setOpportunity,
   setTradeStatus,
   addTrade,
@@ -33,7 +34,6 @@ export function connectWebSocket(dispatch) {
   ws.onclose = () => {
     console.log('WebSocket disconnected')
     dispatch(setConnected(false))
-    // Reconnect after 3 seconds
     reconnectTimeout = setTimeout(() => connectWebSocket(dispatch), 3000)
   }
 
@@ -52,14 +52,17 @@ export function connectWebSocket(dispatch) {
         case 'BOT_STATUS':
           dispatch(setBotStatus(payload))
           break
-        case 'POOL_INFO':
-          dispatch(setPoolInfo(payload))
-          break
         case 'WALLET_INFO':
           dispatch(setWalletInfo(payload))
           break
-        case 'PRICE_UPDATE':
-          dispatch(updatePrices(payload))
+        case 'SCREENER_UPDATE':
+          dispatch(updateScreener(payload))
+          break
+        case 'PAIR_SELECTED':
+          dispatch(setSelectedPair(payload))
+          break
+        case 'ANALYSIS_RESULT':
+          dispatch(setAnalysisResult(payload))
           break
         case 'OPPORTUNITY':
           dispatch(setOpportunity(payload))
@@ -70,6 +73,7 @@ export function connectWebSocket(dispatch) {
         case 'TRADE_COMPLETE':
           dispatch(addTrade(payload))
           dispatch(setTradeStatus(null))
+          dispatch(setOpportunity(null))
           break
         case 'SETTINGS_UPDATE':
           dispatch(updateSettings(payload))
@@ -94,6 +98,10 @@ export function sendMessage(type, payload = {}) {
 
 export function checkPrices() {
   sendMessage('CHECK_PRICES')
+}
+
+export function selectPair(pairName) {
+  sendMessage('SELECT_PAIR', { pairName })
 }
 
 export function executeTrade() {

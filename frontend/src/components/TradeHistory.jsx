@@ -4,15 +4,6 @@ import { useSelector } from 'react-redux'
 function TradeHistory() {
   const { trades } = useSelector(state => state.bot)
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 'success': return 'text-emerald-400 glass-green'
-      case 'failed': return 'text-red-400 glass-pink'
-      case 'pending': return 'text-yellow-400 glass'
-      default: return 'text-purple-300 glass'
-    }
-  }
-
   const formatProfit = (profit) => {
     const num = parseFloat(profit)
     if (num > 0) return `+${num.toFixed(6)}`
@@ -22,53 +13,48 @@ function TradeHistory() {
   const netProfit = trades.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0)
 
   return (
-    <div className="glass rounded-2xl p-6 glow-purple">
-      <h2 className="text-xl font-display font-bold gradient-text mb-4">📊 TRADE HISTORY</h2>
+    <div className="card p-5">
+      <h2 className="text-base font-semibold text-white mb-4">Trade History</h2>
 
       {trades.length === 0 ? (
-        <div className="text-center py-10">
-          <div className="text-6xl mb-4 float">📈</div>
-          <div className="text-purple-300 font-display text-lg">No trades yet</div>
-          <div className="text-purple-400/50 text-sm mt-2">Executed trades appear here</div>
+        <div className="text-center py-8 text-muted">
+          <div className="text-2xl mb-2">📈</div>
+          <div className="text-sm">No trades executed yet</div>
         </div>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="text-purple-300/70 text-left border-b border-purple-500/20">
-                <th className="pb-3 font-display font-medium">TIME</th>
-                <th className="pb-3 font-display font-medium">PATH</th>
-                <th className="pb-3 font-display font-medium">AMOUNT</th>
-                <th className="pb-3 font-display font-medium">PROFIT</th>
-                <th className="pb-3 font-display font-medium">STATUS</th>
+              <tr className="text-label text-left border-b border-[#2a2e37]">
+                <th className="pb-2 font-medium text-xs">Time</th>
+                <th className="pb-2 font-medium text-xs">Path</th>
+                <th className="pb-2 font-medium text-xs">Amount</th>
+                <th className="pb-2 font-medium text-xs">Profit</th>
+                <th className="pb-2 font-medium text-xs">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-purple-500/10">
+            <tbody className="divide-y divide-[#2a2e37]">
               {trades.map((trade, index) => (
-                <tr key={index} className="hover:bg-white/5 transition-colors">
-                  <td className="py-4 text-purple-400/70 font-mono text-xs">
+                <tr key={index} className="hover:bg-[#1f242d]">
+                  <td className="py-3 text-gray-500 font-mono text-xs">
                     {new Date(trade.timestamp).toLocaleTimeString()}
                   </td>
-                  <td className="py-4">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-fuchsia-400 font-medium">{trade.buyExchange}</span>
-                      <span className="text-cyan-400">→</span>
-                      <span className="text-cyan-400 font-medium">{trade.sellExchange}</span>
-                    </div>
+                  <td className="py-3 text-sm">
+                    <span className="text-gray-300">{trade.buyExchange}</span>
+                    <span className="text-gray-600 mx-1">→</span>
+                    <span className="text-gray-300">{trade.sellExchange}</span>
                   </td>
-                  <td className="py-4 text-white font-display">
-                    {trade.amount} <span className="text-purple-300/50">{trade.tokenSymbol}</span>
+                  <td className="py-3 text-gray-300 text-sm">
+                    {trade.amount} <span className="text-gray-500">{trade.tokenSymbol}</span>
                   </td>
-                  <td className="py-4">
-                    <span className={`font-bold font-display ${
-                      parseFloat(trade.profit) >= 0 ? 'text-emerald-400' : 'text-red-400'
-                    }`} style={{textShadow: parseFloat(trade.profit) >= 0 ? '0 0 10px rgba(0,255,136,0.5)' : '0 0 10px rgba(255,0,100,0.5)'}}>
-                      {formatProfit(trade.profit)}
-                    </span>
-                    <span className="text-purple-300/50 ml-1">{trade.tokenSymbol}</span>
+                  <td className={`py-3 font-semibold ${parseFloat(trade.profit) >= 0 ? 'status-green' : 'status-red'}`}>
+                    {formatProfit(trade.profit)}
                   </td>
-                  <td className="py-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${getStatusStyle(trade.status)}`}>
+                  <td className="py-3">
+                    <span className={`badge ${
+                      trade.status === 'success' ? 'badge-green' :
+                      trade.status === 'failed' ? 'badge-red' : 'badge-yellow'
+                    }`}>
                       {trade.status}
                     </span>
                   </td>
@@ -77,18 +63,12 @@ function TradeHistory() {
             </tbody>
           </table>
 
-          {/* Summary */}
-          <div className="mt-6 pt-4 border-t border-purple-500/20 flex justify-between items-center">
-            <div className="glass px-4 py-2 rounded-full">
-              <span className="text-purple-300/70 text-sm">Total: </span>
-              <span className="text-white font-display font-bold">{trades.length}</span>
-            </div>
-            <div className={`px-5 py-2 rounded-full font-display ${netProfit >= 0 ? 'glass-green' : 'glass-pink'}`}>
-              <span className="text-sm opacity-70">Net: </span>
-              <span className={`font-bold text-lg ${netProfit >= 0 ? 'text-emerald-400' : 'text-red-400'}`}
-                style={{textShadow: netProfit >= 0 ? '0 0 15px rgba(0,255,136,0.6)' : '0 0 15px rgba(255,0,100,0.6)'}}>
-                {formatProfit(netProfit)}
-              </span>
+          <div className="mt-4 pt-3 border-t border-[#2a2e37] flex justify-between items-center">
+            <span className="text-muted text-xs">
+              {trades.length} trades
+            </span>
+            <div className={`text-sm font-semibold ${netProfit >= 0 ? 'status-green' : 'status-red'}`}>
+              Net: {formatProfit(netProfit)}
             </div>
           </div>
         </div>
