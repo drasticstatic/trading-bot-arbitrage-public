@@ -3,46 +3,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { getWalletInfo, sendMessage, updateBotSettings } from '../store/websocket'
 import { updateSettings } from '../store/botSlice'
 
-// Tooltip component - displays below when near top of screen
-const Tooltip = ({ text, children, position = 'auto' }) => {
-  const [showBelow, setShowBelow] = React.useState(false)
-  const wrapperRef = React.useRef(null)
-
-  const handleMouseEnter = () => {
-    if (position === 'auto' && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect()
-      // If less than 100px from top, show tooltip below
-      setShowBelow(rect.top < 100)
-    } else if (position === 'bottom') {
-      setShowBelow(true)
-    }
-  }
-
-  return (
-    <div ref={wrapperRef} className="tooltip-wrapper" onMouseEnter={handleMouseEnter}
-      style={{ position: 'relative', display: 'inline-block' }}>
-      {children}
-      <div className="tooltip-text" style={{
-        visibility: 'hidden', opacity: 0, position: 'absolute',
-        ...(showBelow ? { top: '120%' } : { bottom: '120%' }),
-        left: '50%', transform: 'translateX(-50%)', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0',
-        padding: '8px 12px', borderRadius: '8px', fontSize: '12px',
-        zIndex: 1000, border: '1px solid rgba(99, 102, 241, 0.3)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        transition: 'opacity 0.2s, visibility 0.2s', pointerEvents: 'none', maxWidth: '280px', whiteSpace: 'normal', textAlign: 'center'
-      }}>
-        {text}
-        <div style={{
-          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-          border: '6px solid transparent',
-          ...(showBelow
-            ? { bottom: '100%', borderBottomColor: 'rgba(15, 23, 42, 0.95)' }
-            : { top: '100%', borderTopColor: 'rgba(15, 23, 42, 0.95)' })
-        }} />
-      </div>
-      <style>{`.tooltip-wrapper:hover .tooltip-text { visibility: visible !important; opacity: 1 !important; }`}</style>
-    </div>
-  )
-}
+import Tooltip from './Tooltip'
 
 function HeroSection() {
   const dispatch = useDispatch()
@@ -51,13 +12,22 @@ function HeroSection() {
   const [pendingToggle, setPendingToggle] = useState(null)
   const [showSliderModal, setShowSliderModal] = useState(false)
   const [pendingSlider, setPendingSlider] = useState(null)
-  const [originalSliderValue, setOriginalSliderValue] = useState(null)
+  const sliderOriginalRef = React.useRef({})
+  const [settingsFeedback, setSettingsFeedback] = useState(null)
+  const [draftSettings, setDraftSettings] = useState(settings)
 
   useEffect(() => {
     getWalletInfo()
     const interval = setInterval(getWalletInfo, 30000)
     return () => clearInterval(interval)
   }, [])
+
+  // Keep local slider draft values in sync with store settings.
+  // If a confirmation modal is open, don't clobber the draft mid-confirm.
+  useEffect(() => {
+    if (showSliderModal) return
+    setDraftSettings(settings)
+  }, [settings, showSliderModal])
 
   // Use settings.isMainnet to determine mode
   const isTestnet = !settings.isMainnet
@@ -113,6 +83,8 @@ function HeroSection() {
     if (pendingToggle) {
       console.log(`[TOGGLE] ✓ Confirmed: ${pendingToggle.key} = ${pendingToggle.value}`)
       handleSettingChange(pendingToggle.key, pendingToggle.value)
+      setSettingsFeedback(`✓ Updated ${pendingToggle.key}`)
+      setTimeout(() => setSettingsFeedback(null), 2500)
     }
     setShowToggleModal(false)
     setPendingToggle(null)
@@ -160,17 +132,18 @@ function HeroSection() {
     return null
   }
 
-  // Handle slider start - store original value for cancel revert
+  // Handle slider start - store original value for cancel revert (useRef avoids async state race)
   const handleSliderStart = (key) => {
-    const currentValue = settings[key]
-    setOriginalSliderValue({ key, value: currentValue })
+    const currentValue = draftSettings?.[key] ?? settings[key]
+    sliderOriginalRef.current[key] = currentValue
     console.log(`[SLIDER] 📍 Started: ${key} = ${currentValue}`)
   }
 
   // Handle slider with confirmation modal
   const handleSliderClick = (key, value) => {
-    console.log(`[SLIDER] 🎚️ Changed: ${key} from ${originalSliderValue?.value} to ${value}`)
-    setPendingSlider({ key, value, originalValue: originalSliderValue?.value, config: getSliderModalConfig(key, value) })
+		const originalValue = sliderOriginalRef.current[key] ?? settings[key]
+    console.log(`[SLIDER] 🎚️ Changed: ${key} from ${originalValue} to ${value}`)
+    setPendingSlider({ key, value, originalValue, config: getSliderModalConfig(key, value) })
     setShowSliderModal(true)
   }
 
@@ -180,25 +153,28 @@ function HeroSection() {
       console.log(`[SLIDER] 📤 Sending to backend...`)
       dispatch(updateSettings({ [pendingSlider.key]: pendingSlider.value }))
       updateBotSettings({ [pendingSlider.key]: pendingSlider.value })
+
+      setDraftSettings(prev => ({ ...prev, [pendingSlider.key]: pendingSlider.value }))
+
+      setSettingsFeedback(`✓ Applied ${pendingSlider.key}`)
+      setTimeout(() => setSettingsFeedback(null), 2500)
     }
     setShowSliderModal(false)
     setPendingSlider(null)
-    setOriginalSliderValue(null)
+    sliderOriginalRef.current = {}
   }
 
   const cancelSlider = () => {
     if (pendingSlider && pendingSlider.originalValue !== undefined) {
       console.log(`[SLIDER] ❌ CANCELLED: Reverting ${pendingSlider.key} from ${pendingSlider.value} back to ${pendingSlider.originalValue}`)
-      // Revert to original value
-      dispatch(updateSettings({ [pendingSlider.key]: pendingSlider.originalValue }))
+      setDraftSettings(prev => ({ ...prev, [pendingSlider.key]: pendingSlider.originalValue }))
+      setSettingsFeedback('✗ Cancelled (no changes applied)')
+      setTimeout(() => setSettingsFeedback(null), 2000)
     }
     setShowSliderModal(false)
     setPendingSlider(null)
-    setOriginalSliderValue(null)
+    sliderOriginalRef.current = {}
   }
-
-  // Determine display mode - testnet shows demo, mainnet shows live
-  const showDemoMode = isTestnet || isTestMode
 
   return (
     <div className="mb-8">
@@ -417,19 +393,24 @@ function HeroSection() {
 
         {/* Threshold Sliders with tooltips and confirmation modals */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)' }}>
+          {settingsFeedback && (
+            <div className="md:col-span-3 text-center" style={{ fontSize: '12px', color: '#86efac', fontWeight: 600 }}>
+              {settingsFeedback}
+            </div>
+          )}
           {/* Price Threshold */}
           <Tooltip text="📊 Minimum price difference between DEXs to flag an arbitrage opportunity. Lower = more sensitive, Higher = fewer false positives.">
             <div className="text-center">
               <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>PRICE THRESHOLD</label>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{settings.priceDifference?.toFixed(1) || '0.5'}%</div>
-              <input type="range" min="0.1" max="5" step="0.1" value={settings.priceDifference || 0.5}
+	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5).toFixed(1)}%</div>
+	              <input type="range" min="0.1" max="5" step="0.1" value={Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)}
                 onMouseDown={() => handleSliderStart('priceDifference')}
                 onTouchStart={() => handleSliderStart('priceDifference')}
                 onMouseUp={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
                 onTouchEnd={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
-                onChange={(e) => dispatch(updateSettings({ priceDifference: parseFloat(e.target.value) }))}
+	                onChange={(e) => setDraftSettings(prev => ({ ...prev, priceDifference: parseFloat(e.target.value) }))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b 100%)` }} />
+	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)) / 5) * 100}%, #1e293b ${((Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)) / 5) * 100}%, #1e293b 100%)` }} />
             </div>
           </Tooltip>
 
@@ -437,15 +418,15 @@ function HeroSection() {
           <Tooltip text="⛽ Maximum gas units per transaction. Flash loan swaps typically need 300-500K. Higher = safer but more expensive.">
             <div className="text-center">
               <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS LIMIT</label>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasLimit || 400000) / 1000).toFixed(0)}K</div>
-              <input type="range" min="100000" max="1000000" step="50000" value={settings.gasLimit || 400000}
+	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000).toFixed(0)}K</div>
+	              <input type="range" min="100000" max="1000000" step="50000" value={Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)}
                 onMouseDown={() => handleSliderStart('gasLimit')}
                 onTouchStart={() => handleSliderStart('gasLimit')}
                 onMouseUp={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
                 onTouchEnd={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
-                onChange={(e) => dispatch(updateSettings({ gasLimit: parseInt(e.target.value) }))}
+	                onChange={(e) => setDraftSettings(prev => ({ ...prev, gasLimit: parseInt(e.target.value) }))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b 100%)` }} />
+	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000000) * 100}%, #1e293b ${((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000000) * 100}%, #1e293b 100%)` }} />
             </div>
           </Tooltip>
 
@@ -453,15 +434,15 @@ function HeroSection() {
           <Tooltip text="💰 Gas price in Gwei. Higher = faster confirmation but more expensive. Arbitrum typically uses 0.1-1.0 Gwei.">
             <div className="text-center">
               <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS PRICE (GWEI)</label>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasPrice || 0.0000001) * 1e9).toFixed(1)}</div>
-              <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={settings.gasPrice || 0.0000001}
+	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) * 1e9).toFixed(1)}</div>
+	              <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)}
                 onMouseDown={() => handleSliderStart('gasPrice')}
                 onTouchStart={() => handleSliderStart('gasPrice')}
                 onMouseUp={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
                 onTouchEnd={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
-                onChange={(e) => dispatch(updateSettings({ gasPrice: parseFloat(e.target.value) }))}
+	                onChange={(e) => setDraftSettings(prev => ({ ...prev, gasPrice: parseFloat(e.target.value) }))}
                 className="w-full h-2 rounded-full appearance-none cursor-pointer"
-                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b 100%)` }} />
+	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) / 0.000001) * 100}%, #1e293b ${((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) / 0.000001) * 100}%, #1e293b 100%)` }} />
             </div>
           </Tooltip>
         </div>
@@ -471,4 +452,3 @@ function HeroSection() {
 }
 
 export default HeroSection
-
