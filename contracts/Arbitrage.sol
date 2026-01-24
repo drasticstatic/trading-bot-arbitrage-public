@@ -33,7 +33,8 @@ contract Arbitrage is IFlashLoanRecipient {
     struct Trade {
         address[] routerPath;
         address[] tokenPath;
-        uint24 fee;
+        uint24 fee0;  // Fee for first swap (buy)
+        uint24 fee1;  // Fee for second swap (sell)
     }
 
     // ============ Events ============
@@ -84,11 +85,17 @@ contract Arbitrage is IFlashLoanRecipient {
     /**
      * @notice Execute an arbitrage trade using flash loan
      * @dev Only owner can call, protected against reentrancy
+     * @param _routerPath Array of 2 router addresses [buyRouter, sellRouter]
+     * @param _tokenPath Array of 2 token addresses [token0, token1]
+     * @param _fee0 Fee tier for first swap (buy on DEX1)
+     * @param _fee1 Fee tier for second swap (sell on DEX2)
+     * @param _flashAmount Amount of token0 to flash loan
      */
     function executeTrade(
         address[] memory _routerPath,
         address[] memory _tokenPath,
-        uint24 _fee,
+        uint24 _fee0,
+        uint24 _fee1,
         uint256 _flashAmount
     ) external onlyOwner noReentrant whenNotPaused {
         // Validate routers are whitelisted
@@ -99,7 +106,7 @@ contract Arbitrage is IFlashLoanRecipient {
         require(_flashAmount > 0, "Amount must be > 0");
 
         bytes memory data = abi.encode(
-            Trade({routerPath: _routerPath, tokenPath: _tokenPath, fee: _fee})
+            Trade({routerPath: _routerPath, tokenPath: _tokenPath, fee0: _fee0, fee1: _fee1})
         );
 
         IERC20[] memory tokens = new IERC20[](1);
@@ -126,17 +133,17 @@ contract Arbitrage is IFlashLoanRecipient {
         Trade memory trade = abi.decode(userData, (Trade));
         uint256 flashAmount = amounts[0];
 
-        // First swap: token0 -> token1
+        // First swap: token0 -> token1 (using fee0)
         _swapOnV3(
             trade.routerPath[0],
             trade.tokenPath[0],
             flashAmount,
             trade.tokenPath[1],
             0,
-            trade.fee
+            trade.fee0
         );
 
-        // Second swap: token1 -> token0
+        // Second swap: token1 -> token0 (using fee1)
         uint256 token1Balance = IERC20(trade.tokenPath[1]).balanceOf(address(this));
         _swapOnV3(
             trade.routerPath[1],
@@ -144,7 +151,7 @@ contract Arbitrage is IFlashLoanRecipient {
             token1Balance,
             trade.tokenPath[0],
             flashAmount, // Minimum we need to repay
-            trade.fee
+            trade.fee1
         );
 
         // Repay flash loan
