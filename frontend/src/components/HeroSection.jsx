@@ -3,11 +3,55 @@ import { useSelector, useDispatch } from 'react-redux'
 import { getWalletInfo, sendMessage, updateBotSettings } from '../store/websocket'
 import { updateSettings } from '../store/botSlice'
 
+// Tooltip component - displays below when near top of screen
+const Tooltip = ({ text, children, position = 'auto' }) => {
+  const [showBelow, setShowBelow] = React.useState(false)
+  const wrapperRef = React.useRef(null)
+
+  const handleMouseEnter = () => {
+    if (position === 'auto' && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect()
+      // If less than 100px from top, show tooltip below
+      setShowBelow(rect.top < 100)
+    } else if (position === 'bottom') {
+      setShowBelow(true)
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="tooltip-wrapper" onMouseEnter={handleMouseEnter}
+      style={{ position: 'relative', display: 'inline-block' }}>
+      {children}
+      <div className="tooltip-text" style={{
+        visibility: 'hidden', opacity: 0, position: 'absolute',
+        ...(showBelow ? { top: '120%' } : { bottom: '120%' }),
+        left: '50%', transform: 'translateX(-50%)', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0',
+        padding: '8px 12px', borderRadius: '8px', fontSize: '12px',
+        zIndex: 1000, border: '1px solid rgba(99, 102, 241, 0.3)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        transition: 'opacity 0.2s, visibility 0.2s', pointerEvents: 'none', maxWidth: '280px', whiteSpace: 'normal', textAlign: 'center'
+      }}>
+        {text}
+        <div style={{
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+          border: '6px solid transparent',
+          ...(showBelow
+            ? { bottom: '100%', borderBottomColor: 'rgba(15, 23, 42, 0.95)' }
+            : { top: '100%', borderTopColor: 'rgba(15, 23, 42, 0.95)' })
+        }} />
+      </div>
+      <style>{`.tooltip-wrapper:hover .tooltip-text { visibility: visible !important; opacity: 1 !important; }`}</style>
+    </div>
+  )
+}
+
 function HeroSection() {
   const dispatch = useDispatch()
   const { wallet, settings, connected, isExecuting, isRunning, isTestMode } = useSelector(state => state.bot)
   const [showToggleModal, setShowToggleModal] = useState(false)
   const [pendingToggle, setPendingToggle] = useState(null)
+  const [showSliderModal, setShowSliderModal] = useState(false)
+  const [pendingSlider, setPendingSlider] = useState(null)
+  const [originalSliderValue, setOriginalSliderValue] = useState(null)
 
   useEffect(() => {
     getWalletInfo()
@@ -49,8 +93,8 @@ function HeroSection() {
         icon: value ? '🤖' : '✋',
         title: value ? 'Enable Auto Execute?' : 'Disable Auto Execute?',
         description: value
-          ? '🤖 DANGER: The bot will automatically execute trades when profitable opportunities are found. No manual confirmation required!'
-          : 'Auto execution disabled. You will need to manually click Trade to execute.',
+          ? '🤖 DANGER: The bot will automatically execute trades when profitable opportunities are found. No need to manually click "Trade" to execute!'
+          : 'Auto execution disabled. You will need to manually click "Trade" to execute.',
         confirmColor: value ? '#ef4444' : '#10b981',
         confirmGradient: value ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
       }
@@ -86,9 +130,71 @@ function HeroSection() {
     sendMessage('UPDATE_SETTINGS', { [key]: value })
   }
 
-  const handleSliderChange = (key, value) => {
-    dispatch(updateSettings({ [key]: value }))
-    updateBotSettings({ [key]: value })
+  // Slider modal config
+  const getSliderModalConfig = (key, value) => {
+    if (key === 'priceDifference') {
+      return {
+        icon: '📊',
+        title: 'Change Price Threshold?',
+        description: `Set threshold to ${value.toFixed(1)}%? This is the minimum price difference between DEXs required to flag an arbitrage opportunity.`,
+        valueDisplay: `${value.toFixed(1)}%`,
+        confirmColor: '#6366f1'
+      }
+    } else if (key === 'gasLimit') {
+      return {
+        icon: '⛽',
+        title: 'Change Gas Limit?',
+        description: `Set gas limit to ${(value / 1000).toFixed(0)}K? Flash loan swaps typically need 300-500K gas units. Higher = safer but more expensive.`,
+        valueDisplay: `${(value / 1000).toFixed(0)}K`,
+        confirmColor: '#6366f1'
+      }
+    } else if (key === 'gasPrice') {
+      return {
+        icon: '💰',
+        title: 'Change Gas Price?',
+        description: `Set gas price to ${(value * 1e9).toFixed(1)} Gwei? Higher = faster confirmation but more expensive. Arbitrum typically 0.1-1.0 Gwei.`,
+        valueDisplay: `${(value * 1e9).toFixed(1)} Gwei`,
+        confirmColor: '#6366f1'
+      }
+    }
+    return null
+  }
+
+  // Handle slider start - store original value for cancel revert
+  const handleSliderStart = (key) => {
+    const currentValue = settings[key]
+    setOriginalSliderValue({ key, value: currentValue })
+    console.log(`[SLIDER] 📍 Started: ${key} = ${currentValue}`)
+  }
+
+  // Handle slider with confirmation modal
+  const handleSliderClick = (key, value) => {
+    console.log(`[SLIDER] 🎚️ Changed: ${key} from ${originalSliderValue?.value} to ${value}`)
+    setPendingSlider({ key, value, originalValue: originalSliderValue?.value, config: getSliderModalConfig(key, value) })
+    setShowSliderModal(true)
+  }
+
+  const confirmSlider = () => {
+    if (pendingSlider) {
+      console.log(`[SLIDER] ✅ CONFIRMED: ${pendingSlider.key} = ${pendingSlider.value}`)
+      console.log(`[SLIDER] 📤 Sending to backend...`)
+      dispatch(updateSettings({ [pendingSlider.key]: pendingSlider.value }))
+      updateBotSettings({ [pendingSlider.key]: pendingSlider.value })
+    }
+    setShowSliderModal(false)
+    setPendingSlider(null)
+    setOriginalSliderValue(null)
+  }
+
+  const cancelSlider = () => {
+    if (pendingSlider && pendingSlider.originalValue !== undefined) {
+      console.log(`[SLIDER] ❌ CANCELLED: Reverting ${pendingSlider.key} from ${pendingSlider.value} back to ${pendingSlider.originalValue}`)
+      // Revert to original value
+      dispatch(updateSettings({ [pendingSlider.key]: pendingSlider.originalValue }))
+    }
+    setShowSliderModal(false)
+    setPendingSlider(null)
+    setOriginalSliderValue(null)
   }
 
   // Determine display mode - testnet shows demo, mainnet shows live
@@ -130,6 +236,49 @@ function HeroSection() {
                 color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
               }}>
                 ✓ Confirm
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Slider Confirmation Modal */}
+      {showSliderModal && pendingSlider?.config && (
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.85)', zIndex: 1000,
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}>
+          <div style={{
+            background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+            border: `2px solid ${pendingSlider.config.confirmColor}`,
+            borderRadius: '16px', padding: '24px', maxWidth: '420px', width: '90%', textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+              {pendingSlider.config.icon}
+            </div>
+            <h3 style={{ color: '#fff', fontSize: '20px', marginBottom: '8px' }}>
+              {pendingSlider.config.title}
+            </h3>
+            <div style={{ fontSize: '28px', fontWeight: '700', color: '#a5b4fc', marginBottom: '12px' }}>
+              {pendingSlider.config.valueDisplay}
+            </div>
+            <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '20px', lineHeight: '1.5' }}>
+              {pendingSlider.config.description}
+            </p>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={cancelSlider} style={{
+                flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid #374151',
+                background: 'transparent', color: '#94a3b8', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+              }}>
+                Cancel
+              </button>
+              <button onClick={confirmSlider} style={{
+                flex: 1, padding: '12px', borderRadius: '8px', border: 'none',
+                background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer'
+              }}>
+                ✓ Apply
               </button>
             </div>
           </div>
@@ -226,65 +375,95 @@ function HeroSection() {
         {/* Toggle Pills - all use handleToggleClick for confirmation modals */}
         <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
           {/* Testnet/Mainnet Pill */}
-          <button
-            onClick={() => handleToggleClick('isMainnet', !settings.isMainnet)}
-            title={isTestnet ? 'Click to switch to Mainnet (real funds)' : 'Click to switch to Testnet (Hardhat)'}
-            className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-            style={{ background: isTestnet ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.2)', border: `1px solid ${isTestnet ? '#3b82f6' : '#f59e0b'}` }}
-          >
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: isTestnet ? '#3b82f6' : '#f59e0b' }} />
-            <span style={{ color: isTestnet ? '#93c5fd' : '#fcd34d', fontSize: '13px', fontWeight: '600' }}>{isTestnet ? 'Testnet' : 'Mainnet'}</span>
-          </button>
+          <Tooltip text={isTestnet ? '🧪 Currently on TESTNET (Hardhat). Click to switch to Mainnet with real funds.' : '⚠️ Currently on MAINNET. Click to switch to safe Testnet mode.'}>
+            <button
+              onClick={() => handleToggleClick('isMainnet', !settings.isMainnet)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
+              style={{ background: isTestnet ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.2)', border: `1px solid ${isTestnet ? '#3b82f6' : '#f59e0b'}` }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: isTestnet ? '#3b82f6' : '#f59e0b' }} />
+              <span style={{ color: isTestnet ? '#93c5fd' : '#fcd34d', fontSize: '13px', fontWeight: '600' }}>{isTestnet ? 'Testnet' : 'Mainnet'}</span>
+            </button>
+          </Tooltip>
 
           {/* Fast Trade Pill - now uses confirmation modal */}
-          <button
-            onClick={() => handleToggleClick('skipConfirmation', !settings.skipConfirmation)}
-            title={settings.skipConfirmation ? 'Fast Trade ON: Trades execute immediately without confirmation' : 'Fast Trade OFF: Shows confirmation before each trade'}
-            className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-            style={{ background: settings.skipConfirmation ? 'rgba(234, 179, 8, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.skipConfirmation ? '#eab308' : '#374151'}` }}
-          >
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.skipConfirmation ? '#eab308' : '#6b7280' }} />
-            <span style={{ color: settings.skipConfirmation ? '#fde047' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Fast Trade</span>
-          </button>
+          <Tooltip text={settings.skipConfirmation ? '⚡ FAST TRADE ON - Trades execute immediately without confirmation modals!' : '🛡️ Fast Trade OFF - Shows confirmation before each trade for safety.'}>
+            <button
+              onClick={() => handleToggleClick('skipConfirmation', !settings.skipConfirmation)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
+              style={{ background: settings.skipConfirmation ? 'rgba(234, 179, 8, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.skipConfirmation ? '#eab308' : '#374151'}` }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.skipConfirmation ? '#eab308' : '#6b7280' }} />
+              <span style={{ color: settings.skipConfirmation ? '#fde047' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Fast Trade</span>
+            </button>
+          </Tooltip>
 
           {/* Auto Execute Pill - now uses confirmation modal */}
-          <button
-            onClick={() => handleToggleClick('autoExecute', !settings.autoExecute)}
-            title={settings.autoExecute ? 'Auto Execute ON: Bot automatically executes profitable trades' : 'Auto Execute OFF: Manual trade execution required'}
-            className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-            style={{ background: settings.autoExecute ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.autoExecute ? '#a855f7' : '#374151'}` }}
-          >
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.autoExecute ? '#a855f7' : '#6b7280' }} />
-            <span style={{ color: settings.autoExecute ? '#c4b5fd' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Auto Execute</span>
-          </button>
+          <Tooltip text={settings.autoExecute ? '🤖 AUTO EXECUTE ON - Bot automatically executes trades when profitable opportunities are found!' : '✋ Auto Execute OFF - You must manually click Trade to execute.'}>
+            <button
+              onClick={() => handleToggleClick('autoExecute', !settings.autoExecute)}
+              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
+              style={{ background: settings.autoExecute ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.autoExecute ? '#a855f7' : '#374151'}` }}
+            >
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.autoExecute ? '#a855f7' : '#6b7280' }} />
+              <span style={{ color: settings.autoExecute ? '#c4b5fd' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Auto Execute</span>
+            </button>
+          </Tooltip>
 
           {settings.autoExecute && (
             <span className="px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>⚠️ AUTO-TRADING ACTIVE</span>
           )}
         </div>
 
-        {/* Threshold Sliders with tooltips */}
+        {/* Threshold Sliders with tooltips and confirmation modals */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)' }}>
           {/* Price Threshold */}
-          <div className="text-center" title="Minimum price difference (%) between DEXs required to flag an opportunity">
-            <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>PRICE THRESHOLD</label>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{settings.priceDifference?.toFixed(1) || '0.5'}%</div>
-            <input type="range" min="0.1" max="5" step="0.1" value={settings.priceDifference || 0.5} onChange={(e) => handleSliderChange('priceDifference', parseFloat(e.target.value))} title={`${settings.priceDifference?.toFixed(1) || '0.5'}% - Lower = more sensitive, Higher = fewer false positives`} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b 100%)` }} />
-          </div>
+          <Tooltip text="📊 Minimum price difference between DEXs to flag an arbitrage opportunity. Lower = more sensitive, Higher = fewer false positives.">
+            <div className="text-center">
+              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>PRICE THRESHOLD</label>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{settings.priceDifference?.toFixed(1) || '0.5'}%</div>
+              <input type="range" min="0.1" max="5" step="0.1" value={settings.priceDifference || 0.5}
+                onMouseDown={() => handleSliderStart('priceDifference')}
+                onTouchStart={() => handleSliderStart('priceDifference')}
+                onMouseUp={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
+                onTouchEnd={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
+                onChange={(e) => dispatch(updateSettings({ priceDifference: parseFloat(e.target.value) }))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b ${((settings.priceDifference || 0.5) / 5) * 100}%, #1e293b 100%)` }} />
+            </div>
+          </Tooltip>
 
           {/* Gas Limit */}
-          <div className="text-center" title="Maximum gas units allowed per transaction. Higher = safer but more expensive">
-            <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS LIMIT</label>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasLimit || 400000) / 1000).toFixed(0)}K</div>
-            <input type="range" min="100000" max="1000000" step="50000" value={settings.gasLimit || 400000} onChange={(e) => handleSliderChange('gasLimit', parseInt(e.target.value))} title={`${((settings.gasLimit || 400000) / 1000).toFixed(0)}K gas units - Flash loan swaps typically need 300-500K`} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b 100%)` }} />
-          </div>
+          <Tooltip text="⛽ Maximum gas units per transaction. Flash loan swaps typically need 300-500K. Higher = safer but more expensive.">
+            <div className="text-center">
+              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS LIMIT</label>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasLimit || 400000) / 1000).toFixed(0)}K</div>
+              <input type="range" min="100000" max="1000000" step="50000" value={settings.gasLimit || 400000}
+                onMouseDown={() => handleSliderStart('gasLimit')}
+                onTouchStart={() => handleSliderStart('gasLimit')}
+                onMouseUp={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
+                onTouchEnd={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
+                onChange={(e) => dispatch(updateSettings({ gasLimit: parseInt(e.target.value) }))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b ${((settings.gasLimit || 400000) / 1000000) * 100}%, #1e293b 100%)` }} />
+            </div>
+          </Tooltip>
 
           {/* Gas Price */}
-          <div className="text-center" title="Gas price in Gwei. Higher = faster confirmation but more expensive">
-            <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS PRICE (GWEI)</label>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasPrice || 0.0000001) * 1e9).toFixed(1)}</div>
-            <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={settings.gasPrice || 0.0000001} onChange={(e) => handleSliderChange('gasPrice', parseFloat(e.target.value))} title={`${((settings.gasPrice || 0.0000001) * 1e9).toFixed(1)} Gwei - Arbitrum typically 0.1-1.0 Gwei`} className="w-full h-2 rounded-full appearance-none cursor-pointer" style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b 100%)` }} />
-          </div>
+          <Tooltip text="💰 Gas price in Gwei. Higher = faster confirmation but more expensive. Arbitrum typically uses 0.1-1.0 Gwei.">
+            <div className="text-center">
+              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS PRICE (GWEI)</label>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((settings.gasPrice || 0.0000001) * 1e9).toFixed(1)}</div>
+              <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={settings.gasPrice || 0.0000001}
+                onMouseDown={() => handleSliderStart('gasPrice')}
+                onTouchStart={() => handleSliderStart('gasPrice')}
+                onMouseUp={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
+                onTouchEnd={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
+                onChange={(e) => dispatch(updateSettings({ gasPrice: parseFloat(e.target.value) }))}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer"
+                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b ${((settings.gasPrice || 0.0000001) / 0.000001) * 100}%, #1e293b 100%)` }} />
+            </div>
+          </Tooltip>
         </div>
       </div>
     </div>
