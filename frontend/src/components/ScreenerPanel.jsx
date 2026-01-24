@@ -2,48 +2,10 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
 
-// Tooltip component - displays below when near top of screen
-const Tooltip = ({ text, children, position = 'auto' }) => {
-  const [showBelow, setShowBelow] = React.useState(false)
-  const wrapperRef = React.useRef(null)
-
-  const handleMouseEnter = () => {
-    if (position === 'auto' && wrapperRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect()
-      setShowBelow(rect.top < 100)
-    } else if (position === 'bottom') {
-      setShowBelow(true)
-    }
-  }
-
-  return (
-    <div ref={wrapperRef} className="tooltip-wrapper" onMouseEnter={handleMouseEnter}
-      style={{ position: 'relative', display: 'inline-block' }}>
-      {children}
-      <div className="tooltip-text" style={{
-        visibility: 'hidden', opacity: 0, position: 'absolute',
-        ...(showBelow ? { top: '120%' } : { bottom: '120%' }),
-        left: '50%', transform: 'translateX(-50%)', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0',
-        padding: '8px 12px', borderRadius: '8px', fontSize: '12px',
-        zIndex: 1000, border: '1px solid rgba(99, 102, 241, 0.3)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
-        transition: 'opacity 0.2s, visibility 0.2s', pointerEvents: 'none', maxWidth: '220px', whiteSpace: 'normal', textAlign: 'center'
-      }}>
-        {text}
-        <div style={{
-          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
-          border: '6px solid transparent',
-          ...(showBelow
-            ? { bottom: '100%', borderBottomColor: 'rgba(15, 23, 42, 0.95)' }
-            : { top: '100%', borderTopColor: 'rgba(15, 23, 42, 0.95)' })
-        }} />
-      </div>
-      <style>{`.tooltip-wrapper:hover .tooltip-text { visibility: visible !important; opacity: 1 !important; }`}</style>
-    </div>
-  )
-}
+import Tooltip from './Tooltip'
 
 function ScreenerPanel() {
-  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting, isTestMode } = useSelector(state => state.bot)
+  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting, isTestMode, settings } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
   const [hideFailedPairs, setHideFailedPairs] = useState(false)
@@ -52,6 +14,14 @@ function ScreenerPanel() {
   // Trade button - show confirmation modal first
   const handleTrade = (pairName) => {
     const pair = screenerPairs.find(p => p.name === pairName)
+
+    // Fast Trade: bypass confirm modal
+    if (settings?.skipConfirmation) {
+      selectPair(pairName)
+      setTimeout(() => executeTrade(), 100)
+      return
+    }
+
     setPendingTrade(pair)
     setShowConfirmModal(true)
   }
