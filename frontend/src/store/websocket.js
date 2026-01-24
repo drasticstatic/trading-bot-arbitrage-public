@@ -18,7 +18,18 @@ let reconnectTimeout = null
 
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const wsUrl = `${protocol}//${window.location.host}`
+  const explicitUrl = process.env.REACT_APP_WS_URL
+
+  // Dev default: React dev server on :3000, backend WS on :5050.
+  // Prod default: frontend served by backend, so same origin works.
+  let wsUrl
+  if (explicitUrl) {
+    wsUrl = explicitUrl
+  } else if (window.location.port === '3000' || window.location.port === '3001') {
+    wsUrl = `${protocol}//${window.location.hostname}:5050`
+  } else {
+    wsUrl = `${protocol}//${window.location.host}`
+  }
 
   ws = new WebSocket(wsUrl)
 
