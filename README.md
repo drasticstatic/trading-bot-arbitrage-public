@@ -6,9 +6,14 @@ This is a simple trading bot demo that monitors swap events on Uniswap V3 and Pa
 To start the bot:
 
 ```bash
+#Step 1: Start Hardhat Node
 npx hardhat node
+#Step 2: Deploy Smart Contract
 npx hardhat ignition deploy ignition/modules/Arbitrage.js --network localhost
-node bot.js
+#Step 3: Start the Bot
+source ~/.nvm/nvm.sh && node bot.js
+#Step 4: Create Profitable Opportunity & Test
+source ~/.nvm/nvm.sh && npx hardhat run scripts/quick-manipulate.js --network localhost
 ```
 
 ## Technology Stack & Tools
