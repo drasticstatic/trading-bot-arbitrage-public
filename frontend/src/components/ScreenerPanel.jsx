@@ -2,6 +2,46 @@ import React, { useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
 
+// Tooltip component - displays below when near top of screen
+const Tooltip = ({ text, children, position = 'auto' }) => {
+  const [showBelow, setShowBelow] = React.useState(false)
+  const wrapperRef = React.useRef(null)
+
+  const handleMouseEnter = () => {
+    if (position === 'auto' && wrapperRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect()
+      setShowBelow(rect.top < 100)
+    } else if (position === 'bottom') {
+      setShowBelow(true)
+    }
+  }
+
+  return (
+    <div ref={wrapperRef} className="tooltip-wrapper" onMouseEnter={handleMouseEnter}
+      style={{ position: 'relative', display: 'inline-block' }}>
+      {children}
+      <div className="tooltip-text" style={{
+        visibility: 'hidden', opacity: 0, position: 'absolute',
+        ...(showBelow ? { top: '120%' } : { bottom: '120%' }),
+        left: '50%', transform: 'translateX(-50%)', background: 'rgba(15, 23, 42, 0.95)', color: '#e2e8f0',
+        padding: '8px 12px', borderRadius: '8px', fontSize: '12px',
+        zIndex: 1000, border: '1px solid rgba(99, 102, 241, 0.3)', boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+        transition: 'opacity 0.2s, visibility 0.2s', pointerEvents: 'none', maxWidth: '220px', whiteSpace: 'normal', textAlign: 'center'
+      }}>
+        {text}
+        <div style={{
+          position: 'absolute', left: '50%', transform: 'translateX(-50%)',
+          border: '6px solid transparent',
+          ...(showBelow
+            ? { bottom: '100%', borderBottomColor: 'rgba(15, 23, 42, 0.95)' }
+            : { top: '100%', borderTopColor: 'rgba(15, 23, 42, 0.95)' })
+        }} />
+      </div>
+      <style>{`.tooltip-wrapper:hover .tooltip-text { visibility: visible !important; opacity: 1 !important; }`}</style>
+    </div>
+  )
+}
+
 function ScreenerPanel() {
   const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting, isTestMode } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
@@ -147,32 +187,41 @@ function ScreenerPanel() {
           )}
         </div>
         <div className="screener-actions">
-          <button
-            onClick={() => setHideFailedPairs(!hideFailedPairs)}
-            className={hideFailedPairs ? 'btn-filter-active' : 'btn-filter'}
-            title={hideFailedPairs ? 'Show all pairs including those with errors' : 'Hide pairs with fee tier/pool errors'}
-            style={{
-              background: hideFailedPairs ? 'rgba(168,85,247,0.2)' : 'rgba(100,116,139,0.1)',
-              border: `1px solid ${hideFailedPairs ? '#a855f7' : '#374151'}`,
-              color: hideFailedPairs ? '#c4b5fd' : '#94a3b8',
-              padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer'
-            }}
-          >
-            {hideFailedPairs ? `👁 Show All (${hiddenCount} hidden)` : '🚫 Hide Failed'}
-          </button>
-          <span className="block-info" title="Current blockchain block number">Block #{screenerBlock || '---'}</span>
-          <button onClick={handleManipulate} disabled={localLoading} className="btn-test" title="🧪 Creates artificial price differences between DEXs for testing arbitrage" style={{ opacity: localLoading ? 0.5 : 1 }}>
-            {localLoading === 'test' ? '⏳' : '🧪'} Test
-          </button>
-          <button onClick={handleClearTest} disabled={localLoading} className="btn-clear" title="🔄 Resets the Hardhat fork to original state, clearing all test manipulations" style={{ opacity: localLoading ? 0.5 : 1 }}>
-            {localLoading === 'reset' ? '⏳' : '🔄'} Reset
-          </button>
-          <button onClick={handleRefresh} disabled={localLoading} className="btn-refresh" title="↻ Fetches latest prices from all DEX pools" style={{ opacity: localLoading ? 0.5 : 1 }}>
-            {localLoading === 'refresh' ? '⏳' : '↻'} Refresh
-          </button>
-          <button onClick={handleRestartBot} disabled={localLoading} className="btn-restart" title="⟳ Fully restarts the bot and re-initializes all pairs" style={{ opacity: localLoading ? 0.5 : 1 }}>
-            {localLoading === 'restart' ? '⏳' : '⟳'} Restart
-          </button>
+          <Tooltip text={hideFailedPairs ? '👁 Show all pairs including those with pool/fee tier errors' : '🚫 Hide pairs that have pool errors or missing liquidity'}>
+            <button
+              onClick={() => setHideFailedPairs(!hideFailedPairs)}
+              className={hideFailedPairs ? 'btn-filter-active' : 'btn-filter'}
+              style={{
+                background: hideFailedPairs ? 'rgba(168,85,247,0.2)' : 'rgba(100,116,139,0.1)',
+                border: `1px solid ${hideFailedPairs ? '#a855f7' : '#374151'}`,
+                color: hideFailedPairs ? '#c4b5fd' : '#94a3b8',
+                padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer'
+              }}
+            >
+              {hideFailedPairs ? `👁 Show All (${hiddenCount} hidden)` : '🚫 Hide Failed'}
+            </button>
+          </Tooltip>
+          <span className="block-info">Block #{screenerBlock || '---'}</span>
+          <Tooltip text="🧪 Creates artificial price differences between DEXs for testing arbitrage opportunities">
+            <button onClick={handleManipulate} disabled={localLoading} className="btn-test" style={{ opacity: localLoading ? 0.5 : 1 }}>
+              {localLoading === 'test' ? '⏳' : '🧪'} Test
+            </button>
+          </Tooltip>
+          <Tooltip text="🔄 Resets the Hardhat fork to original state, clearing all test manipulations">
+            <button onClick={handleClearTest} disabled={localLoading} className="btn-clear" style={{ opacity: localLoading ? 0.5 : 1 }}>
+              {localLoading === 'reset' ? '⏳' : '🔄'} Reset
+            </button>
+          </Tooltip>
+          <Tooltip text="↻ Fetches latest prices from all DEX pools immediately">
+            <button onClick={handleRefresh} disabled={localLoading} className="btn-refresh" style={{ opacity: localLoading ? 0.5 : 1 }}>
+              {localLoading === 'refresh' ? '⏳' : '↻'} Refresh
+            </button>
+          </Tooltip>
+          <Tooltip text="⟳ Fully restarts the bot and re-initializes all trading pairs">
+            <button onClick={handleRestartBot} disabled={localLoading} className="btn-restart" style={{ opacity: localLoading ? 0.5 : 1 }}>
+              {localLoading === 'restart' ? '⏳' : '⟳'} Restart
+            </button>
+          </Tooltip>
         </div>
       </div>
 
