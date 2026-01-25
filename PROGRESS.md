@@ -1,6 +1,6 @@
 ## DAPPU Arbitrage Bot — Progress Tracker
 
-Last updated: 2026-01-24
+Last updated: 2026-01-25
 
 ### Top goals
 - Make profitable trades show real profit (trade history + wallet balances)
@@ -13,6 +13,11 @@ Last updated: 2026-01-24
    - Symptom: first run shows profit/confetti, but after clicking **Restart Bot** trades show `0.000000` profit and no confetti
    - Root cause: after `hardhat_reset`, the contract code at `PROJECT_SETTINGS.ARBITRAGE_ADDRESS` is gone; tx still “succeeds” but does nothing (no logs, no balance change)
    - Fix: bot now detects missing bytecode and auto-deploys Arbitrage again on localhost, refreshing the in-memory contract handle
+
+2) **Mainnet trade tx failing: "Transaction reverted without a reason string"**
+   - Likely cause: ERC20 tokens that return **no boolean** on `approve/transfer` causing ABI decode revert (empty revert data)
+   - Fix in progress: switch Arbitrage.sol ERC20 interactions to “optional return” safe calls + bubble swap revert data
+   - Impact: should convert silent reverts into actionable revert reasons and allow non-standard tokens to be approved/transferred
 
 ### Backlog / next improvements
 - Add Balancer pools as a DEX source (pricing + quoting via `Vault.queryBatchSwap` or SOR)

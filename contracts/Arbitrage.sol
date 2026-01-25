@@ -3,6 +3,7 @@ pragma solidity 0.8.18;
 
 import "@balancer-labs/v2-interfaces/contracts/vault/IVault.sol";
 import "@balancer-labs/v2-interfaces/contracts/vault/IFlashLoanRecipient.sol";
+import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC20.sol";
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 /**
@@ -45,6 +46,14 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 amountIn,
         uint256 profit
     );
+    event SwapExecuted(
+        address indexed router,
+        address indexed tokenIn,
+        address indexed tokenOut,
+        uint256 amountIn,
+        uint256 amountOut,
+        uint24 fee
+    );
     event RouterWhitelisted(address indexed router, bool status);
     event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -78,6 +87,8 @@ contract Arbitrage is IFlashLoanRecipient {
         whitelistedRouters[0xE592427A0AEce92De3Edee1F18E0157C05861564] = true;
         // Pancakeswap V3 Router
         whitelistedRouters[0x1b81D678ffb9C0263b24A97847620C99d213eB14] = true;
+        // Sushiswap V3 Router
+        whitelistedRouters[0x8A21F6768C1f8075791D08546Dadf6daA0bE820c] = true;
     }
 
     // ============ External Functions ============
@@ -132,6 +143,7 @@ contract Arbitrage is IFlashLoanRecipient {
 
         Trade memory trade = abi.decode(userData, (Trade));
         uint256 flashAmount = amounts[0];
+        uint256 amountOwed = flashAmount + feeAmounts[0];
 
         // First swap: token0 -> token1 (using fee0)
         _swapOnV3(
@@ -150,21 +162,20 @@ contract Arbitrage is IFlashLoanRecipient {
             trade.tokenPath[1],
             token1Balance,
             trade.tokenPath[0],
-            flashAmount, // Minimum we need to repay
+            amountOwed, // Minimum we need to repay
             trade.fee1
         );
 
         // Repay flash loan
-        uint256 amountOwed = flashAmount + feeAmounts[0];
         uint256 currentBalance = IERC20(trade.tokenPath[0]).balanceOf(address(this));
         require(currentBalance >= amountOwed, "Insufficient to repay");
 
-        IERC20(trade.tokenPath[0]).transfer(address(vault), amountOwed);
+        _safeTransfer(trade.tokenPath[0], address(vault), amountOwed);
 
         // Transfer profits to owner
         uint256 profit = IERC20(trade.tokenPath[0]).balanceOf(address(this));
         if (profit > 0) {
-            IERC20(trade.tokenPath[0]).transfer(owner, profit);
+            _safeTransfer(trade.tokenPath[0], owner, profit);
         }
 
         emit TradeExecuted(owner, trade.tokenPath[0], trade.tokenPath[1], flashAmount, profit);
@@ -239,8 +250,15 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 _amountOut,
         uint24 _fee
     ) internal {
-        // Approve token to swap
-        IERC20(_tokenIn).approve(_router, _amountIn);
+        require(_router != address(0), "Invalid router");
+        require(_tokenIn != address(0) && _tokenOut != address(0), "Invalid token");
+        require(_tokenIn != _tokenOut, "Same token");
+        require(_amountIn > 0, "AmountIn=0");
+
+        // Approve token to swap (support tokens that return no bool on approve)
+        // Some tokens require allowance to be set to 0 before setting a new value.
+        _safeApprove(_tokenIn, _router, 0);
+        _safeApprove(_tokenIn, _router, _amountIn);
 
         // Setup swap parameters (currently formatted for Uniswap V3)
         // This can be adapted for other DEXs by changing the parameters accordingly
@@ -264,7 +282,54 @@ contract Arbitrage is IFlashLoanRecipient {
             });
 
         // Perform swap
-        ISwapRouter(_router).exactInputSingle(params);
+        uint256 amountOut;
+        try ISwapRouter(_router).exactInputSingle(params) returns (uint256 out) {
+            amountOut = out;
+        } catch (bytes memory reason) {
+            if (reason.length == 0) {
+                revert("V3 swap failed");
+            }
+
+            // Bubble up original revert data for better debugging.
+            assembly {
+                revert(add(reason, 32), mload(reason))
+            }
+        }
+
+        emit SwapExecuted(_router, _tokenIn, _tokenOut, _amountIn, amountOut, _fee);
+    }
+
+    function _safeApprove(address token, address spender, uint256 value) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20.approve.selector, spender, value),
+            "ERC20 approve failed"
+        );
+    }
+
+    function _safeTransfer(address token, address to, uint256 value) internal {
+        _callOptionalReturn(
+            token,
+            abi.encodeWithSelector(IERC20.transfer.selector, to, value),
+            "ERC20 transfer failed"
+        );
+    }
+
+    function _callOptionalReturn(address token, bytes memory data, string memory defaultError) internal {
+        (bool success, bytes memory returndata) = token.call(data);
+        if (!success) {
+            if (returndata.length > 0) {
+                assembly {
+                    revert(add(returndata, 32), mload(returndata))
+                }
+            }
+            revert(defaultError);
+        }
+
+        // Tokens may return no value, or a single boolean.
+        if (returndata.length > 0) {
+            require(abi.decode(returndata, (bool)), defaultError);
+        }
     }
 
     // Allow contract to receive ETH
