@@ -1,15 +1,25 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
 import { selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
 
 import Tooltip from './Tooltip'
 
 function ScreenerPanel() {
-  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, isExecuting, isTestMode, settings } = useSelector(state => state.bot)
+  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
   const [hideFailedPairs, setHideFailedPairs] = useState(false)
   const [localLoading, setLocalLoading] = useState(null) // 'test' | 'reset' | 'refresh' | 'restart' | null
+
+  // Expanded state for per-pair dropdown details
+  const [expandedPairs, setExpandedPairs] = useState({})
+
+  // Auto-expand the pair that just produced an analysis result
+  useEffect(() => {
+    const pairName = analysisResult?.pairName
+    if (!pairName) return
+    setExpandedPairs(prev => ({ ...prev, [pairName]: true }))
+  }, [analysisResult])
 
   // Trade button - show confirmation modal first
   const handleTrade = (pairName) => {
@@ -198,9 +208,10 @@ function ScreenerPanel() {
       {/* Loading Overlay */}
       {localLoading && (
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'rgba(15, 23, 42, 0.7)', borderRadius: '16px',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(15, 23, 42, 0.75)',
+          backdropFilter: 'blur(6px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
           <div style={{ textAlign: 'center' }}>
             <div className="spinner" style={{ margin: '0 auto 12px', width: '32px', height: '32px', border: '3px solid rgba(99,102,241,0.3)', borderTop: '3px solid #6366f1', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
@@ -249,120 +260,172 @@ function ScreenerPanel() {
               </tr>
             </thead>
             <tbody>
-              {displayedPairs.map((pair) => (
-                <tr
-                  key={pair.name}
-                  className={`${selectedPair?.pairName === pair.name ? 'row-selected' : ''} ${pair.hasOpportunity ? 'row-opportunity' : ''}`}
-                  onClick={() => selectPair(pair.name)}
-                >
-                  <td>
-                    <div className="pair-cell">
-                      <span className="pair-name">{pair.symbol}</span>
-                      {pair.hasOpportunity && <span className="opp-indicator"></span>}
-                    </div>
-                  </td>
-                  <td className="price-cell">
-                    {pair.buyDex && pair.sellDex ? (
-                      <span style={{ fontSize: '12px' }}>
-                        <span style={{ color: '#10b981' }}>{pair.buyDex}</span>
-                        <span style={{ color: '#64748b' }}> → </span>
-                        <span style={{ color: '#f59e0b' }}>{pair.sellDex}</span>
-                      </span>
-                    ) : '—'}
-                  </td>
-                  <td className={`spread-cell ${pair.hasOpportunity ? 'spread-positive' : Math.abs(parseFloat(pair.difference)) >= threshold * 0.5 ? 'spread-warn' : ''}`}>
-                    {parseFloat(pair.difference) > 0 ? '+' : ''}{pair.difference}%
-                  </td>
-                  <td className="text-center">
-                    <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                      {pair.dexCount || 2} DEXs
-                    </span>
-                  </td>
-                  <td className="action-cell">
-                    {pair.hasOpportunity ? (
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleTrade(pair.name); }}
-                        disabled={isExecuting}
-                        className="trade-btn"
-                      >
-                        {isExecuting ? '...' : '💰 Trade'}
-                      </button>
-                    ) : (
-                      <span className="no-action">—</span>
+              {displayedPairs.map((pair) => {
+                const isExpanded = !!expandedPairs[pair.name]
+                const analysis = analysisByPair?.[pair.name]
+
+                const statusIcon = analysis?.status === 'profitable' ? '✅'
+                  : analysis?.status === 'not_profitable' ? '❌'
+                    : analysis?.status === 'simulation_failed' ? '🧪'
+                      : analysis?.status === 'no_opportunity' ? '⚠️'
+                        : analysis?.status === 'error' ? '🔴'
+                          : '🧾'
+
+                return (
+                  <React.Fragment key={pair.name}>
+                    <tr
+                      className={`${selectedPair?.pairName === pair.name ? 'row-selected' : ''} ${pair.hasOpportunity ? 'row-opportunity' : ''}`}
+                      onClick={() => {
+                        selectPair(pair.name)
+                        setExpandedPairs(prev => ({ ...prev, [pair.name]: !prev[pair.name] }))
+                      }}
+                    >
+                      <td>
+                        <div className="pair-cell">
+                          <span style={{ color: '#64748b', fontSize: '12px', marginRight: '8px' }}>
+                            {isExpanded ? '▾' : '▸'}
+                          </span>
+                          <span className="pair-name">{pair.symbol}</span>
+                          {pair.hasOpportunity && <span className="opp-indicator"></span>}
+                        </div>
+                      </td>
+                      <td className="price-cell">
+                        {pair.buyDex && pair.sellDex ? (
+                          <span style={{ fontSize: '12px' }}>
+                            <span style={{ color: '#10b981' }}>{pair.buyDex}</span>
+                            <span style={{ color: '#64748b' }}> → </span>
+                            <span style={{ color: '#f59e0b' }}>{pair.sellDex}</span>
+                          </span>
+                        ) : '—'}
+                      </td>
+                      <td className={`spread-cell ${pair.hasOpportunity ? 'spread-positive' : Math.abs(parseFloat(pair.difference)) >= threshold * 0.5 ? 'spread-warn' : ''}`}>
+                        {parseFloat(pair.difference) > 0 ? '+' : ''}{pair.difference}%
+                      </td>
+                      <td className="text-center">
+                        <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                          {pair.dexCount || 2} DEXs
+                        </span>
+                      </td>
+                      <td className="action-cell">
+                        {pair.hasOpportunity ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleTrade(pair.name); }}
+                            disabled={isExecuting}
+                            className="trade-btn"
+                          >
+                            {isExecuting ? '...' : '💰 Trade'}
+                          </button>
+                        ) : (
+                          <span className="no-action">—</span>
+                        )}
+                      </td>
+                    </tr>
+
+                    {isExpanded && (
+                      <tr>
+                        <td colSpan={5} style={{ padding: 0 }}>
+                          <div style={{
+                            padding: '14px 16px',
+                            background: 'rgba(2, 6, 23, 0.35)',
+                            borderTop: '1px solid rgba(99, 102, 241, 0.12)'
+                          }}>
+                            {analysis ? (
+                              <div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                    <span>{statusIcon}</span>
+                                    <span style={{ color: '#e2e8f0', fontSize: '13px', fontWeight: 700 }}>
+                                      {analysis.symbol} — {analysis.status?.replaceAll('_', ' ')}
+                                    </span>
+                                    {analysis.simulationPassed !== undefined && (
+                                      <span style={{
+                                        fontSize: '11px', padding: '2px 8px', borderRadius: '999px',
+                                        background: analysis.simulationPassed ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                                        color: analysis.simulationPassed ? '#10b981' : '#ef4444',
+                                        border: `1px solid ${analysis.simulationPassed ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`
+                                      }}>
+                                        {analysis.simulationPassed ? '✓ Sim Passed' : '✗ Sim Failed'}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div style={{ color: '#64748b', fontSize: '11px' }}>
+                                    {analysis.timestamp ? `Updated ${new Date(analysis.timestamp).toLocaleTimeString()}` : ''}
+                                  </div>
+                                </div>
+
+                                <div style={{ marginTop: '10px', color: '#94a3b8', fontSize: '12px' }}>
+                                  {analysis.message}
+                                </div>
+
+
+                                {(analysis.direction || (analysis.buyExchange && analysis.sellExchange) || analysis.profitData) && (
+                                  <div style={{ marginTop: '10px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                    {(analysis.direction || (analysis.buyExchange && analysis.sellExchange)) && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <span style={{ color: '#64748b', fontSize: '12px' }}>Route</span>
+                                        <span style={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}>
+                                          {analysis.direction || `${analysis.buyExchange} → ${analysis.sellExchange}`}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {analysis.spread !== undefined && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <span style={{ color: '#64748b', fontSize: '12px' }}>Spread</span>
+                                        <span style={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}>{Number(analysis.spread).toFixed(2)}%</span>
+                                      </div>
+                                    )}
+                                    {analysis.amount && analysis.amount !== '0' && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <span style={{ color: '#64748b', fontSize: '12px' }}>Amount</span>
+                                        <span style={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}>{Number(analysis.amount).toFixed(6)}</span>
+                                      </div>
+                                    )}
+                                    {analysis.profitData?.estimatedGasCost && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <span style={{ color: '#64748b', fontSize: '12px' }}>Est. Gas</span>
+                                        <span style={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 600 }}>{analysis.profitData.estimatedGasCost} ETH</span>
+                                      </div>
+                                    )}
+                                    {analysis.profitData?.totalGainLoss && (
+                                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: '10px' }}>
+                                        <span style={{ color: '#64748b', fontSize: '12px' }}>Net Result</span>
+                                        <span style={{
+                                          fontSize: '12px', fontWeight: 700,
+                                          color: analysis.isProfitable ? '#10b981' : '#ef4444'
+                                        }}>
+                                          {analysis.profitData.totalGainLoss} {analysis.profitData.tokenSymbol}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div style={{ color: '#64748b', fontSize: '12px' }}>
+                                No simulation results yet. Click <span style={{ color: '#a5b4fc', fontWeight: 600 }}>💰 Trade</span> to run analysis (and execute if configured).
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                </tr>
-              ))}
+                  </React.Fragment>
+                )
+              })}
             </tbody>
           </table>
         </div>
       )}
 
-      {/* Analysis Result Feedback */}
-      {analysisResult && (
-        <div className={`analysis-result ${analysisResult.status}`}>
-          <div className="analysis-header">
-            <span className="analysis-icon">
-              {analysisResult.status === 'profitable' ? '✅' :
-               analysisResult.status === 'not_profitable' ? '❌' :
-               analysisResult.status === 'simulation_failed' ? '🔬' :
-               analysisResult.status === 'no_opportunity' ? '⚠️' : '🔴'}
-            </span>
-            <span className="analysis-title">
-              {analysisResult.symbol} - {analysisResult.status === 'profitable' ? 'Profitable!' :
-               analysisResult.status === 'not_profitable' ? 'Not Profitable' :
-               analysisResult.status === 'simulation_failed' ? 'Pre-flight Failed' :
-               analysisResult.status === 'no_opportunity' ? 'No Opportunity' : 'Error'}
-            </span>
-            {analysisResult.simulationPassed !== undefined && (
-              <span style={{
-                marginLeft: '8px', fontSize: '11px', padding: '2px 8px', borderRadius: '4px',
-                background: analysisResult.simulationPassed ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)',
-                color: analysisResult.simulationPassed ? '#10b981' : '#ef4444'
-              }}>
-                {analysisResult.simulationPassed ? '✓ Sim Passed' : '✗ Sim Failed'}
-              </span>
-            )}
-          </div>
-          <div className="analysis-message">{analysisResult.message}</div>
-          {analysisResult.direction && (
-            <div className="analysis-details">
-              <div className="detail-row">
-                <span>Route:</span>
-                <span>{analysisResult.direction}</span>
-              </div>
-              <div className="detail-row">
-                <span>Spread:</span>
-                <span>{analysisResult.spread?.toFixed(2)}%</span>
-              </div>
-              {analysisResult.amount && analysisResult.amount !== '0' && (
-                <div className="detail-row">
-                  <span>Amount:</span>
-                  <span>{parseFloat(analysisResult.amount).toFixed(6)}</span>
-                </div>
-              )}
-              {analysisResult.profitData && (
-                <>
-                  <div className="detail-row">
-                    <span>Est. Gas:</span>
-                    <span>{analysisResult.profitData.estimatedGasCost} ETH</span>
-                  </div>
-                  <div className="detail-row">
-                    <span>Net Result:</span>
-                    <span className={analysisResult.isProfitable ? 'text-green' : 'text-red'}>
-                      {analysisResult.profitData.totalGainLoss} {analysisResult.profitData.tokenSymbol}
-                    </span>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Footer */}
       <div className="screener-footer">
-        {screenerTimestamp && `Updated ${new Date(screenerTimestamp).toLocaleTimeString()}`}
+        <span>
+          {screenerTimestamp ? `Updated ${new Date(screenerTimestamp).toLocaleTimeString()}` : ''}
+        </span>
+        <span style={{ color: '#64748b' }}>
+          {screenerPairs?.length ? ` · Broadcasting ${screenerPairs.length} pairs` : ''}
+        </span>
       </div>
     </div>
   )
