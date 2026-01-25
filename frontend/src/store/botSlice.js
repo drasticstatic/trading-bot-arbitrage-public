@@ -19,11 +19,16 @@ const initialState = {
   // Analysis result (shows why trade failed/succeeded)
   analysisResult: null,
 
+  // Per-pair analysis results (dropdown under each pair)
+  analysisByPair: {},
+
   // Current opportunity
   opportunity: null,
 
   // Trade status
   tradeStatus: null,
+
+  tradeSteps: [],
 
   // Settings
   settings: {
@@ -49,11 +54,13 @@ const botSlice = createSlice({
       state.connected = action.payload
     },
     setInitialState: (state, action) => {
-      const { isRunning, isExecuting, settings, recentLogs } = action.payload
+      const { isRunning, isExecuting, isTestMode, settings, recentLogs, wallet } = action.payload
       state.isRunning = isRunning
       state.isExecuting = isExecuting
+      if (isTestMode !== undefined) state.isTestMode = isTestMode
       if (settings) state.settings = settings
       if (recentLogs) state.logs = recentLogs
+      if (wallet !== undefined) state.wallet = wallet
     },
     setBotStatus: (state, action) => {
       if (action.payload.isRunning !== undefined) state.isRunning = action.payload.isRunning
@@ -75,12 +82,29 @@ const botSlice = createSlice({
     },
     setAnalysisResult: (state, action) => {
       state.analysisResult = action.payload
+
+      const pairName = action.payload?.pairName
+      if (pairName) {
+        state.analysisByPair[pairName] = action.payload
+      }
     },
     setOpportunity: (state, action) => {
       state.opportunity = action.payload
     },
     setTradeStatus: (state, action) => {
       state.tradeStatus = action.payload
+
+      if (action.payload?.status === 'executing') {
+        state.tradeSteps = []
+      }
+    },
+
+    addTradeStep: (state, action) => {
+      state.tradeSteps.push(action.payload)
+      if (state.tradeSteps.length > 100) state.tradeSteps.shift()
+    },
+    clearTradeSteps: (state) => {
+      state.tradeSteps = []
     },
     addTrade: (state, action) => {
       state.trades.unshift(action.payload)
@@ -109,6 +133,9 @@ export const {
   setAnalysisResult,
   setOpportunity,
   setTradeStatus,
+
+  addTradeStep,
+  clearTradeSteps,
   addTrade,
   updateSettings,
   addLog,
@@ -116,4 +143,3 @@ export const {
 } = botSlice.actions
 
 export default botSlice.reducer
-

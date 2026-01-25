@@ -5,6 +5,7 @@ import HeroSection from './components/HeroSection'
 import ScreenerPanel from './components/ScreenerPanel'
 import LogPanel from './components/LogPanel'
 import TradeHistory from './components/TradeHistory'
+import TradeExecutionOverlay from './components/TradeExecutionOverlay'
 
 // Simple confetti component
 function Confetti({ show }) {
@@ -61,6 +62,8 @@ function App() {
   return (
     <div className="min-h-screen pb-8">
       <Confetti show={showConfetti} />
+
+        <TradeExecutionOverlay />
 
       {/* Centered Container */}
       <main className="max-w-5xl mx-auto px-6 sm:px-10 lg:px-12 py-8">

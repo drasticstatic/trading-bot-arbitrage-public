@@ -32,9 +32,15 @@ function WalletPanel() {
             <div className="data-row p-3 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-label text-sm">Hardhat</span>
-                <span className="badge badge-blue">Testnet</span>
+                  <div className="flex items-center gap-2">
+                    {hardhat?.chainId ? (
+                      <span className="text-[10px] text-gray-500">Chain: {hardhat.chainId}</span>
+                    ) : null}
+                    <span className="badge badge-blue">Testnet</span>
+                  </div>
               </div>
-              <div className="flex items-center justify-between">
+
+                <div className="flex items-center justify-between">
                 <span className="text-gray-400 font-mono text-xs">
                   {hardhat?.address ? `${hardhat.address.slice(0, 6)}...${hardhat.address.slice(-4)}` : '—'}
                 </span>
@@ -42,13 +48,29 @@ function WalletPanel() {
                   {safeToFixed(hardhat?.ethBalance, 6)} ETH
                 </span>
               </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-xs">Trading balance</span>
+                  <span className="text-white text-sm font-semibold">
+                    {safeToFixed(hardhat?.wethBalance, 6)} WETH
+                  </span>
+                </div>
             </div>
 
             {/* Arbitrum mainnet */}
             <div className="data-row p-3 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-label text-sm">Arbitrum</span>
-                <span className="badge badge-purple">Mainnet</span>
+
+                  <div className="flex items-center gap-2">
+                    {mainnet?.rpc ? (
+                      <span className="text-[10px] text-gray-500">RPC: {mainnet.rpc}</span>
+                    ) : null}
+                    {mainnet?.chainId ? (
+                      <span className="text-[10px] text-gray-500">Chain: {mainnet.chainId}</span>
+                    ) : null}
+                    <span className="badge badge-purple">Mainnet</span>
+                  </div>
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-gray-400 font-mono text-xs">
@@ -58,7 +80,28 @@ function WalletPanel() {
                   {safeToFixed(mainnet?.ethBalance, 6)} ETH
                 </span>
               </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-xs">Trading balance</span>
+                  <span className="text-white text-sm font-semibold">
+                    {safeToFixed(mainnet?.wethBalance, 6)} WETH
+                  </span>
+                </div>
             </div>
+
+
+              <div className="text-[11px] text-gray-500 text-center">
+                Profits accrue in <span className="text-gray-300">WETH</span>. ETH typically decreases due to gas.
+                <div>
+                  This panel reads <span className="text-gray-300">Arbitrum mainnet (chain 42161)</span>.
+                </div>
+              </div>
+
+              {mainnet?.warning ? (
+                <div className="p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 text-xs text-center">
+                  ⚠️ {mainnet.warning}
+                </div>
+              ) : null}
 
             {Number(mainnet?.ethBalance) < 0.002 && mainnet?.ethBalance !== '—' && (
               <div className="p-2 bg-yellow-500/10 border border-yellow-500/30 rounded text-yellow-500 text-xs text-center">
