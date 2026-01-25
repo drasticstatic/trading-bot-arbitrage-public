@@ -8,6 +8,8 @@ import {
   setAnalysisResult,
   setOpportunity,
   setTradeStatus,
+  addTradeStep,
+  clearTradeSteps,
   addTrade,
   updateSettings,
   addLog
@@ -18,14 +20,18 @@ let reconnectTimeout = null
 
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const explicitUrl = process.env.REACT_APP_WS_URL
+
+  // Support both Vite (`import.meta.env.VITE_WS_URL`) and legacy CRA-style (`process.env.REACT_APP_WS_URL`).
+  const explicitUrl =
+    (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_WS_URL) ||
+    (typeof process !== 'undefined' && process.env && process.env.REACT_APP_WS_URL)
 
   // Dev default: React dev server on :3000, backend WS on :5050.
   // Prod default: frontend served by backend, so same origin works.
   let wsUrl
   if (explicitUrl) {
     wsUrl = explicitUrl
-  } else if (window.location.port === '3000' || window.location.port === '3001') {
+  } else if (['3000', '3001', '5173', '4173'].includes(window.location.port)) {
     wsUrl = `${protocol}//${window.location.hostname}:5050`
   } else {
     wsUrl = `${protocol}//${window.location.host}`
@@ -39,6 +45,13 @@ export function connectWebSocket(dispatch) {
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout)
       reconnectTimeout = null
+    }
+
+    // Ask backend for wallet info on connect so the Wallet panel is populated even after page refresh.
+    try {
+      ws.send(JSON.stringify({ type: 'GET_WALLET_INFO', payload: {} }))
+    } catch (e) {
+      // Ignore
     }
   }
 
@@ -81,6 +94,12 @@ export function connectWebSocket(dispatch) {
         case 'TRADE_STATUS':
           dispatch(setTradeStatus(payload))
           break
+	        case 'TRADE_STEPS_RESET':
+	          dispatch(clearTradeSteps())
+	          break
+	        case 'TRADE_STEP':
+	          dispatch(addTradeStep(payload))
+	          break
         case 'TRADE_COMPLETE':
           dispatch(addTrade(payload))
           dispatch(setTradeStatus(null))

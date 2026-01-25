@@ -9,10 +9,10 @@ Last updated: 2026-01-24
 - Improve UX (trade execution “terminal-like” splash modal)
 
 ### Current blockers / focus
-1) **Contract needs redeployment** ✅ CODE READY
-   - Updated `Arbitrage.sol` to accept two separate fees (fee0, fee1)
-   - Need to run: `npx hardhat ignition deploy ignition/modules/Arbitrage.js --network localhost`
-   - Then update `config.json` with new contract address
+1) **Restart Bot was wiping the deployed Arbitrage contract (hardhat_reset)**
+   - Symptom: first run shows profit/confetti, but after clicking **Restart Bot** trades show `0.000000` profit and no confetti
+   - Root cause: after `hardhat_reset`, the contract code at `PROJECT_SETTINGS.ARBITRAGE_ADDRESS` is gone; tx still “succeeds” but does nothing (no logs, no balance change)
+   - Fix: bot now detects missing bytecode and auto-deploys Arbitrage again on localhost, refreshing the in-memory contract handle
 
 ### Backlog / next improvements
 - Add Balancer pools as a DEX source (pricing + quoting via `Vault.queryBatchSwap` or SOR)
@@ -24,6 +24,7 @@ Last updated: 2026-01-24
 - ✅ **Camelot/Algebra Swap event fix** - Added Swap event to IAlgebraPool ABI (was causing crash)
 - ✅ **Trade history profit parsing** - Now parses TradeExecuted event from receipt logs
 - ✅ **Auto-execute trigger** - Added in checkAllPrices() with 10-second cooldown
+- ✅ **Restart Bot profit/confetti fix** - Auto-redeploy Arbitrage after hardhat_reset so trades emit events + profit is recorded
 - ✅ **WebSocket port 5050** - Already configured correctly
 - ✅ **WalletPanel mainnet balance** - Already displays both hardhat and mainnet balances
 - Fixed 10 “could not decode result data” pairs (zero-address pool guard)
