@@ -58,16 +58,24 @@ function ScreenerPanel() {
     setPendingTrade(null)
   }
 
-  // Button handlers with loading states
+  // Button handlers with loading states + page refresh after completion
   const handleManipulate = () => {
     setLocalLoading('test')
     sendMessage('RUN_MANIPULATION')
-    setTimeout(() => setLocalLoading(null), 3000)
+    setTimeout(() => {
+      setLocalLoading(null)
+      // Refresh page to ensure UI is in sync
+      window.location.reload()
+    }, 3000)
   }
   const handleClearTest = () => {
     setLocalLoading('reset')
     sendMessage('CLEAR_MANIPULATION')
-    setTimeout(() => setLocalLoading(null), 2000)
+    setTimeout(() => {
+      setLocalLoading(null)
+      // Refresh page after reset to ensure clean state
+      window.location.reload()
+    }, 2500)
   }
   const handleRefresh = () => {
     setLocalLoading('refresh')
@@ -77,7 +85,11 @@ function ScreenerPanel() {
   const handleRestartBot = () => {
     setLocalLoading('restart')
     sendMessage('RESTART_BOT')
-    setTimeout(() => setLocalLoading(null), 3000)
+    setTimeout(() => {
+      setLocalLoading(null)
+      // Refresh page after restart to ensure UI is in sync with new state
+      window.location.reload()
+    }, 3500)
   }
 
   // Filter pairs based on toggle
