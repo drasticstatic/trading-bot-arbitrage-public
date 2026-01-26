@@ -54,6 +54,10 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256 amountOut,
         uint24 fee
     );
+
+    event FlashLoanRequested(address indexed token, uint256 amount);
+    event FlashLoanReceived(address indexed token, uint256 amount, uint256 fee, uint256 amountOwed);
+    event FlashLoanRepaid(address indexed token, uint256 amountOwed);
     event RouterWhitelisted(address indexed router, bool status);
     event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
@@ -126,6 +130,8 @@ contract Arbitrage is IFlashLoanRecipient {
         uint256[] memory amounts = new uint256[](1);
         amounts[0] = _flashAmount;
 
+        emit FlashLoanRequested(_tokenPath[0], _flashAmount);
+
         vault.flashLoan(this, tokens, amounts, data);
     }
 
@@ -144,6 +150,8 @@ contract Arbitrage is IFlashLoanRecipient {
         Trade memory trade = abi.decode(userData, (Trade));
         uint256 flashAmount = amounts[0];
         uint256 amountOwed = flashAmount + feeAmounts[0];
+
+        emit FlashLoanReceived(trade.tokenPath[0], flashAmount, feeAmounts[0], amountOwed);
 
         // First swap: token0 -> token1 (using fee0)
         _swapOnV3(
@@ -171,6 +179,8 @@ contract Arbitrage is IFlashLoanRecipient {
         require(currentBalance >= amountOwed, "Insufficient to repay");
 
         _safeTransfer(trade.tokenPath[0], address(vault), amountOwed);
+
+        emit FlashLoanRepaid(trade.tokenPath[0], amountOwed);
 
         // Transfer profits to owner
         uint256 profit = IERC20(trade.tokenPath[0]).balanceOf(address(this));

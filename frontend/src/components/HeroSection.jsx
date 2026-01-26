@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { getWalletInfo, sendMessage, updateBotSettings } from '../store/websocket'
+import { getWalletInfo, sendMessage, updateBotSettings, estimateDeployCost } from '../store/websocket'
 import { updateSettings } from '../store/botSlice'
 
 import Tooltip from './Tooltip'
@@ -15,11 +15,23 @@ function HeroSection() {
   const sliderOriginalRef = React.useRef({})
   const [settingsFeedback, setSettingsFeedback] = useState(null)
   const [draftSettings, setDraftSettings] = useState(settings)
+  const [deployEstimate, setDeployEstimate] = useState(null)
+  const [estimating, setEstimating] = useState(false)
 
   useEffect(() => {
     getWalletInfo()
     const interval = setInterval(getWalletInfo, 30000)
     return () => clearInterval(interval)
+  }, [])
+
+  // Listen for deploy estimate responses
+  useEffect(() => {
+    const handler = (e) => {
+      setEstimating(false)
+      setDeployEstimate(e.detail)
+    }
+    window.addEventListener('deploy-estimate', handler)
+    return () => window.removeEventListener('deploy-estimate', handler)
   }, [])
 
   // Keep local slider draft values in sync with store settings.
@@ -28,6 +40,12 @@ function HeroSection() {
     if (showSliderModal) return
     setDraftSettings(settings)
   }, [settings, showSliderModal])
+
+  const handleEstimateDeploy = () => {
+    setEstimating(true)
+    setDeployEstimate(null)
+    estimateDeployCost()
+  }
 
   // Use settings.isMainnet to determine mode
   const isTestnet = !settings.isMainnet
@@ -389,7 +407,69 @@ function HeroSection() {
           {settings.autoExecute && (
             <span className="px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>⚠️ AUTO-TRADING ACTIVE</span>
           )}
+
+          {/* Estimate Deploy Cost Button */}
+          <Tooltip text="💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet. Useful before going live.">
+            <button
+              onClick={handleEstimateDeploy}
+              disabled={estimating}
+              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
+              style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981' }}
+            >
+              <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : '💰'}</span>
+              <span style={{ color: '#6ee7b7', fontSize: '13px', fontWeight: '600' }}>
+                {estimating ? 'Estimating...' : 'Estimate Deploy'}
+              </span>
+            </button>
+          </Tooltip>
         </div>
+
+        {/* Deploy Estimate Result */}
+        {deployEstimate && (
+          <div className="mt-4 p-4 rounded-xl" style={{
+            background: deployEstimate.error ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+            border: `1px solid ${deployEstimate.error ? '#ef4444' : '#10b981'}`
+          }}>
+            {deployEstimate.error ? (
+              <div style={{ color: '#f87171', fontSize: '13px' }}>❌ {deployEstimate.error}</div>
+            ) : (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>NETWORK</div>
+                  <div style={{ fontSize: '14px', color: '#6ee7b7', fontWeight: '700' }}>{deployEstimate.network}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>GAS UNITS</div>
+                  <div style={{ fontSize: '14px', color: '#a5b4fc', fontWeight: '700', fontFamily: 'monospace' }}>{parseInt(deployEstimate.gasUnits).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>COST (ETH)</div>
+                  <div style={{ fontSize: '14px', color: '#fcd34d', fontWeight: '700', fontFamily: 'monospace' }}>{deployEstimate.costEth}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>COST (USD)</div>
+                  <div style={{ fontSize: '14px', color: '#86efac', fontWeight: '700', fontFamily: 'monospace' }}>${deployEstimate.costUsd}</div>
+                </div>
+              </div>
+            )}
+            <div style={{ fontSize: '10px', color: '#64748b', marginTop: '8px', textAlign: 'center' }}>
+              {deployEstimate.note || 'Estimate based on current network conditions'}
+            </div>
+
+            {/* Deployment Instructions */}
+            {!deployEstimate.error && (
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', marginBottom: '8px' }}>📋 DEPLOYMENT INSTRUCTIONS</div>
+                <ol style={{ fontSize: '11px', color: '#64748b', margin: 0, paddingLeft: '16px', lineHeight: '1.8' }}>
+                  <li>Ensure your wallet has at least <span style={{ color: '#fcd34d', fontWeight: '600' }}>{deployEstimate.costEth} ETH</span> on Arbitrum</li>
+                  <li>Run: <code style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#a5b4fc' }}>npx hardhat ignition deploy ignition/modules/Arbitrage.js --network arbitrum</code></li>
+                  <li>Update <code style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#a5b4fc' }}>config.json</code> with the new contract address</li>
+                  <li>Switch to Mainnet mode and start trading!</li>
+                </ol>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Threshold Sliders with tooltips and confirmation modals */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)' }}>
