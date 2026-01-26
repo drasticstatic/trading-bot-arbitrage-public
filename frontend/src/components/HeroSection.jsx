@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { getWalletInfo, sendMessage, updateBotSettings, estimateDeployCost } from '../store/websocket'
 import { updateSettings } from '../store/botSlice'
@@ -7,7 +7,18 @@ import Tooltip from './Tooltip'
 
 function HeroSection() {
   const dispatch = useDispatch()
-  const { wallet, settings, connected, isExecuting, isRunning, isTestMode } = useSelector(state => state.bot)
+  const { wallet, settings, connected, isExecuting, isRunning, isTestMode, trades } = useSelector(state => state.bot)
+
+  // Calculate P&L metrics from trades
+  const metrics = useMemo(() => {
+    if (!trades?.length) return { total: 0, successful: 0, failed: 0, netProfit: 0, winRate: 0 }
+    const total = trades.length
+    const successful = trades.filter(t => t.status === 'success').length
+    const failed = total - successful
+    const netProfit = trades.reduce((sum, t) => sum + parseFloat(t.profit || 0), 0)
+    const winRate = total > 0 ? Math.round((successful / total) * 100) : 0
+    return { total, successful, failed, netProfit, winRate }
+  }, [trades])
   const [showToggleModal, setShowToggleModal] = useState(false)
   const [pendingToggle, setPendingToggle] = useState(null)
   const [showSliderModal, setShowSliderModal] = useState(false)
@@ -42,6 +53,11 @@ function HeroSection() {
   }, [settings, showSliderModal])
 
   const handleEstimateDeploy = () => {
+    // Toggle visibility if already showing estimate
+    if (deployEstimate && !estimating) {
+      setDeployEstimate(null)
+      return
+    }
     setEstimating(true)
     setDeployEstimate(null)
     estimateDeployCost()
@@ -279,8 +295,13 @@ function HeroSection() {
         </div>
       )}
 
-      {/* Hero Card */}
-      <div className="rounded-2xl p-6" style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.08) 100%)', border: '1px solid rgba(99, 102, 241, 0.25)' }}>
+      {/* Hero Card - Glass-morphism style */}
+      <div className="glass rounded-2xl p-6" style={{
+        background: 'linear-gradient(135deg, rgba(18, 20, 26, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%)',
+        border: '1px solid rgba(99, 102, 241, 0.2)',
+        backdropFilter: 'blur(20px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      }}>
 
         {/* Network Mode Banner - synced with toggle */}
         <div className="mb-4 p-3 rounded-xl text-center" style={{
@@ -317,16 +338,16 @@ function HeroSection() {
           )}
         </div>
 
-        {/* Header Row */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
+        {/* Header Row - Center justified */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-3 mb-2">
             <span className="text-3xl">⚡</span>
-            <div>
-              <h1 style={{ fontSize: '22px', fontWeight: '700', color: 'white' }}>DAPPU Arbitrage</h1>
-              <p style={{ fontSize: '12px', color: '#94a3b8' }}>Multi-DEX Scanner • Uniswap • PancakeSwap • SushiSwap • Camelot</p>
-            </div>
+            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'white', background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DAPPU Arbitrage</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>Multi-DEX Scanner • Uniswap • PancakeSwap • SushiSwap • Camelot</p>
+
+          {/* Status badges - centered */}
+          <div className="flex items-center justify-center gap-3 flex-wrap">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)' }}>
               <div className="w-2 h-2 rounded-full" style={{ background: connected ? '#10b981' : '#ef4444', boxShadow: connected ? '0 0 8px #10b981' : 'none' }} />
               <span style={{ fontSize: '12px', color: connected ? '#10b981' : '#ef4444', fontWeight: '500' }}>{connected ? 'Connected' : 'Offline'}</span>
@@ -337,32 +358,102 @@ function HeroSection() {
           </div>
         </div>
 
-        {/* Wallet Cards */}
+        {/* P&L Metrics Bar */}
+        {metrics.total > 0 && (
+          <div className="flex items-center justify-center gap-4 flex-wrap mb-6 p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.15)' }}>
+            <div className="text-center px-4">
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#a5b4fc' }}>{metrics.total}</div>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Trades</div>
+            </div>
+            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{metrics.successful}</div>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Successful</div>
+            </div>
+            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: '#ef4444' }}>{metrics.failed}</div>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Failed</div>
+            </div>
+            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: metrics.winRate >= 50 ? '#10b981' : '#f59e0b' }}>{metrics.winRate}%</div>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win Rate</div>
+            </div>
+            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+                {metrics.netProfit >= 0 ? '+' : ''}{metrics.netProfit.toFixed(6)}
+              </div>
+              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Net P&L (WETH)</div>
+            </div>
+          </div>
+        )}
+
+        {/* Wallet Cards - Glass-morphism style with ETH + ARB */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Testnet */}
-          <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)' }}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6' }} />
-              <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa', letterSpacing: '1px' }}>TESTNET</span>
+          {/* Testnet Wallet */}
+          <div className="bento-item" style={{
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid rgba(59, 130, 246, 0.25)',
+            backdropFilter: 'blur(12px)'
+          }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' }} />
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa', letterSpacing: '1px' }}>TESTNET</span>
+              </div>
+              {hardhatAddr && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>{hardhatAddr.slice(0, 6)}...{hardhatAddr.slice(-4)}</span>}
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>
-              {hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>
+                  {hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#60a5fa', fontWeight: '600' }}>ETH</div>
+              </div>
+              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>
+                  {wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0.00'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#60a5fa', fontWeight: '600' }}>ARB</div>
+              </div>
             </div>
-            <div style={{ fontSize: '14px', color: '#60a5fa', marginBottom: '4px' }}>ETH</div>
-            {hardhatAddr && <div style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>{hardhatAddr.slice(0, 8)}...{hardhatAddr.slice(-6)}</div>}
           </div>
 
-          {/* Mainnet */}
-          <div className="rounded-xl p-4 text-center" style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.3)' }}>
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <div className="w-2 h-2 rounded-full" style={{ background: '#f59e0b' }} />
-              <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24', letterSpacing: '1px' }}>MAINNET</span>
+          {/* Mainnet Wallet */}
+          <div className="bento-item" style={{
+            background: 'rgba(245, 158, 11, 0.08)',
+            border: '1px solid rgba(245, 158, 11, 0.25)',
+            backdropFilter: 'blur(12px)'
+          }}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
+                <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24', letterSpacing: '1px' }}>MAINNET</span>
+                {wallet?.mainnet?.rpc && (
+                  <span style={{ fontSize: '8px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '1px 5px', borderRadius: '4px' }}>
+                    {wallet.mainnet.rpc}
+                  </span>
+                )}
+              </div>
+              {mainnetAddr && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>{mainnetAddr.slice(0, 6)}...{mainnetAddr.slice(-4)}</span>}
             </div>
-            <div style={{ fontSize: '32px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>
-              {mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>
+                  {mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '600' }}>ETH</div>
+              </div>
+              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
+                <div style={{ fontSize: '22px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>
+                  {wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0.00'}
+                </div>
+                <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '600' }}>ARB</div>
+              </div>
             </div>
-            <div style={{ fontSize: '14px', color: '#fbbf24', marginBottom: '4px' }}>ETH</div>
-            {mainnetAddr && <div style={{ fontSize: '10px', color: '#64748b', fontFamily: 'monospace' }}>{mainnetAddr.slice(0, 8)}...{mainnetAddr.slice(-6)}</div>}
+            {wallet?.mainnet?.warning && (
+              <div style={{ fontSize: '9px', color: '#f87171', marginTop: '8px', textAlign: 'center' }}>
+                ⚠️ {wallet.mainnet.warning}
+              </div>
+            )}
           </div>
         </div>
 
@@ -408,17 +499,20 @@ function HeroSection() {
             <span className="px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>⚠️ AUTO-TRADING ACTIVE</span>
           )}
 
-          {/* Estimate Deploy Cost Button */}
-          <Tooltip text="💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet. Useful before going live.">
+          {/* Estimate Deploy Cost Button - toggles visibility */}
+          <Tooltip text={deployEstimate ? '🔼 Click to hide deployment details' : '💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet. Useful before going live.'}>
             <button
               onClick={handleEstimateDeploy}
               disabled={estimating}
               className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-              style={{ background: 'rgba(16, 185, 129, 0.2)', border: '1px solid #10b981' }}
+              style={{
+                background: deployEstimate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)',
+                border: `1px solid ${deployEstimate ? '#34d399' : '#10b981'}`
+              }}
             >
-              <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : '💰'}</span>
+              <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : deployEstimate ? '🔼' : '💰'}</span>
               <span style={{ color: '#6ee7b7', fontSize: '13px', fontWeight: '600' }}>
-                {estimating ? 'Estimating...' : 'Estimate Deploy'}
+                {estimating ? 'Estimating...' : deployEstimate ? 'Hide Details' : 'Estimate Deploy'}
               </span>
             </button>
           </Tooltip>

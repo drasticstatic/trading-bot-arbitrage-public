@@ -55,20 +55,25 @@ function WalletPanel() {
                     {safeToFixed(hardhat?.wethBalance, 6)} WETH
                   </span>
                 </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-xs">ARB Token</span>
+                  <span className="text-white text-sm font-semibold">
+                    {safeToFixed(hardhat?.arbBalance, 2)} ARB
+                  </span>
+                </div>
             </div>
 
             {/* Arbitrum mainnet */}
             <div className="data-row p-3 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="text-label text-sm">Arbitrum</span>
-
                   <div className="flex items-center gap-2">
-                    {mainnet?.rpc ? (
+                    {mainnet?.rpc && (
                       <span className="text-[10px] text-gray-500">RPC: {mainnet.rpc}</span>
-                    ) : null}
-                    {mainnet?.chainId ? (
+                    )}
+                    {mainnet?.chainId && (
                       <span className="text-[10px] text-gray-500">Chain: {mainnet.chainId}</span>
-                    ) : null}
+                    )}
                     <span className="badge badge-purple">Mainnet</span>
                   </div>
               </div>
@@ -80,11 +85,16 @@ function WalletPanel() {
                   {safeToFixed(mainnet?.ethBalance, 6)} ETH
                 </span>
               </div>
-
                 <div className="flex items-center justify-between">
                   <span className="text-gray-500 text-xs">Trading balance</span>
                   <span className="text-white text-sm font-semibold">
                     {safeToFixed(mainnet?.wethBalance, 6)} WETH
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 text-xs">ARB Token</span>
+                  <span className="text-white text-sm font-semibold">
+                    {safeToFixed(mainnet?.arbBalance, 2)} ARB
                   </span>
                 </div>
             </div>

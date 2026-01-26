@@ -1,77 +1,125 @@
-import React, { useState } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { clearLogs } from '../store/botSlice'
 
 function LogPanel() {
   const { logs } = useSelector(state => state.bot)
   const dispatch = useDispatch()
-  const [showModal, setShowModal] = useState(false)
+  const [expanded, setExpanded] = useState(false)
+  const scrollRef = useRef(null)
 
-  const getLogColor = (level) => {
+  const getLogStyle = (level) => {
     switch (level) {
-      case 'ERROR': return 'text-red-500'
-      case 'WARN': return 'text-yellow-500'
-      case 'SUCCESS': return 'text-green-500'
-      case 'INFO': return 'text-blue-400'
-      default: return 'text-gray-400'
+      case 'ERROR': return { color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' }
+      case 'WARN': return { color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' }
+      case 'SUCCESS': return { color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' }
+      case 'INFO': return { color: '#60a5fa', bg: 'rgba(96, 165, 250, 0.1)' }
+      default: return { color: '#94a3b8', bg: 'transparent' }
     }
   }
 
-  // Show only last 5 logs in compact view
-  const recentLogs = logs.slice(-5)
+  // Auto-scroll when new logs arrive
+  useEffect(() => {
+    if (scrollRef.current && expanded) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight
+    }
+  }, [logs, expanded])
+
+  const recentLogs = expanded ? logs : logs.slice(-8)
 
   return (
-    <>
-      <div className="card p-5 cursor-pointer hover:border-indigo-500/50 transition-colors" onClick={() => setShowModal(true)}>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-base font-semibold text-white">📋 Activity</h2>
-          <span className="text-xs text-gray-500">{logs.length} logs</span>
+    <div className="glass h-full" style={{
+      padding: '16px',
+      borderRadius: '16px',
+      background: 'linear-gradient(135deg, rgba(18, 20, 26, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%)',
+      border: '1px solid rgba(245, 158, 11, 0.15)',
+      backdropFilter: 'blur(20px)',
+      display: 'flex',
+      flexDirection: 'column'
+    }}>
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: '18px' }}>📋</span>
+          <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '15px' }}>Activity Monitor</span>
         </div>
-
-        <div className="space-y-1">
-          {recentLogs.length === 0 ? (
-            <div className="text-muted text-center py-4 text-sm">Awaiting activity...</div>
-          ) : (
-            recentLogs.map((log, index) => (
-              <div key={index} className="flex items-center gap-2 text-xs py-1 border-b border-gray-800/50 last:border-0">
-                <span className={`${getLogColor(log.level)} truncate flex-1`}>{log.message}</span>
-              </div>
-            ))
+        <div className="flex items-center gap-2">
+          <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
+            {logs.length} logs
+          </span>
+          {logs.length > 0 && (
+            <button
+              onClick={() => dispatch(clearLogs())}
+              style={{ fontSize: '10px', color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+            >
+              Clear
+            </button>
           )}
-        </div>
-
-        <div className="text-center mt-3">
-          <span className="text-xs text-indigo-400 hover:text-indigo-300">Click to view all →</span>
         </div>
       </div>
 
-      {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-[#12141a] border border-[#1e2028] rounded-xl w-full max-w-2xl max-h-[80vh] overflow-hidden" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between p-4 border-b border-[#1e2028]">
-              <h3 className="text-lg font-semibold text-white">📋 Activity Log</h3>
-              <div className="flex items-center gap-3">
-                <button onClick={() => dispatch(clearLogs())} className="text-xs text-red-400 hover:text-red-300">Clear All</button>
-                <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-white text-xl">×</button>
-              </div>
-            </div>
-            <div className="p-4 overflow-y-auto max-h-[60vh] font-mono text-xs space-y-1">
-              {logs.length === 0 ? (
-                <div className="text-muted text-center py-8">No activity yet</div>
-              ) : (
-                [...logs].reverse().map((log, index) => (
-                  <div key={index} className="flex items-start gap-3 py-2 border-b border-gray-800/30">
-                    <span className="text-gray-600 shrink-0">{new Date(log.timestamp).toLocaleTimeString()}</span>
-                    <span className={getLogColor(log.level)}>{log.message}</span>
-                  </div>
-                ))
-              )}
-            </div>
+      {/* Log list */}
+      <div ref={scrollRef} style={{
+        flex: 1,
+        overflowY: 'auto',
+        background: 'rgba(0,0,0,0.25)',
+        borderRadius: '10px',
+        padding: '10px',
+        maxHeight: expanded ? '400px' : '200px',
+        minHeight: '150px',
+        transition: 'max-height 0.3s ease'
+      }}>
+        {recentLogs.length === 0 ? (
+          <div style={{ color: '#64748b', textAlign: 'center', padding: '30px 0', fontSize: '12px' }}>
+            <div style={{ fontSize: '20px', marginBottom: '8px' }}>📭</div>
+            Awaiting activity...
           </div>
-        </div>
+        ) : (
+          recentLogs.map((log, index) => {
+            const style = getLogStyle(log.level)
+            return (
+              <div key={index} style={{
+                display: 'flex', alignItems: 'flex-start', gap: '8px',
+                padding: '6px 8px', marginBottom: '4px',
+                background: style.bg, borderRadius: '6px',
+                fontSize: '11px', fontFamily: 'ui-monospace, monospace'
+              }}>
+                <span style={{ color: '#64748b', flexShrink: 0, fontSize: '10px' }}>
+                  {new Date(log.timestamp).toLocaleTimeString()}
+                </span>
+                <span style={{ color: style.color, flex: 1, wordBreak: 'break-word' }}>{log.message}</span>
+              </div>
+            )
+          })
+        )}
+      </div>
+
+      {/* Expand/Collapse button */}
+      {logs.length > 8 && (
+        <button
+          onClick={() => setExpanded(!expanded)}
+          style={{
+            marginTop: '10px',
+            padding: '6px 12px',
+            borderRadius: '8px',
+            background: expanded ? 'rgba(245, 158, 11, 0.2)' : 'rgba(99, 102, 241, 0.15)',
+            border: `1px solid ${expanded ? 'rgba(245, 158, 11, 0.3)' : 'rgba(99, 102, 241, 0.2)'}`,
+            color: expanded ? '#fbbf24' : '#a5b4fc',
+            fontSize: '11px',
+            fontWeight: '600',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <span>{expanded ? '🔼' : '🔽'}</span>
+          {expanded ? 'Collapse' : `Show All (${logs.length})`}
+        </button>
       )}
-    </>
+    </div>
   )
 }
 

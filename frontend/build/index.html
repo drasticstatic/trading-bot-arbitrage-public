@@ -25,21 +25,25 @@
       * { font-family: 'Space Grotesk', sans-serif; box-sizing: border-box; }
       body { background: var(--bg-dark); min-height: 100vh; color: var(--text); }
 
-      /* Screener Card */
+      /* Screener Card - Glass-morphism */
       .screener-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border);
+        background: linear-gradient(135deg, rgba(18, 20, 26, 0.9) 0%, rgba(30, 41, 59, 0.85) 100%);
+        border: 1px solid rgba(99, 102, 241, 0.15);
         border-radius: 16px;
         overflow: hidden;
+        backdrop-filter: blur(20px);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       }
 
       .screener-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 20px 24px;
-        border-bottom: 1px solid var(--border);
-        background: linear-gradient(180deg, rgba(99, 102, 241, 0.05) 0%, transparent 100%);
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(99, 102, 241, 0.1);
+        background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, transparent 100%);
+        flex-wrap: wrap;
+        gap: 12px;
       }
 
       .screener-title {
@@ -202,45 +206,55 @@
       /* Table */
       .table-wrapper {
         overflow-x: auto;
+        padding: 0 4px;
       }
 
       .screener-table {
         width: 100%;
         border-collapse: collapse;
+        table-layout: fixed;
       }
 
       .screener-table th {
-        padding: 14px 24px;
-        font-size: 11px;
-        font-weight: 600;
+        padding: 12px 16px;
+        font-size: 10px;
+        font-weight: 700;
         color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.5px;
+        letter-spacing: 0.8px;
         text-align: left;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid rgba(99, 102, 241, 0.15);
+        background: rgba(0, 0, 0, 0.2);
       }
 
+      .screener-table th:first-child { width: 18%; }
+      .screener-table th:nth-child(2) { width: 28%; }
+      .screener-table th:nth-child(3) { width: 14%; }
+      .screener-table th:nth-child(4) { width: 22%; }
+      .screener-table th:nth-child(5) { width: 18%; }
+
       .screener-table td {
-        padding: 16px 24px;
-        border-bottom: 1px solid var(--border);
+        padding: 14px 16px;
+        border-bottom: 1px solid rgba(99, 102, 241, 0.08);
+        vertical-align: middle;
       }
 
       .screener-table tbody tr {
         cursor: pointer;
-        transition: background 0.15s;
+        transition: all 0.15s ease;
       }
 
       .screener-table tbody tr:hover {
-        background: var(--bg-hover);
+        background: rgba(99, 102, 241, 0.08);
       }
 
       .row-selected {
-        background: rgba(99, 102, 241, 0.1) !important;
+        background: rgba(99, 102, 241, 0.12) !important;
         border-left: 3px solid var(--accent);
       }
 
       .row-opportunity {
-        background: var(--green-glow) !important;
+        background: rgba(16, 185, 129, 0.08) !important;
       }
 
       .pair-cell {
@@ -661,7 +675,7 @@
       .glow-purple { box-shadow: 0 0 20px rgba(168, 85, 247, 0.3); }
       .glow-blue { box-shadow: 0 0 20px rgba(99, 102, 241, 0.3); }
     </style>
-    <script type="module" crossorigin src="/assets/index-BeepQdUV.js"></script>
+    <script type="module" crossorigin src="/assets/index-Cggk4bsF.js"></script>
   </head>
   <body>
     <div id="root"></div>
