@@ -46,18 +46,6 @@ export default function TradeExecutionOverlay() {
     if (tradeId) setDismissedTradeId(null)
   }, [tradeId])
 
-  useEffect(() => {
-    // Auto-hide shortly after a successful trade.
-    if (tradeStatus?.status !== 'success') return
-    if (!tradeId) return
-
-    const t = setTimeout(() => {
-      setDismissedTradeId(tradeId)
-    }, 6000)
-
-    return () => clearTimeout(t)
-  }, [tradeStatus?.status, tradeId])
-
   const rpcLabel = useMemo(() => {
     if (!wallet) return '—'
     if (wallet.isTestnet) return 'localhost (Hardhat fork)'

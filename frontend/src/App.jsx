@@ -6,6 +6,8 @@ import ScreenerPanel from './components/ScreenerPanel'
 import LogPanel from './components/LogPanel'
 import TradeHistory from './components/TradeHistory'
 import TradeExecutionOverlay from './components/TradeExecutionOverlay'
+import WalletPanel from './components/WalletPanel'
+import TradeExecutionCard from './components/TradeExecutionCard'
 
 // Simple confetti component
 function Confetti({ show }) {
@@ -75,6 +77,11 @@ function App() {
 
         {/* Hero Section */}
         <HeroSection />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+            <WalletPanel />
+            <TradeExecutionCard />
+          </div>
 
         {/* Screener Table */}
         <ScreenerPanel />

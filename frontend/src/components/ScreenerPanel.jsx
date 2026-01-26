@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
+import { analyzePair, selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
 
 import Tooltip from './Tooltip'
 
@@ -34,6 +34,12 @@ function ScreenerPanel() {
 
     setPendingTrade(pair)
     setShowConfirmModal(true)
+  }
+
+  const handleAnalyze = (pairName) => {
+    selectPair(pairName)
+    setExpandedPairs(prev => ({ ...prev, [pairName]: true }))
+    analyzePair(pairName)
   }
 
   // Confirm and execute trade
@@ -307,17 +313,25 @@ function ScreenerPanel() {
                         </span>
                       </td>
                       <td className="action-cell">
-                        {pair.hasOpportunity ? (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleTrade(pair.name); }}
-                            disabled={isExecuting}
-                            className="trade-btn"
-                          >
-                            {isExecuting ? '...' : '💰 Trade'}
-                          </button>
-                        ) : (
-                          <span className="no-action">—</span>
-                        )}
+							<div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>
+							  <button
+							    onClick={(e) => { e.stopPropagation(); handleAnalyze(pair.name) }}
+							    disabled={isExecuting}
+							    className="btn-primary"
+							    style={{ padding: '8px 12px', fontSize: '12px' }}
+							  >
+							    {isExecuting ? '...' : '🔍 Analyze'}
+							  </button>
+
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleTrade(pair.name); }}
+                    disabled={isExecuting}
+                    className={pair.hasOpportunity ? 'trade-btn' : 'trade-btn-secondary'}
+                    style={{ padding: '8px 12px', fontSize: '12px' }}
+                  >
+                    {isExecuting ? '...' : '💰 Trade'}
+                  </button>
+							</div>
                       </td>
                     </tr>
 

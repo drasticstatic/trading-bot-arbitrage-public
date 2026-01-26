@@ -111,6 +111,10 @@ export function connectWebSocket(dispatch) {
         case 'LOG':
           dispatch(addLog(payload))
           break
+        case 'DEPLOY_ESTIMATE':
+          // Dispatch a custom event so components can listen
+          window.dispatchEvent(new CustomEvent('deploy-estimate', { detail: payload }))
+          break
         default:
           console.log('Unknown message type:', type)
       }
@@ -138,11 +142,19 @@ export function executeTrade() {
   sendMessage('EXECUTE_TRADE')
 }
 
+export function analyzePair(pairName) {
+  sendMessage('ANALYZE_PAIR', { pairName })
+}
+
 export function updateBotSettings(settings) {
   sendMessage('UPDATE_SETTINGS', settings)
 }
 
 export function getWalletInfo() {
   sendMessage('GET_WALLET_INFO')
+}
+
+export function estimateDeployCost() {
+  sendMessage('ESTIMATE_DEPLOY_COST')
 }
 
