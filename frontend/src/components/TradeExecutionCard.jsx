@@ -69,48 +69,39 @@ export default function TradeExecutionCard() {
       border: '1px solid rgba(99, 102, 241, 0.2)',
       backdropFilter: 'blur(20px)'
     }}>
-      {/* Header with stats */}
-      <div className="flex items-center justify-between flex-wrap gap-3" style={{ marginBottom: '16px' }}>
-        <div className="flex items-center gap-3">
+      {/* Header with title + inline stats row */}
+      <div style={{ marginBottom: '16px' }}>
+        <div className="flex items-center gap-3" style={{ marginBottom: '8px' }}>
           <span style={{ fontSize: '22px' }}>📟</span>
-          <div>
-            <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '16px' }}>Trade Execution Terminal</div>
-            <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
-              Current: <span style={{ color: currentStatus === 'success' ? '#10b981' : currentStatus === 'failed' ? '#ef4444' : currentStatus === 'pending' ? '#fbbf24' : '#a5b4fc' }}>{currentStatus}</span>
-              {currentTxHash && <span style={{ color: '#64748b' }}> · TX: {currentTxHash.slice(0, 10)}…{currentTxHash.slice(-6)}</span>}
-            </div>
-          </div>
+          <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '16px' }}>Trade Execution Terminal</div>
+          {currentTxHash && <span style={{ color: '#64748b', fontSize: '10px' }}>TX: {currentTxHash.slice(0, 10)}…{currentTxHash.slice(-6)}</span>}
         </div>
-        {/* Stats badges */}
-        <div className="flex items-center gap-2 flex-wrap">
-          {stats.total > 0 && (
-            <>
-              <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', fontSize: '11px', fontWeight: '600' }}>
-                {stats.total} total
-              </div>
-              <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '11px', fontWeight: '600' }}>
-                ✓ {stats.successful} success
-              </div>
-              {stats.failed > 0 && (
-                <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontSize: '11px', fontWeight: '600' }}>
-                  ✗ {stats.failed} failed
-                </div>
-              )}
-              <div style={{
-                padding: '4px 10px', borderRadius: '6px',
-                background: stats.netProfit >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                color: stats.netProfit >= 0 ? '#10b981' : '#ef4444',
-                fontSize: '11px', fontWeight: '700'
-              }}>
-                P&L: {formatProfit(stats.netProfit)} WETH
-              </div>
-            </>
+        {/* Stats - Single horizontal row, no wrap */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '4px' }}>
+          <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(99, 102, 241, 0.15)', color: '#a5b4fc', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+            {stats.total} total
+          </div>
+          <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+            ✓ {stats.successful} success
+          </div>
+          {stats.failed > 0 && (
+            <div style={{ padding: '4px 10px', borderRadius: '6px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+              ✗ {stats.failed} failed
+            </div>
           )}
+          <div style={{
+            padding: '4px 10px', borderRadius: '6px',
+            background: stats.netProfit >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+            color: stats.netProfit >= 0 ? '#10b981' : '#ef4444',
+            fontSize: '11px', fontWeight: '700', whiteSpace: 'nowrap'
+          }}>
+            P&L: {formatProfit(stats.netProfit)} WETH
+          </div>
           <div style={{
             padding: '4px 10px', borderRadius: '6px',
             background: currentStatus === 'pending' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.1)',
             color: currentStatus === 'pending' ? '#fbbf24' : '#10b981',
-            fontSize: '11px', fontWeight: '600'
+            fontSize: '11px', fontWeight: '600', whiteSpace: 'nowrap'
           }}>
             {currentStatus === 'pending' ? '⏳ Processing' : '✓ Ready'}
           </div>
