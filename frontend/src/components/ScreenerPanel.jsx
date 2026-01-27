@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { analyzePair, selectPair, executeTrade, sendMessage, checkPrices } from '../store/websocket'
+import { clearTrades } from '../store/botSlice'
 
 import Tooltip from './Tooltip'
 
 function ScreenerPanel() {
+  const dispatch = useDispatch()
   const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
@@ -13,6 +15,10 @@ function ScreenerPanel() {
 
   // Expanded state for per-pair dropdown details
   const [expandedPairs, setExpandedPairs] = useState({})
+
+  // Show all pairs or collapse to show only 10
+  const [showAllPairs, setShowAllPairs] = useState(false)
+  const COLLAPSED_PAIR_LIMIT = 10
 
   // Auto-expand the pair that just produced an analysis result
   useEffect(() => {
@@ -84,6 +90,8 @@ function ScreenerPanel() {
   }
   const handleRestartBot = () => {
     setLocalLoading('restart')
+    // Clear trade history on restart (also clears localStorage)
+    dispatch(clearTrades())
     sendMessage('RESTART_BOT')
     setTimeout(() => {
       setLocalLoading(null)
@@ -93,11 +101,14 @@ function ScreenerPanel() {
   }
 
   // Filter pairs based on toggle
-  const displayedPairs = hideFailedPairs
+  const filteredPairs = hideFailedPairs
     ? screenerPairs.filter(p => p.dexCount >= 2)
     : screenerPairs
-  const opportunities = displayedPairs.filter(p => p.hasOpportunity)
-  const hiddenCount = screenerPairs.length - displayedPairs.length
+  // Apply show all/collapse limit
+  const displayedPairs = showAllPairs ? filteredPairs : filteredPairs.slice(0, COLLAPSED_PAIR_LIMIT)
+  const hasMorePairs = filteredPairs.length > COLLAPSED_PAIR_LIMIT
+  const opportunities = filteredPairs.filter(p => p.hasOpportunity)
+  const hiddenCount = screenerPairs.length - filteredPairs.length
 
   return (
     <div className="screener-card" style={{ position: 'relative' }}>
@@ -266,15 +277,15 @@ function ScreenerPanel() {
           <p>{screenerPairs.length > 0 ? 'All pairs filtered out - click "Show All" above' : 'Loading pairs...'}</p>
         </div>
       ) : (
-        <div className="table-wrapper">
+        <div className="table-wrapper" style={{ maxHeight: '500px', overflowY: 'auto' }}>
           <table className="screener-table">
-            <thead>
+            <thead style={{ position: 'sticky', top: 0, zIndex: 10, background: '#0f172a' }}>
               <tr>
-                <th>Pair</th>
-                <th className="text-right">Best Route</th>
-                <th className="text-right">Spread</th>
-                <th className="text-center">DEXs</th>
-                <th className="text-center">Action</th>
+                <th style={{ background: '#0f172a' }}>Pair</th>
+                <th className="text-right" style={{ background: '#0f172a' }}>Best Route</th>
+                <th className="text-right" style={{ background: '#0f172a' }}>Spread</th>
+                <th className="text-center" style={{ background: '#0f172a' }}>DEXs</th>
+                <th className="text-center" style={{ background: '#0f172a' }}>Action</th>
               </tr>
             </thead>
             <tbody>
@@ -441,6 +452,30 @@ function ScreenerPanel() {
               })}
             </tbody>
           </table>
+
+          {/* Show All / Collapse Button */}
+          {hasMorePairs && (
+            <div style={{ textAlign: 'center', padding: '12px', borderTop: '1px solid rgba(100,116,139,0.15)' }}>
+              <button
+                onClick={() => setShowAllPairs(!showAllPairs)}
+                style={{
+                  padding: '8px 20px',
+                  borderRadius: '8px',
+                  border: '1px solid rgba(99, 102, 241, 0.3)',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  color: '#a5b4fc',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {showAllPairs
+                  ? `▲ Collapse (showing ${filteredPairs.length} pairs)`
+                  : `▼ Show All (${filteredPairs.length - COLLAPSED_PAIR_LIMIT} more pairs)`}
+              </button>
+            </div>
+          )}
         </div>
       )}
 
