@@ -2,6 +2,22 @@ import React, { useState, useRef, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 import { clearLogs } from '../store/botSlice'
 
+function downloadJSON(filename, data) {
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.warn('Export failed:', e)
+  }
+}
+
 function LogPanel() {
   const { logs } = useSelector(state => state.bot)
   const dispatch = useDispatch()
@@ -47,6 +63,14 @@ function LogPanel() {
           <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
             {logs.length} logs
           </span>
+				{logs.length > 0 && (
+				  <button
+				    onClick={() => downloadJSON(`dappu-activity-log-${Date.now()}.json`, { exportedAt: new Date().toISOString(), logs })}
+				    style={{ fontSize: '10px', color: '#93c5fd', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59,130,246,0.25)', cursor: 'pointer', fontWeight: 700 }}
+				  >
+				    Export
+				  </button>
+				)}
           {logs.length > 0 && (
             <button
               onClick={() => dispatch(clearLogs())}

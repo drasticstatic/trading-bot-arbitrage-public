@@ -47,7 +47,7 @@ const initialState = {
     gasPrice: 0.1, // In Gwei (Arbitrum typically 0.1-1.0 Gwei)
     skipConfirmation: false,
     autoExecute: false,
-    mevProtection: false
+		mevProtection: true
   },
 
   // Logs
@@ -118,8 +118,9 @@ const botSlice = createSlice({
       state.tradeSteps = []
     },
     addTrade: (state, action) => {
-      state.trades.unshift(action.payload)
-      if (state.trades.length > 100) state.trades.pop()
+			// Keep oldest at top, newest at bottom (requested)
+			state.trades.push(action.payload)
+			if (state.trades.length > 100) state.trades.shift()
       // Persist to localStorage
       try {
         localStorage.setItem('dappu_trades', JSON.stringify(state.trades))

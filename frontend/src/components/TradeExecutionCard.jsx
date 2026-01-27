@@ -16,6 +16,22 @@ function formatProfit(profit) {
   return '0.000000'
 }
 
+function downloadJSON(filename, data) {
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
+    URL.revokeObjectURL(url)
+  } catch (e) {
+    console.warn('Export failed:', e)
+  }
+}
+
 export default function TradeExecutionCard() {
   const { tradeStatus, tradeSteps, trades } = useSelector(state => state.bot)
   const scrollRef = useRef(null)
@@ -44,6 +60,17 @@ export default function TradeExecutionCard() {
 
   const currentStatus = tradeStatus?.status || 'idle'
   const currentTxHash = tradeStatus?.txHash
+
+  const handleExport = () => {
+    downloadJSON(`dappu-trade-terminal-${Date.now()}.json`, {
+      exportedAt: new Date().toISOString(),
+      trades: trades || [],
+      current: {
+        tradeStatus: tradeStatus || null,
+        tradeSteps: tradeSteps || []
+      }
+    })
+  }
 
   // Combine historical trades with current steps for continuous scroll
   const allExecutions = useMemo(() => {
@@ -75,6 +102,22 @@ export default function TradeExecutionCard() {
           <span style={{ fontSize: '22px' }}>📟</span>
           <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '16px' }}>Trade Execution Terminal</div>
           {currentTxHash && <span style={{ color: '#64748b', fontSize: '10px' }}>TX: {currentTxHash.slice(0, 10)}…{currentTxHash.slice(-6)}</span>}
+	          <button
+	            onClick={handleExport}
+	            style={{
+	              marginLeft: 'auto',
+	              fontSize: '10px',
+	              color: '#93c5fd',
+	              background: 'rgba(59,130,246,0.12)',
+	              padding: '4px 10px',
+	              borderRadius: '8px',
+	              border: '1px solid rgba(59,130,246,0.25)',
+	              cursor: 'pointer',
+	              fontWeight: 700
+	            }}
+	          >
+	            Export
+	          </button>
         </div>
         {/* Stats - Single horizontal row, no wrap */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '4px' }}>
@@ -128,6 +171,7 @@ export default function TradeExecutionCard() {
           const trade = exec.trade
           const isSuccess = trade.status === 'success'
           const profit = parseFloat(trade.profit || 0)
+	          const steps = Array.isArray(trade.steps) ? trade.steps : []
 
           return (
             <div key={exec.id}>
@@ -153,6 +197,20 @@ export default function TradeExecutionCard() {
                   </span>
                   <span style={{ color: '#e2e8f0', fontWeight: '600', fontSize: '13px' }}>{trade.pair || 'Trade'}</span>
                   <span style={{ color: '#64748b', fontSize: '11px' }}>{trade.buyExchange} → {trade.sellExchange}</span>
+	                  {trade.mevProtected && (
+	                    <span style={{
+	                      fontSize: '10px',
+	                      padding: '2px 6px',
+	                      borderRadius: '999px',
+	                      background: 'rgba(16,185,129,0.12)',
+	                      border: '1px solid rgba(16,185,129,0.25)',
+	                      color: '#34d399',
+	                      fontWeight: 700,
+	                      whiteSpace: 'nowrap'
+	                    }}>
+	                      🛡 MEV
+	                    </span>
+	                  )}
                   <span style={{
                     marginLeft: 'auto',
                     color: profit > 0 ? '#10b981' : profit < 0 ? '#ef4444' : '#64748b',
@@ -174,9 +232,37 @@ export default function TradeExecutionCard() {
                     <div><span style={{ color: '#64748b' }}>Amount:</span> <span style={{ color: '#e2e8f0' }}>{trade.amount} {trade.tokenSymbol}</span></div>
                     <div><span style={{ color: '#64748b' }}>Buy:</span> <span style={{ color: '#60a5fa' }}>{trade.buyExchange}</span></div>
                     <div><span style={{ color: '#64748b' }}>Sell:</span> <span style={{ color: '#c084fc' }}>{trade.sellExchange}</span></div>
+	                    {typeof trade.mevProtected === 'boolean' && (
+	                      <div>
+	                        <span style={{ color: '#64748b' }}>MEV:</span>{' '}
+	                        <span style={{ color: trade.mevProtected ? '#10b981' : '#94a3b8' }}>{trade.mevProtected ? 'protected' : 'not protected'}</span>
+	                      </div>
+	                    )}
+	                    {trade.gasPaidEth !== undefined && (
+	                      <div><span style={{ color: '#64748b' }}>Gas Paid:</span> <span style={{ color: '#e2e8f0' }}>{Number(trade.gasPaidEth).toFixed(6)} ETH</span></div>
+	                    )}
                     {trade.gasUsed && <div><span style={{ color: '#64748b' }}>Gas:</span> <span style={{ color: '#e2e8f0' }}>{trade.gasUsed}</span></div>}
                     {trade.spread && <div><span style={{ color: '#64748b' }}>Spread:</span> <span style={{ color: '#e2e8f0' }}>{trade.spread}%</span></div>}
                   </div>
+
+	                  {steps.length > 0 && (
+	                    <div style={{
+	                      marginTop: '10px',
+	                      paddingTop: '10px',
+	                      borderTop: '1px solid rgba(100,116,139,0.2)'
+	                    }}>
+	                      <div style={{ fontSize: '9px', color: '#64748b', fontWeight: 700, letterSpacing: '0.8px', marginBottom: '6px' }}>TERMINAL LOG</div>
+	                      {steps.slice(0, 120).map((s, i) => (
+	                        <div key={i} style={{ display: 'flex', gap: '10px', marginBottom: '3px', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace', fontSize: '10px' }}>
+	                          <span style={{ width: '70px', color: '#64748b', flexShrink: 0 }}>{formatTime(s.timestamp)}</span>
+	                          <span style={{ color: s.status === 'success' ? '#10b981' : s.status === 'error' ? '#ef4444' : '#cbd5e1' }}>
+	                            {s.status === 'success' ? '✓' : s.status === 'error' ? '✗' : '→'} {s.label}
+	                            {s.details && <span style={{ color: '#64748b' }}> · {s.details}</span>}
+	                          </span>
+	                        </div>
+	                      ))}
+	                    </div>
+	                  )}
                   {trade.txHash && (
                     <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px solid rgba(100,116,139,0.2)' }}>
                       <span style={{ color: '#64748b' }}>TX: </span>
@@ -259,4 +345,3 @@ export default function TradeExecutionCard() {
     </div>
   )
 }
-
