@@ -295,227 +295,230 @@ function HeroSection() {
         </div>
       )}
 
-      {/* Hero Card - Glass-morphism style */}
-      <div className="glass rounded-2xl p-6" style={{
-        background: 'linear-gradient(135deg, rgba(18, 20, 26, 0.85) 0%, rgba(30, 41, 59, 0.75) 100%)',
-        border: '1px solid rgba(99, 102, 241, 0.2)',
-        backdropFilter: 'blur(20px)',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3)'
+      {/* Hero Card - Fluid Bento-style Glass-morphism Layout */}
+      <div className="glass rounded-3xl p-5 mb-6" style={{
+        background: 'linear-gradient(145deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.85) 50%, rgba(51, 65, 85, 0.8) 100%)',
+        border: '1px solid rgba(99, 102, 241, 0.25)',
+        backdropFilter: 'blur(24px)',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.05)'
       }}>
+        {/* Bento Grid - Fluid organic layout */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', alignItems: 'stretch' }}>
 
-        {/* Network Mode Banner - synced with toggle */}
-        <div className="mb-4 p-3 rounded-xl text-center" style={{
-          background: isTestnet ? 'rgba(59, 130, 246, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-          border: `2px solid ${isTestnet ? '#3b82f6' : '#f59e0b'}`,
-        }}>
-          <div className="flex items-center justify-center gap-3">
-            <div className="w-3 h-3 rounded-full" style={{
-              background: isTestnet ? '#3b82f6' : '#f59e0b',
-              boxShadow: `0 0 12px ${isTestnet ? '#3b82f6' : '#f59e0b'}`,
-              animation: 'pulse 1.5s infinite'
-            }} />
-            <span style={{
-              fontSize: '16px',
-              fontWeight: '700',
-              color: isTestnet ? '#60a5fa' : '#fbbf24',
-              letterSpacing: '2px'
-            }}>
-              {isTestnet ? '🧪 TESTNET MODE - HARDHAT' : '🔴 MAINNET MODE - REAL TRADES'}
-            </span>
-            <div className="w-3 h-3 rounded-full" style={{
-              background: isTestnet ? '#3b82f6' : '#f59e0b',
-              boxShadow: `0 0 12px ${isTestnet ? '#3b82f6' : '#f59e0b'}`,
-              animation: 'pulse 1.5s infinite'
-            }} />
-          </div>
-          <p style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
-            {isTestnet ? 'Safe testing on forked Arbitrum • No real funds at risk' : 'Connected to Arbitrum mainnet • Real ETH transactions'}
-          </p>
-          {isTestMode && isTestnet && (
-            <p style={{ fontSize: '10px', color: '#fbbf24', marginTop: '4px' }}>
-              ⚡ Price manipulation active - artificial opportunities visible
-            </p>
-          )}
-        </div>
-
-        {/* Header Row - Center justified */}
-        <div className="text-center mb-6">
-          <div className="flex items-center justify-center gap-3 mb-2">
-            <span className="text-3xl">⚡</span>
-            <h1 style={{ fontSize: '24px', fontWeight: '700', color: 'white', background: 'linear-gradient(135deg, #fff 0%, #a5b4fc 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DAPPU Arbitrage</h1>
-          </div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', marginBottom: '12px' }}>Multi-DEX Scanner • Uniswap • PancakeSwap • SushiSwap • Camelot</p>
-
-          {/* Status badges - centered */}
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: connected ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)' }}>
-              <div className="w-2 h-2 rounded-full" style={{ background: connected ? '#10b981' : '#ef4444', boxShadow: connected ? '0 0 8px #10b981' : 'none' }} />
-              <span style={{ fontSize: '12px', color: connected ? '#10b981' : '#ef4444', fontWeight: '500' }}>{connected ? 'Connected' : 'Offline'}</span>
-            </div>
-            <span className="px-3 py-1.5 rounded-full" style={{ fontSize: '12px', fontWeight: '600', background: isExecuting ? 'rgba(245, 158, 11, 0.15)' : isRunning ? 'rgba(16, 185, 129, 0.15)' : 'rgba(99, 102, 241, 0.15)', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1' }}>
-              {isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}
-            </span>
-          </div>
-        </div>
-
-        {/* P&L Metrics Bar */}
-        {metrics.total > 0 && (
-          <div className="flex items-center justify-center gap-4 flex-wrap mb-6 p-3 rounded-xl" style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(99,102,241,0.15)' }}>
-            <div className="text-center px-4">
-              <div style={{ fontSize: '18px', fontWeight: '700', color: '#a5b4fc' }}>{metrics.total}</div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Trades</div>
-            </div>
-            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: '#10b981' }}>{metrics.successful}</div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Successful</div>
-            </div>
-            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: '#ef4444' }}>{metrics.failed}</div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Failed</div>
-            </div>
-            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: metrics.winRate >= 50 ? '#10b981' : '#f59e0b' }}>{metrics.winRate}%</div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Win Rate</div>
-            </div>
-            <div className="text-center px-4" style={{ borderLeft: '1px solid rgba(100,116,139,0.2)' }}>
-              <div style={{ fontSize: '18px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
-                {metrics.netProfit >= 0 ? '+' : ''}{metrics.netProfit.toFixed(6)}
-              </div>
-              <div style={{ fontSize: '10px', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Net P&L (WETH)</div>
-            </div>
-          </div>
-        )}
-
-        {/* Wallet Cards - Glass-morphism style with ETH + ARB */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* Testnet Wallet */}
-          <div className="bento-item" style={{
-            background: 'rgba(59, 130, 246, 0.08)',
-            border: '1px solid rgba(59, 130, 246, 0.25)',
-            backdropFilter: 'blur(12px)'
-          }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#3b82f6', boxShadow: '0 0 8px #3b82f6' }} />
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa', letterSpacing: '1px' }}>TESTNET</span>
-              </div>
-              {hardhatAddr && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>{hardhatAddr.slice(0, 6)}...{hardhatAddr.slice(-4)}</span>}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>
-                  {hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}
-                </div>
-                <div style={{ fontSize: '11px', color: '#60a5fa', fontWeight: '600' }}>ETH</div>
-              </div>
-              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>
-                  {wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0.00'}
-                </div>
-                <div style={{ fontSize: '11px', color: '#60a5fa', fontWeight: '600' }}>ARB</div>
+          {/* Title Block - spans 4 cols */}
+          <div style={{ gridColumn: 'span 4', padding: '16px', borderRadius: '16px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(168, 85, 247, 0.08) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+            <div className="flex items-center gap-3">
+              <span style={{ fontSize: '32px' }}>⚡</span>
+              <div>
+                <h1 style={{ fontSize: '15px', fontWeight: '700', margin: 0, lineHeight: 1.3, background: 'linear-gradient(135deg, #a5b4fc 0%, #c084fc 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Drasticstatic's Arbitrage Trading Bot
+                </h1>
+                <p style={{ fontSize: '10px', color: '#64748b', margin: '2px 0 0 0' }}>built on DAPP University's framework</p>
               </div>
             </div>
           </div>
 
-          {/* Mainnet Wallet */}
-          <div className="bento-item" style={{
-            background: 'rgba(245, 158, 11, 0.08)',
-            border: '1px solid rgba(245, 158, 11, 0.25)',
-            backdropFilter: 'blur(12px)'
-          }}>
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full" style={{ background: '#f59e0b', boxShadow: '0 0 8px #f59e0b' }} />
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24', letterSpacing: '1px' }}>MAINNET</span>
-                {wallet?.mainnet?.rpc && (
-                  <span style={{ fontSize: '8px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '1px 5px', borderRadius: '4px' }}>
-                    {wallet.mainnet.rpc}
-                  </span>
-                )}
+          {/* DEX List Block - spans 5 cols */}
+          <div style={{ gridColumn: 'span 5', padding: '12px 16px', borderRadius: '16px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(100,116,139,0.15)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', justifyContent: 'center' }}>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#60a5fa', fontSize: '11px', fontWeight: '600' }}>Uniswap</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>SwapRouter</div>
               </div>
-              {mainnetAddr && <span style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace' }}>{mainnetAddr.slice(0, 6)}...{mainnetAddr.slice(-4)}</span>}
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>
-                  {mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}
-                </div>
-                <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '600' }}>ETH</div>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#f472b6', fontSize: '11px', fontWeight: '600' }}>PancakeSwap</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>SmartRouter</div>
               </div>
-              <div className="text-center p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.2)' }}>
-                <div style={{ fontSize: '22px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>
-                  {wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0.00'}
-                </div>
-                <div style={{ fontSize: '11px', color: '#fbbf24', fontWeight: '600' }}>ARB</div>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#fb923c', fontSize: '11px', fontWeight: '600' }}>SushiSwap</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>RouteProcessor</div>
+              </div>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#a78bfa', fontSize: '11px', fontWeight: '600' }}>Camelot</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>AlgebraRouter</div>
+              </div>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#94a3b8', fontSize: '11px', fontWeight: '600' }}>Balancer</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>Vault</div>
+              </div>
+              <div style={{ textAlign: 'center', minWidth: '70px' }}>
+                <div style={{ color: '#fbbf24', fontSize: '11px', fontWeight: '600' }}>Curve</div>
+                <div style={{ color: '#475569', fontSize: '8px' }}>StableSwap</div>
               </div>
             </div>
-            {wallet?.mainnet?.warning && (
-              <div style={{ fontSize: '9px', color: '#f87171', marginTop: '8px', textAlign: 'center' }}>
-                ⚠️ {wallet.mainnet.warning}
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* Toggle Pills - all use handleToggleClick for confirmation modals */}
-        <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-          {/* Testnet/Mainnet Pill */}
-          <Tooltip text={isTestnet ? '🧪 Currently on TESTNET (Hardhat). Click to switch to Mainnet with real funds.' : '⚠️ Currently on MAINNET. Click to switch to safe Testnet mode.'}>
-            <button
-              onClick={() => handleToggleClick('isMainnet', !settings.isMainnet)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-              style={{ background: isTestnet ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.2)', border: `1px solid ${isTestnet ? '#3b82f6' : '#f59e0b'}` }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: isTestnet ? '#3b82f6' : '#f59e0b' }} />
-              <span style={{ color: isTestnet ? '#93c5fd' : '#fcd34d', fontSize: '13px', fontWeight: '600' }}>{isTestnet ? 'Testnet' : 'Mainnet'}</span>
-            </button>
-          </Tooltip>
-
-          {/* Fast Trade Pill - now uses confirmation modal */}
-          <Tooltip text={settings.skipConfirmation ? '⚡ FAST TRADE ON - Trades execute immediately without confirmation modals!' : '🛡️ Fast Trade OFF - Shows confirmation before each trade for safety.'}>
-            <button
-              onClick={() => handleToggleClick('skipConfirmation', !settings.skipConfirmation)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-              style={{ background: settings.skipConfirmation ? 'rgba(234, 179, 8, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.skipConfirmation ? '#eab308' : '#374151'}` }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.skipConfirmation ? '#eab308' : '#6b7280' }} />
-              <span style={{ color: settings.skipConfirmation ? '#fde047' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Fast Trade</span>
-            </button>
-          </Tooltip>
-
-          {/* Auto Execute Pill - now uses confirmation modal */}
-          <Tooltip text={settings.autoExecute ? '🤖 AUTO EXECUTE ON - Bot automatically executes trades when profitable opportunities are found!' : '✋ Auto Execute OFF - You must manually click Trade to execute.'}>
-            <button
-              onClick={() => handleToggleClick('autoExecute', !settings.autoExecute)}
-              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-              style={{ background: settings.autoExecute ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.autoExecute ? '#a855f7' : '#374151'}` }}
-            >
-              <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.autoExecute ? '#a855f7' : '#6b7280' }} />
-              <span style={{ color: settings.autoExecute ? '#c4b5fd' : '#9ca3af', fontSize: '13px', fontWeight: '600' }}>Auto Execute</span>
-            </button>
-          </Tooltip>
-
-          {settings.autoExecute && (
-            <span className="px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>⚠️ AUTO-TRADING ACTIVE</span>
-          )}
-
-          {/* Estimate Deploy Cost Button - toggles visibility */}
-          <Tooltip text={deployEstimate ? '🔼 Click to hide deployment details' : '💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet. Useful before going live.'}>
-            <button
-              onClick={handleEstimateDeploy}
-              disabled={estimating}
-              className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105"
-              style={{
-                background: deployEstimate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)',
-                border: `1px solid ${deployEstimate ? '#34d399' : '#10b981'}`
-              }}
-            >
-              <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : deployEstimate ? '🔼' : '💰'}</span>
-              <span style={{ color: '#6ee7b7', fontSize: '13px', fontWeight: '600' }}>
-                {estimating ? 'Estimating...' : deployEstimate ? 'Hide Details' : 'Estimate Deploy'}
+          {/* Status Block - spans 3 cols */}
+          <div style={{ gridColumn: 'span 3', padding: '12px', borderRadius: '16px', background: isTestnet ? 'rgba(59, 130, 246, 0.1)' : 'rgba(245, 158, 11, 0.1)', border: `1px solid ${isTestnet ? 'rgba(59, 130, 246, 0.3)' : 'rgba(245, 158, 11, 0.3)'}`, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center' }}>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: isTestnet ? '#3b82f6' : '#f59e0b', boxShadow: `0 0 10px ${isTestnet ? '#3b82f6' : '#f59e0b'}`, animation: 'pulse 1.5s infinite' }} />
+              <span style={{ fontSize: '13px', fontWeight: '700', color: isTestnet ? '#60a5fa' : '#fbbf24' }}>{isTestnet ? '🧪 TESTNET' : '🔴 MAINNET'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 px-2 py-0.5 rounded-full" style={{ background: connected ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)' }}>
+                <div className="w-1.5 h-1.5 rounded-full" style={{ background: connected ? '#10b981' : '#ef4444' }} />
+                <span style={{ fontSize: '9px', color: connected ? '#10b981' : '#ef4444' }}>{connected ? 'Connected' : 'Offline'}</span>
+              </div>
+              <span className="px-2 py-0.5 rounded-full" style={{ fontSize: '9px', fontWeight: '600', background: isExecuting ? 'rgba(245, 158, 11, 0.2)' : isRunning ? 'rgba(16, 185, 129, 0.2)' : 'rgba(99, 102, 241, 0.2)', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1' }}>
+                {isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}
               </span>
-            </button>
-          </Tooltip>
+            </div>
+            {isTestMode && isTestnet && <span style={{ fontSize: '8px', color: '#fbbf24', marginTop: '4px' }}>⚡ Test Mode Active</span>}
+          </div>
+
+          {/* Testnet Wallet - spans 3 cols */}
+          <div style={{ gridColumn: 'span 3', padding: '14px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.05) 100%)', border: '1px solid rgba(59, 130, 246, 0.25)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6', boxShadow: '0 0 6px #3b82f6' }} />
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#60a5fa', letterSpacing: '0.5px' }}>TESTNET</span>
+              </div>
+              {hardhatAddr && (
+                <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace', textDecoration: 'none' }}>
+                  {hardhatAddr.slice(0,6)}...{hardhatAddr.slice(-4)} ↗
+                </a>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>{hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}</div>
+                <div style={{ fontSize: '9px', color: '#60a5fa' }}>ETH</div>
+              </div>
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>{wallet?.hardhat?.wethBalance ? parseFloat(wallet.hardhat.wethBalance).toFixed(4) : '0'}</div>
+                <div style={{ fontSize: '9px', color: '#60a5fa' }}>WETH</div>
+              </div>
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#93c5fd', fontFamily: 'monospace' }}>{wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0'}</div>
+                <div style={{ fontSize: '9px', color: '#60a5fa' }}>ARB</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Mainnet Wallet - spans 3 cols */}
+          <div style={{ gridColumn: 'span 3', padding: '14px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(245, 158, 11, 0.05) 100%)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ background: '#f59e0b', boxShadow: '0 0 6px #f59e0b' }} />
+                <span style={{ fontSize: '10px', fontWeight: '700', color: '#fbbf24', letterSpacing: '0.5px' }}>MAINNET</span>
+                {wallet?.mainnet?.rpc && <span style={{ fontSize: '7px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: '3px' }}>{wallet.mainnet.rpc}</span>}
+              </div>
+              {mainnetAddr && (
+                <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#64748b', fontFamily: 'monospace', textDecoration: 'none' }}>
+                  {mainnetAddr.slice(0,6)}...{mainnetAddr.slice(-4)} ↗
+                </a>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>{mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}</div>
+                <div style={{ fontSize: '9px', color: '#fbbf24' }}>ETH</div>
+              </div>
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>{wallet?.mainnet?.wethBalance ? parseFloat(wallet.mainnet.wethBalance).toFixed(4) : '0'}</div>
+                <div style={{ fontSize: '9px', color: '#fbbf24' }}>WETH</div>
+              </div>
+              <div className="text-center flex-1">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: '#fcd34d', fontFamily: 'monospace' }}>{wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0'}</div>
+                <div style={{ fontSize: '9px', color: '#fbbf24' }}>ARB</div>
+              </div>
+            </div>
+          </div>
+
+          {/* P&L Metrics - spans 3 cols */}
+          <div style={{ gridColumn: 'span 3', padding: '14px', borderRadius: '20px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+            <div style={{ fontSize: '9px', color: '#64748b', textAlign: 'center', marginBottom: '8px', fontWeight: '600', letterSpacing: '1px' }}>PERFORMANCE</div>
+            <div className="flex justify-center gap-4">
+              <div className="text-center">
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc' }}>{metrics.total}</div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>TRADES</div>
+              </div>
+              <div className="text-center">
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#10b981' }}>{metrics.successful}</div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>SUCCESS</div>
+              </div>
+              <div className="text-center">
+                <div style={{ fontSize: '20px', fontWeight: '700', color: '#ef4444' }}>{metrics.failed}</div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>FAILED</div>
+              </div>
+              <div className="text-center">
+                <div style={{ fontSize: '18px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+                  {metrics.netProfit >= 0 ? '+' : ''}{metrics.netProfit.toFixed(4)}
+                </div>
+                <div style={{ fontSize: '8px', color: '#64748b' }}>P&L WETH</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Settings Sliders - spans 3 cols */}
+          <div style={{ gridColumn: 'span 3', padding: '14px', borderRadius: '20px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
+            <div style={{ fontSize: '9px', color: '#64748b', textAlign: 'center', marginBottom: '10px', fontWeight: '600', letterSpacing: '1px' }}>SETTINGS</div>
+            {settingsFeedback && <div style={{ fontSize: '10px', color: '#86efac', textAlign: 'center', marginBottom: '8px' }}>{settingsFeedback}</div>}
+            <div className="flex justify-center gap-4">
+              <Tooltip text="📊 Minimum price difference between DEXs to flag an arbitrage opportunity. Lower = more sensitive, Higher = fewer false positives.">
+                <div className="text-center" style={{ cursor: 'help' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5).toFixed(1)}%</div>
+                  <input type="range" min="0.1" max="5" step="0.1" value={Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)}
+                    onMouseDown={() => handleSliderStart('priceDifference')} onTouchStart={() => handleSliderStart('priceDifference')}
+                    onMouseUp={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))} onTouchEnd={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
+                    onChange={(e) => setDraftSettings(prev => ({ ...prev, priceDifference: parseFloat(e.target.value) }))}
+                    style={{ width: '60px', height: '4px' }} className="appearance-none rounded cursor-pointer" />
+                  <div style={{ fontSize: '7px', color: '#64748b' }}>THRESHOLD</div>
+                </div>
+              </Tooltip>
+              <Tooltip text="⛽ Maximum gas units per transaction. Flash loan swaps typically need 300-500K. Higher = safer but more expensive.">
+                <div className="text-center" style={{ cursor: 'help' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000).toFixed(0)}K</div>
+                  <input type="range" min="100000" max="1000000" step="50000" value={Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)}
+                    onMouseDown={() => handleSliderStart('gasLimit')} onTouchStart={() => handleSliderStart('gasLimit')}
+                    onMouseUp={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))} onTouchEnd={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
+                    onChange={(e) => setDraftSettings(prev => ({ ...prev, gasLimit: parseInt(e.target.value) }))}
+                    style={{ width: '60px', height: '4px' }} className="appearance-none rounded cursor-pointer" />
+                  <div style={{ fontSize: '7px', color: '#64748b' }}>GAS LIMIT</div>
+                </div>
+              </Tooltip>
+              <Tooltip text="💰 Gas price in Gwei. Higher = faster confirmation but more expensive. Arbitrum typically uses 0.1-1.0 Gwei.">
+                <div className="text-center" style={{ cursor: 'help' }}>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) * 1e9).toFixed(1)}</div>
+                  <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)}
+                    onMouseDown={() => handleSliderStart('gasPrice')} onTouchStart={() => handleSliderStart('gasPrice')}
+                    onMouseUp={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))} onTouchEnd={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
+                    onChange={(e) => setDraftSettings(prev => ({ ...prev, gasPrice: parseFloat(e.target.value) }))}
+                    style={{ width: '60px', height: '4px' }} className="appearance-none rounded cursor-pointer" />
+                  <div style={{ fontSize: '7px', color: '#64748b' }}>GWEI</div>
+                </div>
+              </Tooltip>
+            </div>
+          </div>
+
+          {/* Toggle Pills - spans full width (12 cols) */}
+          <div style={{ gridColumn: 'span 12', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', borderRadius: '16px', background: 'rgba(0,0,0,0.15)', border: '1px solid rgba(100,116,139,0.1)' }}>
+            <Tooltip text={isTestnet ? '🧪 Currently on TESTNET (Hardhat). Click to switch to Mainnet with real funds.' : '⚠️ Currently on MAINNET. Click to switch to safe Testnet mode.'}>
+              <button onClick={() => handleToggleClick('isMainnet', !settings.isMainnet)} className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105" style={{ background: isTestnet ? 'rgba(59, 130, 246, 0.2)' : 'rgba(245, 158, 11, 0.2)', border: `1px solid ${isTestnet ? '#3b82f6' : '#f59e0b'}` }}>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: isTestnet ? '#3b82f6' : '#f59e0b' }} />
+                <span style={{ color: isTestnet ? '#93c5fd' : '#fcd34d', fontSize: '12px', fontWeight: '600' }}>{isTestnet ? 'Testnet' : 'Mainnet'}</span>
+              </button>
+            </Tooltip>
+            <Tooltip text={settings.skipConfirmation ? '⚡ FAST TRADE ON - Trades execute immediately without confirmation modals!' : '🛡️ Fast Trade OFF - Shows confirmation before each trade for safety.'}>
+              <button onClick={() => handleToggleClick('skipConfirmation', !settings.skipConfirmation)} className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105" style={{ background: settings.skipConfirmation ? 'rgba(234, 179, 8, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.skipConfirmation ? '#eab308' : '#374151'}` }}>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.skipConfirmation ? '#eab308' : '#6b7280' }} />
+                <span style={{ color: settings.skipConfirmation ? '#fde047' : '#9ca3af', fontSize: '12px', fontWeight: '600' }}>Fast Trade</span>
+              </button>
+            </Tooltip>
+            <Tooltip text={settings.autoExecute ? '🤖 AUTO EXECUTE ON - Bot automatically executes trades when profitable opportunities are found!' : '✋ Auto Execute OFF - You must manually click Trade to execute.'}>
+              <button onClick={() => handleToggleClick('autoExecute', !settings.autoExecute)} className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105" style={{ background: settings.autoExecute ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255,255,255,0.05)', border: `1px solid ${settings.autoExecute ? '#a855f7' : '#374151'}` }}>
+                <div className="w-2.5 h-2.5 rounded-full" style={{ background: settings.autoExecute ? '#a855f7' : '#6b7280' }} />
+                <span style={{ color: settings.autoExecute ? '#c4b5fd' : '#9ca3af', fontSize: '12px', fontWeight: '600' }}>Auto Execute</span>
+              </button>
+            </Tooltip>
+            {settings.autoExecute && <span className="px-3 py-1.5 rounded-full text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#f87171', border: '1px solid rgba(239, 68, 68, 0.4)' }}>⚠️ AUTO-TRADING ACTIVE</span>}
+            <Tooltip text={deployEstimate ? '🔼 Click to hide deployment details' : '💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet. Useful before going live.'}>
+              <button onClick={handleEstimateDeploy} disabled={estimating} className="flex items-center gap-2 px-4 py-2 rounded-full transition-all hover:scale-105" style={{ background: deployEstimate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)', border: `1px solid ${deployEstimate ? '#34d399' : '#10b981'}` }}>
+                <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : deployEstimate ? '🔼' : '💰'}</span>
+                <span style={{ color: '#6ee7b7', fontSize: '12px', fontWeight: '600' }}>{estimating ? 'Estimating...' : deployEstimate ? 'Hide Details' : 'Estimate Deploy'}</span>
+              </button>
+            </Tooltip>
+          </div>
         </div>
 
         {/* Deploy Estimate Result */}
@@ -549,8 +552,6 @@ function HeroSection() {
             <div style={{ fontSize: '10px', color: '#64748b', marginTop: '8px', textAlign: 'center' }}>
               {deployEstimate.note || 'Estimate based on current network conditions'}
             </div>
-
-            {/* Deployment Instructions */}
             {!deployEstimate.error && (
               <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
                 <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', marginBottom: '8px' }}>📋 DEPLOYMENT INSTRUCTIONS</div>
@@ -564,62 +565,6 @@ function HeroSection() {
             )}
           </div>
         )}
-
-        {/* Threshold Sliders with tooltips and confirmation modals */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4" style={{ borderTop: '1px solid rgba(99, 102, 241, 0.2)' }}>
-          {settingsFeedback && (
-            <div className="md:col-span-3 text-center" style={{ fontSize: '12px', color: '#86efac', fontWeight: 600 }}>
-              {settingsFeedback}
-            </div>
-          )}
-          {/* Price Threshold */}
-          <Tooltip text="📊 Minimum price difference between DEXs to flag an arbitrage opportunity. Lower = more sensitive, Higher = fewer false positives.">
-            <div className="text-center">
-              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>PRICE THRESHOLD</label>
-	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5).toFixed(1)}%</div>
-	              <input type="range" min="0.1" max="5" step="0.1" value={Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)}
-                onMouseDown={() => handleSliderStart('priceDifference')}
-                onTouchStart={() => handleSliderStart('priceDifference')}
-                onMouseUp={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
-                onTouchEnd={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
-	                onChange={(e) => setDraftSettings(prev => ({ ...prev, priceDifference: parseFloat(e.target.value) }))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)) / 5) * 100}%, #1e293b ${((Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5)) / 5) * 100}%, #1e293b 100%)` }} />
-            </div>
-          </Tooltip>
-
-          {/* Gas Limit */}
-          <Tooltip text="⛽ Maximum gas units per transaction. Flash loan swaps typically need 300-500K. Higher = safer but more expensive.">
-            <div className="text-center">
-              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS LIMIT</label>
-	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000).toFixed(0)}K</div>
-	              <input type="range" min="100000" max="1000000" step="50000" value={Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)}
-                onMouseDown={() => handleSliderStart('gasLimit')}
-                onTouchStart={() => handleSliderStart('gasLimit')}
-                onMouseUp={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
-                onTouchEnd={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
-	                onChange={(e) => setDraftSettings(prev => ({ ...prev, gasLimit: parseInt(e.target.value) }))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000000) * 100}%, #1e293b ${((Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000)) / 1000000) * 100}%, #1e293b 100%)` }} />
-            </div>
-          </Tooltip>
-
-          {/* Gas Price */}
-          <Tooltip text="💰 Gas price in Gwei. Higher = faster confirmation but more expensive. Arbitrum typically uses 0.1-1.0 Gwei.">
-            <div className="text-center">
-              <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', letterSpacing: '0.5px', cursor: 'help' }}>GAS PRICE (GWEI)</label>
-	              <div style={{ fontSize: '20px', fontWeight: '700', color: '#a5b4fc', margin: '4px 0' }}>{((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) * 1e9).toFixed(1)}</div>
-	              <input type="range" min="0.00000001" max="0.000001" step="0.00000001" value={Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)}
-                onMouseDown={() => handleSliderStart('gasPrice')}
-                onTouchStart={() => handleSliderStart('gasPrice')}
-                onMouseUp={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
-                onTouchEnd={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
-	                onChange={(e) => setDraftSettings(prev => ({ ...prev, gasPrice: parseFloat(e.target.value) }))}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer"
-	                style={{ background: `linear-gradient(to right, #6366f1 0%, #6366f1 ${((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) / 0.000001) * 100}%, #1e293b ${((Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.0000001)) / 0.000001) * 100}%, #1e293b 100%)` }} />
-            </div>
-          </Tooltip>
-        </div>
       </div>
     </div>
   )

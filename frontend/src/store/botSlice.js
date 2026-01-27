@@ -1,5 +1,15 @@
 import { createSlice } from '@reduxjs/toolkit'
 
+// Load persisted trades from localStorage
+const loadPersistedTrades = () => {
+  try {
+    const saved = localStorage.getItem('dappu_trades')
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
 const initialState = {
   connected: false,
   isRunning: false,
@@ -42,8 +52,8 @@ const initialState = {
   // Logs
   logs: [],
 
-  // Trade history
-  trades: []
+  // Trade history - load from localStorage
+  trades: loadPersistedTrades()
 }
 
 const botSlice = createSlice({
@@ -109,6 +119,20 @@ const botSlice = createSlice({
     addTrade: (state, action) => {
       state.trades.unshift(action.payload)
       if (state.trades.length > 100) state.trades.pop()
+      // Persist to localStorage
+      try {
+        localStorage.setItem('dappu_trades', JSON.stringify(state.trades))
+      } catch (e) {
+        console.warn('Failed to persist trades:', e)
+      }
+    },
+    clearTrades: (state) => {
+      state.trades = []
+      try {
+        localStorage.removeItem('dappu_trades')
+      } catch (e) {
+        console.warn('Failed to clear trades:', e)
+      }
     },
     updateSettings: (state, action) => {
       state.settings = { ...state.settings, ...action.payload }
@@ -133,10 +157,10 @@ export const {
   setAnalysisResult,
   setOpportunity,
   setTradeStatus,
-
   addTradeStep,
   clearTradeSteps,
   addTrade,
+  clearTrades,
   updateSettings,
   addLog,
   clearLogs

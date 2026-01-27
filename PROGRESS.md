@@ -10,6 +10,14 @@ Last updated: 2026-01-26
 5. **Expand DEX Coverage** - Add Balancer, Camelot, Curve, BaseSwap
 
 ### ✅ Recently Completed (2026-01-26)
+- ✅ **Compact Hero Section** - Reduced height 50%+, horizontal layout with 3 rows
+- ✅ **Wallet Cards Redesigned** - Compact widgets with ETH + WETH side by side
+- ✅ **P&L Metrics Inline** - Horizontal stats in hero (trades/win/loss/profit)
+- ✅ **Trade History Persistence** - Trades persist via localStorage, cleared only on restart
+- ✅ **Footer Banner Centered** - Slim footer with links inline, founder credits
+- ✅ **Toggle Pills Compact** - Smaller, more compact toggle buttons
+- ✅ **Arbiscan Links** - Wallet addresses link to Arbiscan explorer
+- ✅ **DEX List Expanded** - Shows Balancer, Curve, BaseSwap in header
 - ✅ **Deployment Cost Estimation** - "Estimate Deploy" button shows gas cost in ETH/USD
 - ✅ **Deployment Instructions** - Step-by-step guide shown after cost estimate
 - ✅ **Trade Button for All Pairs** - Trade button now shows for all executable pairs
@@ -21,7 +29,7 @@ Last updated: 2026-01-26
 
 ### 🔧 Current Issues
 1. **"Too little received" Error** - Expected behavior, contract rejects unprofitable trades
-2. **Mainnet ETH Balance** - Need to fetch from Arbitrum (not Ethereum), show ARB too
+2. **Mainnet ETH Balance Shows 0** - Verified wallet has 0 ETH on Arbitrum (funds on Ethereum mainnet need bridging)
 
 ### 📋 Backlog (Priority Order)
 
@@ -30,7 +38,8 @@ Last updated: 2026-01-26
 - [ ] Realistic gas cost in profitability check
 - [ ] MinProfit parameter in contract
 - [ ] callStatic simulation before tx
-- [ ] Show ARB balance in wallet
+- [x] Show ARB balance in wallet ✓
+- [x] Show WETH balance in wallet ✓
 
 #### MEDIUM PRIORITY (DEX Expansion)
 - [ ] Balancer pools as swap venue
@@ -39,11 +48,13 @@ Last updated: 2026-01-26
 - [ ] BaseSwap DEX
 
 #### UI/UX IMPROVEMENTS
-- [ ] Hero Section revamp (bento grid, glass-morphism)
-- [ ] Trade Execution Panel below screener
+- [x] Hero Section revamp (bento grid, glass-morphism) ✓
+- [x] Trade Execution Panel below screener ✓
+- [x] Combine wallet sections ✓
+- [x] Footer banner clean ✓
 - [ ] AMM Router/Aggregator manual swap
-- [ ] Combine wallet sections
-- [ ] Footer SVGs reduce size
+- [ ] Sticky screener header when scrolling
+- [ ] Show all/collapse button for screener
 
 ### 📊 Bot Status
 - **Executable DEXs**: Uniswap V3 ✓, PancakeSwap V3 ✓, SushiSwap V3 ✓
