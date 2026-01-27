@@ -178,56 +178,75 @@ function ScreenerPanel() {
         </div>
       )}
 
-      {/* Header */}
-      <div className="screener-header">
-        <div className="screener-title">
-          <span className="screener-icon">⚡</span>
-          <h2>Multi-DEX Screener</h2>
+      {/* Header - Consolidated single row */}
+      <div className="screener-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', padding: '10px 16px', marginBottom: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+        {/* Left: Title + Mode Badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span style={{ fontSize: '20px' }}>⚡</span>
+          <h2 style={{ fontSize: '16px', fontWeight: '700', margin: 0, color: '#f1f5f9' }}>Multi-DEX Screener</h2>
           {isTestMode ? (
-            <span className="test-badge" title="Test mode active - prices are manipulated">
-              <span className="test-dot"></span>
-              TEST MODE
+            <span className="test-badge" title="Test mode active - prices are manipulated" style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(234,179,8,0.2)', color: '#fde047', border: '1px solid rgba(234,179,8,0.4)' }}>
+              <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#eab308', marginRight: '4px', animation: 'pulse 1.5s infinite' }}></span>
+              TEST
             </span>
           ) : (
-            <span className="live-badge" title="Connected to live forked network">
-              <span className="live-dot"></span>
+            <span className="live-badge" title="Connected to live forked network" style={{ fontSize: '10px', padding: '3px 8px', borderRadius: '6px', background: 'rgba(16,185,129,0.2)', color: '#6ee7b7', border: '1px solid rgba(16,185,129,0.4)' }}>
+              <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', marginRight: '4px' }}></span>
               LIVE
             </span>
           )}
         </div>
-        <div className="screener-actions">
+
+        {/* Center: Inline Stats */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{displayedPairs.length}{hiddenCount > 0 ? `/${screenerPairs.length}` : ''}</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>pairs</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '16px', fontWeight: '700', color: '#10b981' }}>{opportunities.length}</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>opps</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: '#fbbf24' }}>{threshold}%</span>
+            <span style={{ fontSize: '10px', color: '#64748b' }}>thresh</span>
+          </div>
+          <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>Block #{screenerBlock || '---'}</span>
+        </div>
+
+        {/* Right: Action Buttons */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Tooltip text={hideFailedPairs ? '👁 Show all pairs including those with pool/fee tier errors' : '🚫 Hide pairs that have pool errors or missing liquidity'}>
             <button
               onClick={() => setHideFailedPairs(!hideFailedPairs)}
-              className={hideFailedPairs ? 'btn-filter-active' : 'btn-filter'}
+              className="transition-all hover:scale-105"
               style={{
-                background: hideFailedPairs ? 'rgba(168,85,247,0.2)' : 'rgba(100,116,139,0.1)',
-                border: `1px solid ${hideFailedPairs ? '#a855f7' : '#374151'}`,
+                background: hideFailedPairs ? 'rgba(168,85,247,0.2)' : 'rgba(100,116,139,0.15)',
+                border: `1px solid ${hideFailedPairs ? '#a855f7' : '#475569'}`,
                 color: hideFailedPairs ? '#c4b5fd' : '#94a3b8',
-                padding: '4px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer'
+                padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600'
               }}
             >
-              {hideFailedPairs ? `👁 Show All (${hiddenCount} hidden)` : '🚫 Hide Failed'}
+              {hideFailedPairs ? `👁 Show All` : '🚫 Hide Failed'}
             </button>
           </Tooltip>
-          <span className="block-info">Block #{screenerBlock || '---'}</span>
           <Tooltip text="🧪 Creates artificial price differences between DEXs for testing arbitrage opportunities">
-            <button onClick={handleManipulate} disabled={localLoading} className="btn-test" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            <button onClick={handleManipulate} disabled={localLoading} className="transition-all hover:scale-105" style={{ opacity: localLoading ? 0.5 : 1, background: 'rgba(234,179,8,0.15)', border: '1px solid #eab308', color: '#fde047', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>
               {localLoading === 'test' ? '⏳' : '🧪'} Test
             </button>
           </Tooltip>
           <Tooltip text="🔄 Resets the Hardhat fork to original state, clearing all test manipulations">
-            <button onClick={handleClearTest} disabled={localLoading} className="btn-clear" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            <button onClick={handleClearTest} disabled={localLoading} className="transition-all hover:scale-105" style={{ opacity: localLoading ? 0.5 : 1, background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444', color: '#f87171', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>
               {localLoading === 'reset' ? '⏳' : '🔄'} Reset
             </button>
           </Tooltip>
           <Tooltip text="↻ Fetches latest prices from all DEX pools immediately">
-            <button onClick={handleRefresh} disabled={localLoading} className="btn-refresh" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            <button onClick={handleRefresh} disabled={localLoading} className="transition-all hover:scale-105" style={{ opacity: localLoading ? 0.5 : 1, background: 'rgba(59,130,246,0.15)', border: '1px solid #3b82f6', color: '#93c5fd', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>
               {localLoading === 'refresh' ? '⏳' : '↻'} Refresh
             </button>
           </Tooltip>
           <Tooltip text="⟳ Fully restarts the bot and re-initializes all trading pairs">
-            <button onClick={handleRestartBot} disabled={localLoading} className="btn-restart" style={{ opacity: localLoading ? 0.5 : 1 }}>
+            <button onClick={handleRestartBot} disabled={localLoading} className="transition-all hover:scale-105" style={{ opacity: localLoading ? 0.5 : 1, background: 'rgba(168,85,247,0.15)', border: '1px solid #a855f7', color: '#c4b5fd', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>
               {localLoading === 'restart' ? '⏳' : '⟳'} Restart
             </button>
           </Tooltip>
@@ -253,22 +272,6 @@ function ScreenerPanel() {
           </div>
         </div>
       )}
-
-      {/* Stats Bar */}
-      <div className="stats-bar">
-        <div className="stat">
-          <span className="stat-value">{displayedPairs.length}{hiddenCount > 0 ? ` / ${screenerPairs.length}` : ''}</span>
-          <span className="stat-label">Pairs{hiddenCount > 0 ? ' (filtered)' : ''}</span>
-        </div>
-        <div className="stat stat-highlight">
-          <span className="stat-value">{opportunities.length}</span>
-          <span className="stat-label">Opportunities</span>
-        </div>
-        <div className="stat">
-          <span className="stat-value">{threshold}%</span>
-          <span className="stat-label">Threshold</span>
-        </div>
-      </div>
 
       {/* Table */}
       {displayedPairs.length === 0 ? (
