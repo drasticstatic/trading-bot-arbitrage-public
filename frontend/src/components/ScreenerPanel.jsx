@@ -205,11 +205,11 @@ function ScreenerPanel() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#10b981' }}>{opportunities.length}</span>
-            <span style={{ fontSize: '10px', color: '#64748b' }}>opps</span>
+	          <span style={{ fontSize: '10px', color: '#64748b' }}>opportunities</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '14px', fontWeight: '600', color: '#fbbf24' }}>{threshold}%</span>
-            <span style={{ fontSize: '10px', color: '#64748b' }}>thresh</span>
+	          <span style={{ fontSize: '10px', color: '#64748b' }}>threshold</span>
           </div>
           <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>Block #{screenerBlock || '---'}</span>
         </div>

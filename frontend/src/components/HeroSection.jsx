@@ -150,21 +150,70 @@ function HeroSection() {
       return {
         icon: '⛽',
         title: 'Change Gas Limit?',
-        description: `Set gas limit to ${(value / 1000).toFixed(0)}K? Flash loan swaps typically need 300-500K gas units. Higher = safer but more expensive.`,
-        valueDisplay: `${(value / 1000).toFixed(0)}K`,
+				description: `Set gas limit to ${Number(value).toLocaleString()}? Flash loan swaps typically need 300-500K gas units. Higher = safer but more expensive.`,
+				valueDisplay: `${Number(value).toLocaleString()}`,
         confirmColor: '#6366f1'
       }
     } else if (key === 'gasPrice') {
       return {
         icon: '💰',
         title: 'Change Gas Price?',
-        description: `Set gas price to ${(value * 1e9).toFixed(1)} Gwei? Higher = faster confirmation but more expensive. Arbitrum typically 0.1-1.0 Gwei.`,
-        valueDisplay: `${(value * 1e9).toFixed(1)} Gwei`,
+				// value is already in Gwei (fix: avoid * 1e9 display bug like 0.83 -> 830000000.0)
+				description: `Set gas price to ${Number(value).toFixed(2)} Gwei? Higher = faster confirmation but more expensive. Arbitrum typically 0.1-1.0 Gwei.`,
+				valueDisplay: `${Number(value).toFixed(2)} Gwei`,
         confirmColor: '#6366f1'
       }
     }
     return null
   }
+
+	const sliderStyle = (value, min, max) => {
+		const v = Number(value)
+		const clamped = Math.min(max, Math.max(min, Number.isFinite(v) ? v : min))
+		const pct = ((clamped - min) / (max - min)) * 100
+		return {
+			width: '80px',
+			height: '6px',
+			accentColor: '#a5b4fc',
+			'--value-percent': `${pct}%`
+		}
+	}
+
+	const pnlSpark = useMemo(() => {
+		const recent = (trades || []).slice(-24)
+		if (recent.length < 2) return null
+		const series = []
+		let running = 0
+		for (const t of recent) {
+			running += parseFloat(t.profit || 0)
+			series.push(running)
+		}
+		const min = Math.min(...series)
+		const max = Math.max(...series)
+		const span = max - min || 1
+		const points = series.map((y, i) => {
+			const x = (i / (series.length - 1)) * 100
+			const yy = 28 - ((y - min) / span) * 28
+			return `${x.toFixed(2)},${yy.toFixed(2)}`
+		}).join(' ')
+		return { points, end: series[series.length - 1] }
+	}, [trades])
+
+	const outcomeBars = useMemo(() => {
+		const recent = (trades || []).slice(-24)
+		if (!recent.length) return []
+		const vals = recent.map(t => parseFloat(t.profit || 0))
+		const maxAbs = Math.max(...vals.map(v => Math.abs(v)), 0) || 1
+		return recent.map((t, i) => {
+			const v = parseFloat(t.profit || 0)
+			return {
+				i,
+				status: t.status,
+				height: (Math.abs(v) / maxAbs) * 18,
+				isPos: v >= 0
+			}
+		})
+	}, [trades])
 
   // Handle slider start - store original value for cancel revert (useRef avoids async state race)
   const handleSliderStart = (key) => {
@@ -340,6 +389,37 @@ function HeroSection() {
             <div style={{ fontSize: '20px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
               {metrics.netProfit >= 0 ? '+' : ''}{metrics.netProfit.toFixed(6)} <span style={{ fontSize: '12px', color: '#64748b' }}>WETH P&L</span>
             </div>
+
+				{/* Simple chart placeholders (no deps) */}
+				<div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
+					<div style={{ height: '74px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
+						<div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>P&L TREND</div>
+						{pnlSpark ? (
+							<svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '40px' }}>
+								<polyline points={pnlSpark.points} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+							</svg>
+						) : (
+							<div style={{ color: '#64748b', fontSize: '11px', paddingTop: '10px' }}>Awaiting trade data…</div>
+						)}
+					</div>
+					<div style={{ height: '62px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
+						<div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>TRADE OUTCOMES</div>
+						{outcomeBars.length ? (
+							<svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: '100%', height: '28px' }}>
+								{outcomeBars.map((b) => {
+									const w = 100 / outcomeBars.length
+									const x = b.i * w
+									const h = Math.max(2, Math.min(18, b.status === 'success' ? b.height : 6))
+									const y = 20 - h
+									const fill = b.status === 'success' ? (b.isPos ? '#10b981' : '#ef4444') : '#ef4444'
+									return <rect key={b.i} x={x + 0.5} y={y} width={Math.max(1, w - 1)} height={h} rx="1" fill={fill} opacity="0.9" />
+								})}
+							</svg>
+						) : (
+							<div style={{ color: '#64748b', fontSize: '11px', paddingTop: '6px' }}>No trades yet.</div>
+						)}
+					</div>
+				</div>
           </div>
 
           {/* Row 2: Testnet Wallet - spans 4 cols */}
@@ -447,7 +527,7 @@ function HeroSection() {
                   onMouseDown={() => handleSliderStart('priceDifference')} onTouchStart={() => handleSliderStart('priceDifference')}
                   onMouseUp={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))} onTouchEnd={(e) => handleSliderClick('priceDifference', parseFloat(e.target.value))}
                   onChange={(e) => setDraftSettings(prev => ({ ...prev, priceDifference: parseFloat(e.target.value) }))}
-                  style={{ width: '80px', height: '6px', accentColor: '#a5b4fc' }} className="appearance-none rounded cursor-pointer" />
+								style={sliderStyle(Number(draftSettings?.priceDifference ?? settings.priceDifference ?? 0.5), 0.1, 5)} className="appearance-none rounded cursor-pointer" />
               </div>
             </Tooltip>
             <Tooltip text="⛽ Maximum gas units per transaction. Flash loan swaps typically need 300-500K. Higher = safer but more expensive.">
@@ -458,7 +538,7 @@ function HeroSection() {
                   onMouseDown={() => handleSliderStart('gasLimit')} onTouchStart={() => handleSliderStart('gasLimit')}
                   onMouseUp={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))} onTouchEnd={(e) => handleSliderClick('gasLimit', parseInt(e.target.value))}
                   onChange={(e) => setDraftSettings(prev => ({ ...prev, gasLimit: parseInt(e.target.value) }))}
-                  style={{ width: '80px', height: '6px', accentColor: '#a5b4fc' }} className="appearance-none rounded cursor-pointer" />
+								style={sliderStyle(Number(draftSettings?.gasLimit ?? settings.gasLimit ?? 400000), 100000, 1000000)} className="appearance-none rounded cursor-pointer" />
               </div>
             </Tooltip>
             <Tooltip text="💰 Gas price in Gwei. Higher = faster confirmation but more expensive. Arbitrum typically uses 0.1-1.0 Gwei.">
@@ -469,7 +549,7 @@ function HeroSection() {
                   onMouseDown={() => handleSliderStart('gasPrice')} onTouchStart={() => handleSliderStart('gasPrice')}
                   onMouseUp={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))} onTouchEnd={(e) => handleSliderClick('gasPrice', parseFloat(e.target.value))}
                   onChange={(e) => setDraftSettings(prev => ({ ...prev, gasPrice: parseFloat(e.target.value) }))}
-                  style={{ width: '80px', height: '6px', accentColor: '#a5b4fc' }} className="appearance-none rounded cursor-pointer" />
+								style={sliderStyle(Number(draftSettings?.gasPrice ?? settings.gasPrice ?? 0.1), 0.01, 2)} className="appearance-none rounded cursor-pointer" />
               </div>
             </Tooltip>
 
@@ -479,7 +559,7 @@ function HeroSection() {
             <Tooltip text={deployEstimate ? '🔼 Click to hide deployment details' : '💰 Estimate the cost to deploy the Arbitrage contract on Arbitrum mainnet.'}>
               <button onClick={handleEstimateDeploy} disabled={estimating} className="cta-button flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105" style={{ background: deployEstimate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(16, 185, 129, 0.2)', border: `1px solid ${deployEstimate ? '#34d399' : '#10b981'}` }}>
                 <span style={{ fontSize: '14px' }}>{estimating ? '⏳' : '💰'}</span>
-                <span style={{ color: '#6ee7b7', fontSize: '12px', fontWeight: '600' }}>{estimating ? 'Estimating...' : 'Estimate Deploy'}</span>
+								<span style={{ color: '#6ee7b7', fontSize: '12px', fontWeight: '600' }}>{estimating ? 'Estimating...' : deployEstimate ? 'Hide Deployment Details' : 'Estimate Deploy'}</span>
               </button>
             </Tooltip>
           </div>
