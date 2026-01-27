@@ -89,30 +89,28 @@ function App() {
         </div>
       </main>
 
-      {/* Footer Banner - Full width, center justified, 3 rows */}
+      {/* Footer Banner - Centered horizontally, 3 rows */}
       <footer className="w-full mt-auto" style={{
         background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%)',
         borderTop: '1px solid rgba(99, 102, 241, 0.15)',
         backdropFilter: 'blur(10px)'
       }}>
-        <div className="w-full px-8 lg:px-16 py-4 text-center">
+        <div className="flex flex-col items-center justify-center py-5" style={{ maxWidth: '800px', margin: '0 auto' }}>
           {/* Row 1: Main Title */}
-          <div style={{ marginBottom: '6px' }}>
-            <span style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: '14px', fontWeight: '700' }}>
+          <div style={{ marginBottom: '8px' }}>
+            <span style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: '15px', fontWeight: '700' }}>
               ⚡ DAPP University Arbitrage Trading Bot v3.0.1
             </span>
           </div>
           {/* Row 2: Founded by */}
-          <div style={{ color: '#94a3b8', fontSize: '11px', marginBottom: '4px' }}>
-            Founded by <span style={{ color: '#8b5cf6' }}>@drasticstatic</span>  •  Augmented via <span style={{ color: '#a5b4fc' }}>Claude Opus 4.5</span> and <span style={{ color: '#10b981' }}>GPT 5.2</span>
+          <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '10px', textAlign: 'center' }}>
+            Founded by <span style={{ color: '#8b5cf6', fontWeight: '600' }}>@drasticstatic</span>  •  Augmented via <span style={{ color: '#a5b4fc' }}>Claude Opus 4.5</span> and <span style={{ color: '#10b981' }}>GPT 5.2</span>
           </div>
-          {/* Row 3: Built with + Links */}
-          <div style={{ fontSize: '11px' }}>
+          {/* Row 3: Built with + Button Links */}
+          <div className="flex items-center justify-center gap-3" style={{ fontSize: '12px' }}>
             <span style={{ color: '#64748b' }}>Built with 💜</span>
-            <span style={{ color: '#475569', margin: '0 8px' }}>•</span>
-            <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer" style={{ color: '#a5b4fc', textDecoration: 'none' }}>About the builder</a>
-            <span style={{ color: '#475569', margin: '0 8px' }}>•</span>
-            <a href="https://github.com/drasticstatic" target="_blank" rel="noopener noreferrer" style={{ color: '#9ca3af', textDecoration: 'none' }}>GitHub</a>
+            <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#a5b4fc', textDecoration: 'none', background: 'rgba(165,180,252,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(165,180,252,0.3)', fontWeight: '600' }}>About the builder</a>
+            <a href="https://github.com/drasticstatic" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#9ca3af', textDecoration: 'none', background: 'rgba(156,163,175,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(156,163,175,0.3)', fontWeight: '600' }}>GitHub</a>
           </div>
         </div>
       </footer>

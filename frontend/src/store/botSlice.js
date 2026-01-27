@@ -44,9 +44,10 @@ const initialState = {
   settings: {
     priceDifference: 0.5,
     gasLimit: 600000,
-    gasPrice: 0.00000001,
+    gasPrice: 0.1, // In Gwei (Arbitrum typically 0.1-1.0 Gwei)
     skipConfirmation: false,
-    autoExecute: false
+    autoExecute: false,
+    mevProtection: false
   },
 
   // Logs
