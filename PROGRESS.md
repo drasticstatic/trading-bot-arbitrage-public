@@ -1,6 +1,6 @@
 ## DAPPU Arbitrage Bot — Progress Tracker
 
-Last updated: 2026-01-26
+Last updated: 2026-01-30
 
 ### 🎯 Top Goals (Mainnet Readiness)
 1. **Prove bot can capture real profits** - Currently working on local fork ✓
@@ -26,6 +26,15 @@ Last updated: 2026-01-26
 - ✅ **Analyze Button + Backend Handler** - ANALYZE_PAIR message handler in bot.js
 - ✅ **Flash Loan Steps in Overlay** - Parses FlashLoan events from receipt
 - ✅ **Tab Character Cleanup** - Replaced all tabs with spaces
+
+### ✅ Recently Completed (2026-01-30)
+- ✅ **Fork freshness UI** - Screener now shows block, `evm_mine` indicator, and refork-needed warning
+- ✅ **Route mismatch badge** - Screener marks when best scan route differs from executable route (scan-only vs executable)
+- ✅ **Screener counts fixed** - Header now shows visible/total/hidden counts (no longer changes with collapse)
+- ✅ **MEV indicators improved** - Testnet wallet shows MEV/Auto badges; trade history shows MEV when configured/protected
+- ✅ **UI spacing polish** - Increased gaps in Activity header/buttons and wallet explorer links
+- ✅ **Deploy estimate layout** - Deploy details now 2-column centered layout
+- ✅ **Footer centering** - Row 1 and Row 3 explicitly centered
 
 ### 🔧 Current Issues
 1. **"Too little received" Error** - Expected behavior, contract rejects unprofitable trades

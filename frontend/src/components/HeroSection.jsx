@@ -70,6 +70,13 @@ function HeroSection() {
   const hardhatAddr = wallet?.hardhat?.address
   const mainnetAddr = wallet?.mainnet?.address
 
+	  const balancePopStyle = {
+		fontSize: '15px',
+		fontFamily: 'monospace',
+		letterSpacing: '0.2px',
+		textShadow: '0 0 10px rgba(99,102,241,0.15)'
+	  }
+
   // Get modal config based on toggle type
   const getModalConfig = (key, value) => {
     if (key === 'isMainnet') {
@@ -439,14 +446,19 @@ function HeroSection() {
               <span><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc', fontWeight: '600' }}>Hardhat</span></span>
               <span><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#10b981', fontWeight: '600' }}>localhost:8545</span></span>
             </div>
+	            {/* MEV + Auto status inline */}
+	            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
+	              <span><span style={{ color: '#64748b' }}>MEV:</span> <span style={{ color: settings.mevProtection ? '#10b981' : '#ef4444', fontWeight: '600' }}>{settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}</span></span>
+	              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
+	            </div>
             {/* Balances with more spacing */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}</strong> ETH</span>
-              <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{wallet?.hardhat?.wethBalance ? parseFloat(wallet.hardhat.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
-              <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
+	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}</strong> ETH</span>
+	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{wallet?.hardhat?.wethBalance ? parseFloat(wallet.hardhat.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
+	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
             {hardhatAddr && (
-              <div className="flex" style={{ gap: '10px', marginTop: 'auto' }}>
+	              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
                 <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#60a5fa', background: 'rgba(96,165,250,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(96,165,250,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
                 <a href={`https://etherscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
               </div>
@@ -462,6 +474,23 @@ function HeroSection() {
                 {!isTestnet && <span style={{ fontSize: '9px', color: connected ? '#10b981' : '#ef4444', background: connected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{connected ? '● Connected' : '○ Offline'}</span>}
                 {!isTestnet && <span style={{ fontSize: '9px', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1', background: isExecuting ? 'rgba(245,158,11,0.2)' : isRunning ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}</span>}
               </div>
+	              <button
+	                onClick={getWalletInfo}
+	                title="Refresh wallet balances now"
+	                className="transition-all hover:scale-105"
+	                style={{
+	                  fontSize: '10px',
+	                  color: '#93c5fd',
+	                  background: 'rgba(59,130,246,0.12)',
+	                  padding: '2px 8px',
+	                  borderRadius: '6px',
+	                  border: '1px solid rgba(59,130,246,0.25)',
+	                  cursor: 'pointer',
+	                  fontWeight: 700
+	                }}
+	              >
+	                ↻ Refresh
+	              </button>
             </div>
             {mainnetAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '6px' }}>{mainnetAddr}</div>}
             {/* Network info with colored fonts */}
@@ -477,12 +506,12 @@ function HeroSection() {
             </div>
             {/* Balances with more spacing */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
-              <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}</strong> ETH</span>
-              <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{wallet?.mainnet?.wethBalance ? parseFloat(wallet.mainnet.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
-              <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
+	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}</strong> ETH</span>
+	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{wallet?.mainnet?.wethBalance ? parseFloat(wallet.mainnet.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
+	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
             {mainnetAddr && (
-              <div className="flex" style={{ gap: '10px', marginTop: 'auto' }}>
+	              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
                 <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(251,191,36,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
                 <a href={`https://etherscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
               </div>
@@ -578,7 +607,7 @@ function HeroSection() {
             {deployEstimate.error ? (
               <div style={{ color: '#f87171', fontSize: '13px' }}>❌ {deployEstimate.error}</div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+	            <div className="grid grid-cols-2 gap-4 text-center" style={{ maxWidth: '520px', margin: '0 auto' }}>
                 <div>
                   <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600' }}>NETWORK</div>
                   <div style={{ fontSize: '14px', color: '#6ee7b7', fontWeight: '700' }}>{deployEstimate.network}</div>
