@@ -55,11 +55,11 @@ function LogPanel() {
     }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-3">
+	        <div className="flex items-center gap-4">
           <span style={{ fontSize: '18px' }}>📋</span>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '15px' }}>Activity Monitor</span>
         </div>
-        <div className="flex items-center gap-3">
+	        <div className="flex items-center gap-4">
           <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
             {logs.length} logs
           </span>
