@@ -97,8 +97,8 @@ export default function TradeExecutionCard() {
       backdropFilter: 'blur(20px)'
     }}>
       {/* Header with title + inline stats row */}
-      <div style={{ marginBottom: '16px' }}>
-        <div className="flex items-center gap-3" style={{ marginBottom: '8px' }}>
+	      <div style={{ marginBottom: '16px' }}>
+	        <div className="flex items-center gap-4" style={{ marginBottom: '8px' }}>
           <span style={{ fontSize: '22px' }}>📟</span>
           <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '16px' }}>Trade Execution Terminal</div>
           {currentTxHash && <span style={{ color: '#64748b', fontSize: '10px' }}>TX: {currentTxHash.slice(0, 10)}…{currentTxHash.slice(-6)}</span>}
@@ -197,20 +197,23 @@ export default function TradeExecutionCard() {
                   </span>
                   <span style={{ color: '#e2e8f0', fontWeight: '600', fontSize: '13px' }}>{trade.pair || 'Trade'}</span>
                   <span style={{ color: '#64748b', fontSize: '11px' }}>{trade.buyExchange} → {trade.sellExchange}</span>
-	                  {trade.mevProtected && (
-	                    <span style={{
-	                      fontSize: '10px',
-	                      padding: '2px 6px',
-	                      borderRadius: '999px',
-	                      background: 'rgba(16,185,129,0.12)',
-	                      border: '1px solid rgba(16,185,129,0.25)',
-	                      color: '#34d399',
-	                      fontWeight: 700,
-	                      whiteSpace: 'nowrap'
-	                    }}>
-	                      🛡 MEV
-	                    </span>
-	                  )}
+						  {(trade.mevProtected || trade.mevConfigured) && (
+						    <span
+						      title={trade.mevProtected ? 'MEV protection: protected (private tx)' : 'MEV protection: configured (not protected in this mode)'}
+						      style={{
+						        fontSize: '10px',
+						        padding: '2px 6px',
+						        borderRadius: '999px',
+						        background: trade.mevProtected ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)',
+						        border: trade.mevProtected ? '1px solid rgba(16,185,129,0.25)' : '1px solid rgba(99,102,241,0.25)',
+						        color: trade.mevProtected ? '#34d399' : '#a5b4fc',
+						        fontWeight: 700,
+						        whiteSpace: 'nowrap'
+						      }}
+						    >
+						      🛡 MEV
+						    </span>
+						  )}
                   <span style={{
                     marginLeft: 'auto',
                     color: profit > 0 ? '#10b981' : profit < 0 ? '#ef4444' : '#64748b',
@@ -232,12 +235,14 @@ export default function TradeExecutionCard() {
                     <div><span style={{ color: '#64748b' }}>Amount:</span> <span style={{ color: '#e2e8f0' }}>{trade.amount} {trade.tokenSymbol}</span></div>
                     <div><span style={{ color: '#64748b' }}>Buy:</span> <span style={{ color: '#60a5fa' }}>{trade.buyExchange}</span></div>
                     <div><span style={{ color: '#64748b' }}>Sell:</span> <span style={{ color: '#c084fc' }}>{trade.sellExchange}</span></div>
-	                    {typeof trade.mevProtected === 'boolean' && (
-	                      <div>
-	                        <span style={{ color: '#64748b' }}>MEV:</span>{' '}
-	                        <span style={{ color: trade.mevProtected ? '#10b981' : '#94a3b8' }}>{trade.mevProtected ? 'protected' : 'not protected'}</span>
-	                      </div>
-	                    )}
+							{(typeof trade.mevProtected === 'boolean' || typeof trade.mevConfigured === 'boolean') && (
+							  <div>
+							    <span style={{ color: '#64748b' }}>MEV:</span>{' '}
+							    <span style={{ color: trade.mevProtected ? '#10b981' : trade.mevConfigured ? '#a5b4fc' : '#94a3b8' }}>
+							      {trade.mevProtected ? 'protected' : trade.mevConfigured ? 'configured' : 'off'}
+							    </span>
+							  </div>
+							)}
 	                    {trade.gasPaidEth !== undefined && (
 	                      <div><span style={{ color: '#64748b' }}>Gas Paid:</span> <span style={{ color: '#e2e8f0' }}>{Number(trade.gasPaidEth).toFixed(6)} ETH</span></div>
 	                    )}

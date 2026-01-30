@@ -22,6 +22,7 @@ const initialState = {
   screenerBlock: null,
   screenerTimestamp: null,
   threshold: 0.5,
+	fork: null,
 
   // Selected pair for trading
   selectedPair: null,
@@ -47,7 +48,7 @@ const initialState = {
     gasPrice: 0.1, // In Gwei (Arbitrum typically 0.1-1.0 Gwei)
     skipConfirmation: false,
     autoExecute: false,
-		mevProtection: true
+	  mevProtection: true
   },
 
   // Logs
@@ -86,6 +87,7 @@ const botSlice = createSlice({
       state.screenerBlock = action.payload.block
       state.screenerTimestamp = action.payload.timestamp
       state.threshold = action.payload.threshold
+	  state.fork = action.payload.fork ?? null
     },
     setSelectedPair: (state, action) => {
       state.selectedPair = action.payload
