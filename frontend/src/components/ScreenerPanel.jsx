@@ -7,7 +7,7 @@ import Tooltip from './Tooltip'
 
 function ScreenerPanel() {
   const dispatch = useDispatch()
-  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings } = useSelector(state => state.bot)
+	const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings, fork } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
   const [hideFailedPairs, setHideFailedPairs] = useState(false)
@@ -100,15 +100,18 @@ function ScreenerPanel() {
     }, 3500)
   }
 
-  // Filter pairs based on toggle
-  const filteredPairs = hideFailedPairs
-    ? screenerPairs.filter(p => p.dexCount >= 2)
-    : screenerPairs
+	const visiblePairs = screenerPairs.filter(p => p.dexCount >= 2)
+	const hiddenErrorCount = Math.max(0, screenerPairs.length - visiblePairs.length)
+
+	// Filter pairs based on toggle
+	const filteredPairs = hideFailedPairs ? visiblePairs : screenerPairs
   // Apply show all/collapse limit
   const displayedPairs = showAllPairs ? filteredPairs : filteredPairs.slice(0, COLLAPSED_PAIR_LIMIT)
   const hasMorePairs = filteredPairs.length > COLLAPSED_PAIR_LIMIT
-  const opportunities = filteredPairs.filter(p => p.hasOpportunity)
-  const hiddenCount = screenerPairs.length - filteredPairs.length
+	const opportunities = visiblePairs.filter(p => (p.hasExecutableOpportunity ?? p.hasOpportunity))
+	const shownCount = displayedPairs.length
+	const visibleCount = visiblePairs.length
+	const totalCount = screenerPairs.length
 
   return (
     <div className="screener-card" style={{ position: 'relative' }}>
@@ -132,24 +135,36 @@ function ScreenerPanel() {
                 <span style={{ color: '#94a3b8' }}>Pair:</span>
                 <span style={{ color: '#fff', fontWeight: '600' }}>{pendingTrade.symbol}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span style={{ color: '#94a3b8' }}>Route:</span>
-                <span style={{ color: '#10b981' }}>{pendingTrade.buyDex}</span>
-                <span style={{ color: '#64748b' }}>→</span>
-                <span style={{ color: '#f59e0b' }}>{pendingTrade.sellDex}</span>
-              </div>
+				  {(() => {
+					const routeBuyDex = pendingTrade.execBuyDex || pendingTrade.buyDex
+					const routeSellDex = pendingTrade.execSellDex || pendingTrade.sellDex
+					return (
+					  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+						<span style={{ color: '#94a3b8' }}>Route:</span>
+						<span style={{ color: '#10b981' }}>{routeBuyDex || '—'}</span>
+						<span style={{ color: '#64748b' }}>→</span>
+						<span style={{ color: '#f59e0b' }}>{routeSellDex || '—'}</span>
+					  </div>
+					)
+				  })()}
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                 <span style={{ color: '#94a3b8' }}>Spread:</span>
-                <span style={{ color: parseFloat(pendingTrade.difference) > 0 ? '#10b981' : '#ef4444', fontWeight: '600' }}>
-                  {pendingTrade.difference}%
-                </span>
+					{(() => {
+						const displayedSpread = pendingTrade.execDifference ?? pendingTrade.difference
+						const spreadNum = parseFloat(displayedSpread)
+						return (
+						  <span style={{ color: spreadNum > 0 ? '#10b981' : '#ef4444', fontWeight: '600' }}>
+							{displayedSpread}%
+						  </span>
+						)
+					})()}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                 <span style={{ color: '#94a3b8' }}>DEXs Available:</span>
                 <span style={{ color: '#a5b4fc' }}>{pendingTrade.dexCount}</span>
               </div>
             </div>
-            {!pendingTrade.hasOpportunity && (
+				{!(pendingTrade.hasExecutableOpportunity ?? pendingTrade.hasOpportunity) && (
               <div style={{
                 background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444',
                 borderRadius: '8px', padding: '12px', marginBottom: '16px', textAlign: 'center'
@@ -179,7 +194,7 @@ function ScreenerPanel() {
       )}
 
       {/* Header - Consolidated single row */}
-      <div className="screener-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', padding: '10px 16px', marginBottom: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+	      <div className="screener-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', padding: '10px 16px', marginBottom: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
         {/* Left: Title + Mode Badge */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <span style={{ fontSize: '20px' }}>⚡</span>
@@ -198,11 +213,28 @@ function ScreenerPanel() {
         </div>
 
         {/* Center: Inline Stats */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <span style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{displayedPairs.length}{hiddenCount > 0 ? `/${screenerPairs.length}` : ''}</span>
-            <span style={{ fontSize: '10px', color: '#64748b' }}>pairs</span>
-          </div>
+	        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+	          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+	            <span style={{ fontSize: '16px', fontWeight: '700', color: '#a5b4fc' }}>{visibleCount}</span>
+	            <span style={{ fontSize: '10px', color: '#64748b' }}>visible</span>
+	            <span style={{ fontSize: '10px', color: '#475569' }}>•</span>
+	            <span style={{ fontSize: '12px', fontWeight: '700', color: '#64748b' }}>{totalCount}</span>
+	            <span style={{ fontSize: '10px', color: '#64748b' }}>total</span>
+	            {hiddenErrorCount > 0 && (
+	              <>
+	                <span style={{ fontSize: '10px', color: '#475569' }}>•</span>
+	                <span title="Hidden due to pool/fee tier errors (missing liquidity / quoting errors)" style={{ fontSize: '12px', fontWeight: '700', color: '#f59e0b' }}>{hiddenErrorCount}</span>
+	                <span style={{ fontSize: '10px', color: '#64748b' }}>hidden</span>
+	              </>
+	            )}
+	            {(showAllPairs ? false : visibleCount > COLLAPSED_PAIR_LIMIT) && (
+	              <>
+	                <span style={{ fontSize: '10px', color: '#475569' }}>•</span>
+	                <span style={{ fontSize: '12px', fontWeight: '700', color: '#c4b5fd' }}>{shownCount}</span>
+	                <span style={{ fontSize: '10px', color: '#64748b' }}>shown</span>
+	              </>
+	            )}
+	          </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#10b981' }}>{opportunities.length}</span>
 	          <span style={{ fontSize: '10px', color: '#64748b' }}>opportunities</span>
@@ -211,7 +243,56 @@ function ScreenerPanel() {
             <span style={{ fontSize: '14px', fontWeight: '600', color: '#fbbf24' }}>{threshold}%</span>
 	          <span style={{ fontSize: '10px', color: '#64748b' }}>threshold</span>
           </div>
-          <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 6px', borderRadius: '4px' }}>Block #{screenerBlock || '---'}</span>
+	          <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '999px', border: '1px solid rgba(100,116,139,0.2)' }}>
+	            <span style={{
+	              background: 'linear-gradient(135deg, #60a5fa 0%, #a78bfa 55%, #f472b6 100%)',
+	              WebkitBackgroundClip: 'text',
+	              WebkitTextFillColor: 'transparent',
+	              fontWeight: 800
+	            }}>
+	              Block #{screenerBlock || '---'}
+	            </span>
+	            {fork && (
+	              <>
+	                <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+	                <span
+	                  title={fork.autoMineEnabled ? 'Hardhat evm_mine enabled (advances local block/timestamp)' : 'Hardhat evm_mine disabled'}
+	                  style={{ color: fork.autoMineEnabled ? '#10b981' : '#94a3b8', fontWeight: 700 }}
+	                >
+	                  ⛏ {fork.autoMineEnabled ? 'ON' : 'OFF'}
+	                </span>
+	                {fork.minedThisTick && (
+	                  <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '999px', background: '#10b981', marginLeft: '6px', animation: 'pulse 1.2s infinite' }} />
+	                )}
+	                {typeof fork.behindBlocks === 'number' && (
+	                  <>
+	                    <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+	                    <span style={{ color: fork.needsRefork ? '#ef4444' : '#f59e0b', fontWeight: 800 }}>
+	                      {fork.behindBlocks.toLocaleString()} behind
+	                    </span>
+	                  </>
+	                )}
+	                {fork.needsRefork && (
+	                  <>
+	                    <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+	                    <span
+	                      title={`Fork is behind mainnet by ≥ ${fork.reforkLagBlocks} blocks. Restart bot / reset fork to refresh snapshot.`}
+	                      style={{
+	                        color: '#fecaca',
+	                        background: 'rgba(239,68,68,0.18)',
+	                        border: '1px solid rgba(239,68,68,0.35)',
+	                        padding: '1px 8px',
+	                        borderRadius: '999px',
+	                        fontWeight: 800
+	                      }}
+	                    >
+	                      REFORK
+	                    </span>
+	                  </>
+	                )}
+	              </>
+	            )}
+	          </span>
         </div>
 
         {/* Right: Action Buttons */}
@@ -306,7 +387,7 @@ function ScreenerPanel() {
                 return (
                   <React.Fragment key={pair.name}>
                     <tr
-                      className={`${selectedPair?.pairName === pair.name ? 'row-selected' : ''} ${pair.hasOpportunity ? 'row-opportunity' : ''}`}
+								  className={`${selectedPair?.pairName === pair.name ? 'row-selected' : ''} ${(pair.hasExecutableOpportunity ?? pair.hasOpportunity) ? 'row-opportunity' : ''}`}
                       onClick={() => {
                         selectPair(pair.name)
                         setExpandedPairs(prev => ({ ...prev, [pair.name]: !prev[pair.name] }))
@@ -318,21 +399,55 @@ function ScreenerPanel() {
                             {isExpanded ? '▾' : '▸'}
                           </span>
                           <span className="pair-name">{pair.symbol}</span>
-                          {pair.hasOpportunity && <span className="opp-indicator"></span>}
+										  {(pair.hasExecutableOpportunity ?? pair.hasOpportunity) && <span className="opp-indicator"></span>}
                         </div>
                       </td>
                       <td className="price-cell">
-                        {pair.buyDex && pair.sellDex ? (
-                          <span style={{ fontSize: '12px' }}>
-                            <span style={{ color: '#10b981' }}>{pair.buyDex}</span>
-                            <span style={{ color: '#64748b' }}> → </span>
-                            <span style={{ color: '#f59e0b' }}>{pair.sellDex}</span>
-                          </span>
-                        ) : '—'}
+									{(() => {
+										const displayBuyDex = pair.execBuyDex || pair.buyDex
+										const displaySellDex = pair.execSellDex || pair.sellDex
+										const scanBuyDex = pair.buyDex
+										const scanSellDex = pair.sellDex
+										const hasRouteMismatch = !!(pair.execBuyDex && pair.execSellDex && scanBuyDex && scanSellDex && (pair.execBuyDex !== scanBuyDex || pair.execSellDex !== scanSellDex))
+										return displayBuyDex && displaySellDex ? (
+										  <span style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+											<span>
+											  <span style={{ color: '#10b981' }}>{displayBuyDex}</span>
+											  <span style={{ color: '#64748b' }}> → </span>
+											  <span style={{ color: '#f59e0b' }}>{displaySellDex}</span>
+											</span>
+											{hasRouteMismatch && (
+											  <span
+													title={`Best scan route: ${scanBuyDex} → ${scanSellDex} (may include scan-only DEXs). Executable: ${pair.execBuyDex} → ${pair.execSellDex}.`}
+													style={{
+														fontSize: '10px',
+														padding: '2px 8px',
+														borderRadius: '999px',
+														background: 'rgba(168,85,247,0.15)',
+														border: '1px solid rgba(168,85,247,0.25)',
+														color: '#c4b5fd',
+														fontWeight: 800,
+														whiteSpace: 'nowrap'
+													}}
+											  >
+												🛰 scan-best
+											  </span>
+											)}
+										  </span>
+										) : '—'
+									})()}
                       </td>
-                      <td className={`spread-cell ${pair.hasOpportunity ? 'spread-positive' : Math.abs(parseFloat(pair.difference)) >= threshold * 0.5 ? 'spread-warn' : ''}`}>
-                        {parseFloat(pair.difference) > 0 ? '+' : ''}{pair.difference}%
-                      </td>
+								  {(() => {
+									const displayedSpread = pair.execDifference ?? pair.difference
+									const spreadNum = parseFloat(displayedSpread)
+									const hasOpp = (pair.hasExecutableOpportunity ?? pair.hasOpportunity)
+									const warn = Math.abs(spreadNum) >= threshold * 0.5
+									return (
+									  <td className={`spread-cell ${hasOpp ? 'spread-positive' : warn ? 'spread-warn' : ''}`}>
+										{spreadNum > 0 ? '+' : ''}{displayedSpread}%
+									  </td>
+									)
+								})()}
                       <td className="text-center">
                         <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                           {pair.dexCount || 2} DEXs
@@ -352,7 +467,7 @@ function ScreenerPanel() {
                   <button
                     onClick={(e) => { e.stopPropagation(); handleTrade(pair.name); }}
                     disabled={isExecuting}
-                    className={pair.hasOpportunity ? 'trade-btn' : 'trade-btn-secondary'}
+													className={(pair.hasExecutableOpportunity ?? pair.hasOpportunity) ? 'trade-btn' : 'trade-btn-secondary'}
                     style={{ padding: '8px 12px', fontSize: '12px' }}
                   >
                     {isExecuting ? '...' : '💰 Trade'}
