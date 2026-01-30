@@ -346,15 +346,15 @@ function HeroSection() {
 
       {/* Hero Section - No outer card border, bento cards inside */}
       <div style={{ marginBottom: '24px' }}>
-        {/* Bento Grid - Compact fluid layout */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '10px', alignItems: 'stretch' }}>
+        {/* Bento Grid - Performance card spans 2 rows */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gridTemplateRows: 'auto 1fr', gap: '10px', alignItems: 'stretch' }}>
 
-          {/* Row 1: Title + DEX List Block - spans 8 cols */}
-          <div style={{ gridColumn: 'span 8', padding: '10px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+          {/* Row 1: Title + DEX List Block - spans 8 cols, compact */}
+          <div style={{ gridColumn: 'span 8', gridRow: 'span 1', padding: '10px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.06) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
             <h1 style={{ fontSize: '17px', fontWeight: '700', margin: 0, lineHeight: 1.3, background: 'linear-gradient(135deg, #a5b4fc 0%, #c084fc 50%, #f472b6 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ WebkitTextFillColor: 'initial' }}>⚡</span> Drasticstatic's Arbitrage Trading Bot
             </h1>
-            <p style={{ fontSize: '10px', color: '#64748b', margin: '2px 0 8px 0' }}>built on DAPP University's framework</p>
+            <p style={{ fontSize: '10px', color: '#64748b', margin: '4px 0 10px 0' }}>built on DAPP University's framework</p>
             {/* DEX List with tooltips */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
               <Tooltip text="Universal Router - Supports v2/v3/v4 pools with optimized gas">
@@ -378,111 +378,115 @@ function HeroSection() {
             </div>
           </div>
 
-          {/* Row 1: Performance Stats - spans 4 cols */}
-          <div style={{ gridColumn: 'span 4', padding: '10px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
+          {/* Performance Stats - spans 4 cols + 2 rows (double height) */}
+          <div style={{ gridColumn: 'span 4', gridRow: 'span 2', padding: '12px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(99, 102, 241, 0.08) 100%)', border: '1px solid rgba(99, 102, 241, 0.2)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '6px', fontWeight: '600', letterSpacing: '1px' }}>PERFORMANCE</div>
             <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', color: '#a5b4fc' }}><strong style={{ fontSize: '18px' }}>{metrics.total}</strong> trades</span>
               <span style={{ fontSize: '13px', color: '#10b981' }}><strong style={{ fontSize: '18px' }}>{metrics.successful}</strong> success</span>
               <span style={{ fontSize: '13px', color: '#ef4444' }}><strong style={{ fontSize: '18px' }}>{metrics.failed}</strong> failed</span>
             </div>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: metrics.netProfit >= 0 ? '#10b981' : '#ef4444', marginBottom: '8px' }}>
               {metrics.netProfit >= 0 ? '+' : ''}{metrics.netProfit.toFixed(6)} <span style={{ fontSize: '12px', color: '#64748b' }}>WETH P&L</span>
             </div>
 
-				{/* Simple chart placeholders (no deps) */}
-				<div style={{ marginTop: '10px', display: 'grid', gap: '8px' }}>
-					<div style={{ height: '74px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
-						<div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>P&L TREND</div>
-						{pnlSpark ? (
-							<svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '40px' }}>
-								<polyline points={pnlSpark.points} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-							</svg>
-						) : (
-							<div style={{ color: '#64748b', fontSize: '11px', paddingTop: '10px' }}>Awaiting trade data…</div>
-						)}
-					</div>
-					<div style={{ height: '62px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
-						<div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>TRADE OUTCOMES</div>
-						{outcomeBars.length ? (
-							<svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: '100%', height: '28px' }}>
-								{outcomeBars.map((b) => {
-									const w = 100 / outcomeBars.length
-									const x = b.i * w
-									const h = Math.max(2, Math.min(18, b.status === 'success' ? b.height : 6))
-									const y = 20 - h
-									const fill = b.status === 'success' ? (b.isPos ? '#10b981' : '#ef4444') : '#ef4444'
-									return <rect key={b.i} x={x + 0.5} y={y} width={Math.max(1, w - 1)} height={h} rx="1" fill={fill} opacity="0.9" />
-								})}
-							</svg>
-						) : (
-							<div style={{ color: '#64748b', fontSize: '11px', paddingTop: '6px' }}>No trades yet.</div>
-						)}
-					</div>
-				</div>
+            {/* Charts - expand to fill remaining space */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ flex: 1, minHeight: '70px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
+                <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>P&L TREND</div>
+                {pnlSpark ? (
+                  <svg viewBox="0 0 100 30" preserveAspectRatio="none" style={{ width: '100%', height: '100%', maxHeight: '50px' }}>
+                    <polyline points={pnlSpark.points} fill="none" stroke="#10b981" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+                  </svg>
+                ) : (
+                  <div style={{ color: '#64748b', fontSize: '11px', paddingTop: '10px' }}>Awaiting trade data…</div>
+                )}
+              </div>
+              <div style={{ flex: 1, minHeight: '60px', padding: '8px', borderRadius: '12px', background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(100,116,139,0.15)' }}>
+                <div style={{ fontSize: '9px', color: '#64748b', fontWeight: '700', letterSpacing: '0.8px', marginBottom: '6px' }}>TRADE OUTCOMES</div>
+                {outcomeBars.length ? (
+                  <svg viewBox="0 0 100 20" preserveAspectRatio="none" style={{ width: '100%', height: '100%', maxHeight: '30px' }}>
+                    {outcomeBars.map((b) => {
+                      const w = 100 / outcomeBars.length
+                      const x = b.i * w
+                      const h = Math.max(2, Math.min(18, b.status === 'success' ? b.height : 6))
+                      const y = 20 - h
+                      const fill = b.status === 'success' ? (b.isPos ? '#10b981' : '#ef4444') : '#ef4444'
+                      return <rect key={b.i} x={x + 0.5} y={y} width={Math.max(1, w - 1)} height={h} rx="1" fill={fill} opacity="0.9" />
+                    })}
+                  </svg>
+                ) : (
+                  <div style={{ color: '#64748b', fontSize: '11px', paddingTop: '6px' }}>No trades yet.</div>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Row 2: Testnet Wallet - spans 4 cols */}
-          <div style={{ gridColumn: 'span 4', padding: '10px 12px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.04) 100%)', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+          {/* Row 2: Testnet Wallet - spans 4 cols, includes network status info */}
+          <div style={{ gridColumn: 'span 4', gridRow: 'span 1', padding: '12px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.04) 100%)', border: '1px solid rgba(59, 130, 246, 0.2)', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
               <div className="flex items-center" style={{ gap: '6px', flexWrap: 'wrap' }}>
                 <div className="w-2 h-2 rounded-full" style={{ background: '#3b82f6', boxShadow: '0 0 8px #3b82f6', animation: isTestnet ? 'pulse 1.5s infinite' : 'none' }} />
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#60a5fa' }}>🧪 TESTNET</span>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#60a5fa' }}>🧪 TESTNET</span>
                 {isTestnet && <span style={{ fontSize: '9px', color: connected ? '#10b981' : '#ef4444', background: connected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{connected ? '● Connected' : '○ Offline'}</span>}
                 {isTestnet && <span style={{ fontSize: '9px', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1', background: isExecuting ? 'rgba(245,158,11,0.2)' : isRunning ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}</span>}
               </div>
             </div>
-            {hardhatAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '4px' }}>{hardhatAddr}</div>}
-            <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '6px' }}>Chain: 31337 (Hardhat Fork) • RPC: localhost:8545</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            {hardhatAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '6px' }}>{hardhatAddr}</div>}
+            {/* Network info with colored fonts */}
+            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <span><span style={{ color: '#64748b' }}>Chain:</span> <span style={{ color: '#60a5fa', fontWeight: '600' }}>31337</span></span>
+              <span><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc', fontWeight: '600' }}>Hardhat</span></span>
+              <span><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#10b981', fontWeight: '600' }}>localhost:8545</span></span>
+            </div>
+            {/* Balances with more spacing */}
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}</strong> ETH</span>
               <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{wallet?.hardhat?.wethBalance ? parseFloat(wallet.hardhat.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
               <span style={{ fontSize: '13px', color: '#93c5fd', fontFamily: 'monospace' }}><strong>{wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
             {hardhatAddr && (
-              <div className="flex" style={{ gap: '6px' }}>
-                <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#60a5fa', background: 'rgba(96,165,250,0.15)', padding: '3px 8px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(96,165,250,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
-                <a href={`https://etherscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '3px 8px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
+              <div className="flex" style={{ gap: '10px', marginTop: 'auto' }}>
+                <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#60a5fa', background: 'rgba(96,165,250,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(96,165,250,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
+                <a href={`https://etherscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
               </div>
             )}
           </div>
 
-          {/* Row 2: Mainnet Wallet - spans 4 cols */}
-          <div style={{ gridColumn: 'span 4', padding: '10px 12px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.04) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)' }}>
+          {/* Row 2: Mainnet Wallet - spans 4 cols, includes network status info */}
+          <div style={{ gridColumn: 'span 4', gridRow: 'span 1', padding: '12px 14px', borderRadius: '14px', background: 'linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.04) 100%)', border: '1px solid rgba(245, 158, 11, 0.2)', display: 'flex', flexDirection: 'column' }}>
             <div className="flex items-center justify-between" style={{ marginBottom: '6px' }}>
               <div className="flex items-center" style={{ gap: '6px', flexWrap: 'wrap' }}>
                 <div className="w-2 h-2 rounded-full" style={{ background: '#f59e0b', boxShadow: '0 0 8px #f59e0b', animation: !isTestnet ? 'pulse 1.5s infinite' : 'none' }} />
-                <span style={{ fontSize: '11px', fontWeight: '700', color: '#fbbf24' }}>🔴 MAINNET</span>
+                <span style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24' }}>🔴 MAINNET</span>
                 {!isTestnet && <span style={{ fontSize: '9px', color: connected ? '#10b981' : '#ef4444', background: connected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{connected ? '● Connected' : '○ Offline'}</span>}
                 {!isTestnet && <span style={{ fontSize: '9px', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1', background: isExecuting ? 'rgba(245,158,11,0.2)' : isRunning ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}</span>}
               </div>
             </div>
-            {mainnetAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '4px' }}>{mainnetAddr}</div>}
-            <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '6px' }}>Chain: 42161 (Arbitrum One) • RPC: {wallet?.mainnet?.rpc || 'Alchemy'}</div>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+            {mainnetAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '6px' }}>{mainnetAddr}</div>}
+            {/* Network info with colored fonts */}
+            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+              <span><span style={{ color: '#64748b' }}>Chain:</span> <span style={{ color: '#fbbf24', fontWeight: '600' }}>42161</span></span>
+              <span><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc', fontWeight: '600' }}>Arbitrum</span></span>
+              <span><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#10b981', fontWeight: '600' }}>{wallet?.mainnet?.rpc || 'Alchemy'}</span></span>
+            </div>
+            {/* MEV + Auto status inline */}
+            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
+              <span><span style={{ color: '#64748b' }}>MEV:</span> <span style={{ color: settings.mevProtection ? '#10b981' : '#ef4444', fontWeight: '600' }}>{settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}</span></span>
+              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
+            </div>
+            {/* Balances with more spacing */}
+            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
               <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}</strong> ETH</span>
               <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{wallet?.mainnet?.wethBalance ? parseFloat(wallet.mainnet.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
               <span style={{ fontSize: '13px', color: '#fcd34d', fontFamily: 'monospace' }}><strong>{wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
             {mainnetAddr && (
-              <div className="flex" style={{ gap: '6px' }}>
-                <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '3px 8px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(251,191,36,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
-                <a href={`https://etherscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '3px 8px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
+              <div className="flex" style={{ gap: '10px', marginTop: 'auto' }}>
+                <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(251,191,36,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
+                <a href={`https://etherscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
               </div>
             )}
-          </div>
-
-          {/* Row 2: Network Info - spans 4 cols */}
-          <div style={{ gridColumn: 'span 4', padding: '10px 12px', borderRadius: '14px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(100,116,139,0.15)' }}>
-            <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '6px', fontWeight: '600', letterSpacing: '1px' }}>NETWORK STATUS</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px', fontSize: '11px' }}>
-              <div><span style={{ color: '#64748b' }}>Mode:</span> <span style={{ color: isTestnet ? '#60a5fa' : '#fbbf24', fontWeight: '600' }}>{isTestnet ? 'Testnet' : 'Mainnet'}</span></div>
-              <div><span style={{ color: '#64748b' }}>Chain:</span> <span style={{ color: '#a5b4fc' }}>{isTestnet ? '31337' : '42161'}</span></div>
-              <div><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc' }}>{isTestnet ? 'Hardhat' : 'Arbitrum'}</span></div>
-              <div><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#a5b4fc' }}>{isTestnet ? 'localhost' : (wallet?.mainnet?.rpc || 'Alchemy')}</span></div>
-              <div><span style={{ color: '#64748b' }}>MEV:</span> <span style={{ color: settings.mevProtection ? '#10b981' : '#ef4444' }}>{settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}</span></div>
-              <div><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></div>
-            </div>
           </div>
 
           {/* Controls Row: Toggles + Sliders - spans full width (12 cols) */}
@@ -597,9 +601,9 @@ function HeroSection() {
               {deployEstimate.note || 'Estimate based on current network conditions'}
             </div>
             {!deployEstimate.error && (
-              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+              <div style={{ marginTop: '16px', padding: '12px', background: 'rgba(0,0,0,0.2)', borderRadius: '8px', textAlign: 'center' }}>
                 <div style={{ fontSize: '11px', color: '#94a3b8', fontWeight: '600', marginBottom: '8px' }}>📋 DEPLOYMENT INSTRUCTIONS</div>
-                <ol style={{ fontSize: '11px', color: '#64748b', margin: 0, paddingLeft: '16px', lineHeight: '1.8' }}>
+                <ol style={{ fontSize: '11px', color: '#64748b', margin: '0 auto', paddingLeft: '16px', lineHeight: '1.8', textAlign: 'left', maxWidth: '600px', display: 'inline-block' }}>
                   <li>Ensure your wallet has at least <span style={{ color: '#fcd34d', fontWeight: '600' }}>{deployEstimate.costEth} ETH</span> on Arbitrum</li>
                   <li>Run: <code style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#a5b4fc' }}>npx hardhat ignition deploy ignition/modules/Arbitrage.js --network arbitrum</code></li>
                   <li>Update <code style={{ background: 'rgba(99, 102, 241, 0.2)', padding: '2px 6px', borderRadius: '4px', color: '#a5b4fc' }}>config.json</code> with the new contract address</li>
