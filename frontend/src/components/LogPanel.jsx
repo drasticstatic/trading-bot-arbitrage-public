@@ -55,22 +55,22 @@ function LogPanel() {
     }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span style={{ fontSize: '18px' }}>📋</span>
           <span style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '15px' }}>Activity Monitor</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <span style={{ fontSize: '10px', color: '#64748b', background: 'rgba(0,0,0,0.3)', padding: '2px 8px', borderRadius: '4px' }}>
             {logs.length} logs
           </span>
-				{logs.length > 0 && (
-				  <button
-				    onClick={() => downloadJSON(`dappu-activity-log-${Date.now()}.json`, { exportedAt: new Date().toISOString(), logs })}
-				    style={{ fontSize: '10px', color: '#93c5fd', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59,130,246,0.25)', cursor: 'pointer', fontWeight: 700 }}
-				  >
-				    Export
-				  </button>
-				)}
+          {logs.length > 0 && (
+            <button
+              onClick={() => downloadJSON(`dappu-activity-log-${Date.now()}.json`, { exportedAt: new Date().toISOString(), logs })}
+              style={{ fontSize: '10px', color: '#93c5fd', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59,130,246,0.25)', cursor: 'pointer', fontWeight: 700 }}
+            >
+              Export
+            </button>
+          )}
           {logs.length > 0 && (
             <button
               onClick={() => dispatch(clearLogs())}

@@ -102,22 +102,22 @@ export default function TradeExecutionCard() {
           <span style={{ fontSize: '22px' }}>📟</span>
           <div style={{ color: '#e2e8f0', fontWeight: 700, fontSize: '16px' }}>Trade Execution Terminal</div>
           {currentTxHash && <span style={{ color: '#64748b', fontSize: '10px' }}>TX: {currentTxHash.slice(0, 10)}…{currentTxHash.slice(-6)}</span>}
-	          <button
-	            onClick={handleExport}
-	            style={{
-	              marginLeft: 'auto',
-	              fontSize: '10px',
-	              color: '#93c5fd',
-	              background: 'rgba(59,130,246,0.12)',
-	              padding: '4px 10px',
-	              borderRadius: '8px',
-	              border: '1px solid rgba(59,130,246,0.25)',
-	              cursor: 'pointer',
-	              fontWeight: 700
-	            }}
-	          >
-	            Export
-	          </button>
+          <button
+            onClick={handleExport}
+            style={{
+              marginLeft: 'auto',
+              fontSize: '10px',
+              color: '#93c5fd',
+              background: 'rgba(59,130,246,0.12)',
+              padding: '4px 10px',
+              borderRadius: '8px',
+              border: '1px solid rgba(59,130,246,0.25)',
+              cursor: 'pointer',
+              fontWeight: 700
+            }}
+          >
+            Export
+          </button>
         </div>
         {/* Stats - Single horizontal row, no wrap */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'nowrap', overflowX: 'auto', paddingBottom: '4px' }}>
