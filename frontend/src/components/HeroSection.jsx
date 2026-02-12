@@ -446,23 +446,60 @@ function HeroSection() {
               <span><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc', fontWeight: '600' }}>Hardhat</span></span>
               <span><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#10b981', fontWeight: '600' }}>localhost:8545</span></span>
             </div>
-	            {/* MEV + Auto status inline */}
-	            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
-	              <span><span style={{ color: '#64748b' }}>MEV:</span> <span style={{ color: settings.mevProtection ? '#10b981' : '#ef4444', fontWeight: '600' }}>{settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}</span></span>
-	              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
-	            </div>
+		            {/* MEV + Auto status inline */}
+		            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
+		              <span>
+		                <span style={{ color: '#64748b' }}>MEV:</span>{' '}
+		                <Tooltip text={settings.mevProtection ? '🛡️ MEV Shield: configured. Private mempool requires MAINNET + ALCHEMY_API_KEY (local forks cannot use private tx).' : '⚠️ MEV Shield: off. Click to toggle.'}>
+		                  <button
+		                    onClick={() => handleToggleClick('mevProtection', !settings.mevProtection)}
+		                    className="transition-all hover:scale-105"
+		                    style={{
+		                      fontSize: '10px',
+		                      fontWeight: 600,
+		                      color: settings.mevProtection ? '#10b981' : '#ef4444',
+		                      background: settings.mevProtection ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.08)',
+		                      border: `1px solid ${settings.mevProtection ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+		                      borderRadius: '999px',
+		                      padding: '1px 7px',
+		                      cursor: 'pointer'
+		                    }}
+		                  >
+		                    {settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}
+		                  </button>
+		                </Tooltip>
+		              </span>
+		              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
+		            </div>
             {/* Balances with more spacing */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
 	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{hardhatBal ? parseFloat(hardhatBal).toFixed(4) : '—'}</strong> ETH</span>
 	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{wallet?.hardhat?.wethBalance ? parseFloat(wallet.hardhat.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
 	              <span style={{ ...balancePopStyle, color: '#93c5fd' }}><strong>{wallet?.hardhat?.arbBalance ? parseFloat(wallet.hardhat.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
-            {hardhatAddr && (
-	              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
-                <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#60a5fa', background: 'rgba(96,165,250,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(96,165,250,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
-                <a href={`https://etherscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
-              </div>
-            )}
+		            {hardhatAddr && (
+		              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
+		                <a href={`https://arbiscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#60a5fa', background: 'rgba(96,165,250,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(96,165,250,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
+		                <a href={`https://etherscan.io/address/${hardhatAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
+		                <button
+		                  onClick={getWalletInfo}
+		                  title="Refresh wallet balances now"
+		                  className="transition-all hover:scale-105"
+		                  style={{
+		                    fontSize: '9px',
+		                    color: '#93c5fd',
+		                    background: 'rgba(59,130,246,0.12)',
+		                    padding: '4px 10px',
+		                    borderRadius: '6px',
+		                    border: '1px solid rgba(59,130,246,0.25)',
+		                    cursor: 'pointer',
+		                    fontWeight: 700
+		                  }}
+		                >
+		                  ↻ Refresh
+		                </button>
+		              </div>
+		            )}
           </div>
 
           {/* Row 2: Mainnet Wallet - spans 4 cols, includes network status info */}
@@ -473,24 +510,7 @@ function HeroSection() {
                 <span style={{ fontSize: '12px', fontWeight: '700', color: '#fbbf24' }}>🔴 MAINNET</span>
                 {!isTestnet && <span style={{ fontSize: '9px', color: connected ? '#10b981' : '#ef4444', background: connected ? 'rgba(16,185,129,0.2)' : 'rgba(239,68,68,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{connected ? '● Connected' : '○ Offline'}</span>}
                 {!isTestnet && <span style={{ fontSize: '9px', color: isExecuting ? '#f59e0b' : isRunning ? '#10b981' : '#6366f1', background: isExecuting ? 'rgba(245,158,11,0.2)' : isRunning ? 'rgba(16,185,129,0.2)' : 'rgba(99,102,241,0.2)', padding: '2px 5px', borderRadius: '4px', marginLeft: '2px' }}>{isExecuting ? '⏳ Trading' : isRunning ? '🔍 Scanning' : '💤 Idle'}</span>}
-              </div>
-	              <button
-	                onClick={getWalletInfo}
-	                title="Refresh wallet balances now"
-	                className="transition-all hover:scale-105"
-	                style={{
-	                  fontSize: '10px',
-	                  color: '#93c5fd',
-	                  background: 'rgba(59,130,246,0.12)',
-	                  padding: '2px 8px',
-	                  borderRadius: '6px',
-	                  border: '1px solid rgba(59,130,246,0.25)',
-	                  cursor: 'pointer',
-	                  fontWeight: 700
-	                }}
-	              >
-	                ↻ Refresh
-	              </button>
+		              </div>
             </div>
             {mainnetAddr && <div style={{ fontSize: '9px', color: '#475569', fontFamily: 'monospace', marginBottom: '6px' }}>{mainnetAddr}</div>}
             {/* Network info with colored fonts */}
@@ -499,23 +519,60 @@ function HeroSection() {
               <span><span style={{ color: '#64748b' }}>Network:</span> <span style={{ color: '#a5b4fc', fontWeight: '600' }}>Arbitrum</span></span>
               <span><span style={{ color: '#64748b' }}>RPC:</span> <span style={{ color: '#10b981', fontWeight: '600' }}>{wallet?.mainnet?.rpc || 'Alchemy'}</span></span>
             </div>
-            {/* MEV + Auto status inline */}
-            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
-              <span><span style={{ color: '#64748b' }}>MEV:</span> <span style={{ color: settings.mevProtection ? '#10b981' : '#ef4444', fontWeight: '600' }}>{settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}</span></span>
-              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
-            </div>
+		            {/* MEV + Auto status inline */}
+		            <div style={{ fontSize: '10px', marginBottom: '8px', display: 'flex', gap: '12px' }}>
+		              <span>
+		                <span style={{ color: '#64748b' }}>MEV:</span>{' '}
+		                <Tooltip text={settings.mevProtection ? '🛡️ MEV Shield: configured. Private mempool requires MAINNET + ALCHEMY_API_KEY.' : '⚠️ MEV Shield: off. Click to toggle.'}>
+		                  <button
+		                    onClick={() => handleToggleClick('mevProtection', !settings.mevProtection)}
+		                    className="transition-all hover:scale-105"
+		                    style={{
+		                      fontSize: '10px',
+		                      fontWeight: 600,
+		                      color: settings.mevProtection ? '#10b981' : '#ef4444',
+		                      background: settings.mevProtection ? 'rgba(16,185,129,0.12)' : 'rgba(239,68,68,0.08)',
+		                      border: `1px solid ${settings.mevProtection ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)'}`,
+		                      borderRadius: '999px',
+		                      padding: '1px 7px',
+		                      cursor: 'pointer'
+		                    }}
+		                  >
+		                    {settings.mevProtection ? '🛡️ ON' : '⚠️ OFF'}
+		                  </button>
+		                </Tooltip>
+		              </span>
+		              <span><span style={{ color: '#64748b' }}>Auto:</span> <span style={{ color: settings.autoExecute ? '#10b981' : '#64748b', fontWeight: '600' }}>{settings.autoExecute ? '🤖 ON' : 'OFF'}</span></span>
+		            </div>
             {/* Balances with more spacing */}
             <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginBottom: '8px' }}>
 	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{mainnetBal ? parseFloat(mainnetBal).toFixed(4) : '—'}</strong> ETH</span>
 	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{wallet?.mainnet?.wethBalance ? parseFloat(wallet.mainnet.wethBalance).toFixed(4) : '0'}</strong> WETH</span>
 	              <span style={{ ...balancePopStyle, color: '#fcd34d', textShadow: '0 0 10px rgba(245,158,11,0.18)' }}><strong>{wallet?.mainnet?.arbBalance ? parseFloat(wallet.mainnet.arbBalance).toFixed(2) : '0'}</strong> ARB</span>
             </div>
-            {mainnetAddr && (
-	              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
-                <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(251,191,36,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
-                <a href={`https://etherscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
-              </div>
-            )}
+		            {mainnetAddr && (
+		              <div className="flex" style={{ gap: '14px', marginTop: 'auto' }}>
+		                <a href={`https://arbiscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#fbbf24', background: 'rgba(251,191,36,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(251,191,36,0.3)' }} className="hover:scale-105">Arbiscan ↗</a>
+		                <a href={`https://etherscan.io/address/${mainnetAddr}`} target="_blank" rel="noopener noreferrer" style={{ fontSize: '9px', color: '#94a3b8', background: 'rgba(148,163,184,0.15)', padding: '4px 10px', borderRadius: '6px', textDecoration: 'none', transition: 'all 0.2s', border: '1px solid rgba(148,163,184,0.3)' }} className="hover:scale-105">Etherscan ↗</a>
+		                <button
+		                  onClick={getWalletInfo}
+		                  title="Refresh wallet balances now"
+		                  className="transition-all hover:scale-105"
+		                  style={{
+		                    fontSize: '9px',
+		                    color: '#93c5fd',
+		                    background: 'rgba(59,130,246,0.12)',
+		                    padding: '4px 10px',
+		                    borderRadius: '6px',
+		                    border: '1px solid rgba(59,130,246,0.25)',
+		                    cursor: 'pointer',
+		                    fontWeight: 700
+		                  }}
+		                >
+		                  ↻ Refresh
+		                </button>
+		              </div>
+		            )}
           </div>
 
           {/* Controls Row: Toggles + Sliders - spans full width (12 cols) */}
@@ -539,13 +596,7 @@ function HeroSection() {
                 <span style={{ color: settings.autoExecute ? '#c4b5fd' : '#9ca3af', fontSize: '12px', fontWeight: '700' }}>🤖 Auto Execute</span>
               </button>
             </Tooltip>
-            {settings.autoExecute && <span className="px-3 py-1.5 rounded-lg text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#f87171', border: '2px solid rgba(239, 68, 68, 0.5)', fontSize: '11px', fontWeight: '600' }}>⚠️ AUTO ON</span>}
-            <Tooltip text={settings.mevProtection ? '🛡️ MEV PROTECTION ON - Transactions submitted privately via Flashbots to prevent frontrunning (mainnet only).' : '⚠️ MEV Protection OFF - Transactions visible in public mempool. Enable for mainnet trading!'}>
-              <button onClick={() => handleToggleClick('mevProtection', !settings.mevProtection)} className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:scale-105 active:scale-95" style={{ background: settings.mevProtection ? 'rgba(16, 185, 129, 0.25)' : 'rgba(100,116,139,0.15)', border: `2px solid ${settings.mevProtection ? '#10b981' : '#475569'}`, boxShadow: settings.mevProtection ? '0 0 12px rgba(16,185,129,0.3)' : 'none' }}>
-                <div className="w-3 h-3 rounded-full" style={{ background: settings.mevProtection ? '#10b981' : '#6b7280' }} />
-                <span style={{ color: settings.mevProtection ? '#6ee7b7' : '#9ca3af', fontSize: '12px', fontWeight: '700' }}>🛡️ MEV Shield</span>
-              </button>
-            </Tooltip>
+		            {settings.autoExecute && <span className="px-3 py-1.5 rounded-lg text-xs animate-pulse" style={{ background: 'rgba(239, 68, 68, 0.25)', color: '#f87171', border: '2px solid rgba(239, 68, 68, 0.5)', fontSize: '11px', fontWeight: '600' }}>⚠️ AUTO ON</span>}
 
             {/* Divider */}
             <div style={{ width: '1px', height: '24px', background: 'rgba(100,116,139,0.3)', margin: '0 4px' }} />

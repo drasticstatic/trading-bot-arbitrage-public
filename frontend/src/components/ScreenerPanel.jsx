@@ -252,46 +252,66 @@ function ScreenerPanel() {
 	            }}>
 	              Block #{screenerBlock || '---'}
 	            </span>
-	            {fork && (
-	              <>
-	                <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
-	                <span
-	                  title={fork.autoMineEnabled ? 'Hardhat evm_mine enabled (advances local block/timestamp)' : 'Hardhat evm_mine disabled'}
-	                  style={{ color: fork.autoMineEnabled ? '#10b981' : '#94a3b8', fontWeight: 700 }}
-	                >
-	                  ⛏ {fork.autoMineEnabled ? 'ON' : 'OFF'}
-	                </span>
-	                {fork.minedThisTick && (
-	                  <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '999px', background: '#10b981', marginLeft: '6px', animation: 'pulse 1.2s infinite' }} />
-	                )}
-	                {typeof fork.behindBlocks === 'number' && (
-	                  <>
-	                    <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
-	                    <span style={{ color: fork.needsRefork ? '#ef4444' : '#f59e0b', fontWeight: 800 }}>
-	                      {fork.behindBlocks.toLocaleString()} behind
-	                    </span>
-	                  </>
-	                )}
-	                {fork.needsRefork && (
-	                  <>
-	                    <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
-	                    <span
-	                      title={`Fork is behind mainnet by ≥ ${fork.reforkLagBlocks} blocks. Restart bot / reset fork to refresh snapshot.`}
-	                      style={{
-	                        color: '#fecaca',
-	                        background: 'rgba(239,68,68,0.18)',
-	                        border: '1px solid rgba(239,68,68,0.35)',
-	                        padding: '1px 8px',
-	                        borderRadius: '999px',
-	                        fontWeight: 800
-	                      }}
-	                    >
-	                      REFORK
-	                    </span>
-	                  </>
-	                )}
-	              </>
-	            )}
+		            <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+		            <Tooltip
+		              text={
+		                (fork?.autoMineEnabled === true)
+		                  ? 'Hardhat evm_mine: enabled (advances local block/timestamp). Note: this does NOT pull new mainnet swaps into an existing fork snapshot.'
+		                  : (fork?.autoMineEnabled === false)
+		                    ? 'Hardhat evm_mine: disabled.'
+		                    : 'Hardhat evm_mine: unknown (fork diagnostics not yet available).'
+		              }
+		            >
+		              <span
+		                style={{
+		                  color: (fork?.autoMineEnabled === true) ? '#10b981' : (fork?.autoMineEnabled === false) ? '#94a3b8' : '#64748b',
+		                  fontWeight: 700
+		                }}
+		              >
+		                ⛏ {(fork?.autoMineEnabled === true) ? 'ON' : (fork?.autoMineEnabled === false) ? 'OFF' : '—'}
+		              </span>
+		            </Tooltip>
+		            {fork?.minedThisTick && (
+		              <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '999px', background: '#10b981', marginLeft: '6px', animation: 'pulse 1.2s infinite' }} />
+		            )}
+		            <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+		            <Tooltip
+		              text={
+		                (typeof fork?.behindBlocks === 'number')
+		                  ? `Fork freshness: ~${fork.behindBlocks.toLocaleString()} blocks behind Arbitrum mainnet. If this grows, restart/refork to refresh snapshot.`
+		                  : 'Fork freshness: mainnet block comparison unavailable (RPC may be rate-limited/unavailable).'
+		              }
+		            >
+		              <span
+		                style={{
+		                  color: (typeof fork?.behindBlocks === 'number')
+		                    ? (fork?.needsRefork ? '#ef4444' : '#f59e0b')
+		                    : '#64748b',
+		                  fontWeight: 800
+		                }}
+		              >
+		                {(typeof fork?.behindBlocks === 'number') ? `${fork.behindBlocks.toLocaleString()} behind` : '— behind'}
+		              </span>
+		            </Tooltip>
+		            {fork?.needsRefork && (
+		              <>
+		                <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
+		                <Tooltip text={`Fork is behind mainnet by ≥ ${fork.reforkLagBlocks} blocks. Restart bot to refork (refresh snapshot).`}>
+		                  <span
+		                    style={{
+		                      color: '#fecaca',
+		                      background: 'rgba(239,68,68,0.18)',
+		                      border: '1px solid rgba(239,68,68,0.35)',
+		                      padding: '1px 8px',
+		                      borderRadius: '999px',
+		                      fontWeight: 800
+		                    }}
+		                  >
+		                    REFORK
+		                  </span>
+		                </Tooltip>
+		              </>
+		            )}
 	          </span>
         </div>
 
@@ -326,7 +346,7 @@ function ScreenerPanel() {
               {localLoading === 'refresh' ? '⏳' : '↻'} Refresh
             </button>
           </Tooltip>
-          <Tooltip text="⟳ Fully restarts the bot and re-initializes all trading pairs">
+		        <Tooltip text="⟳ Hard refresh + resets/reforks the local environment snapshot (Hardhat fork) + re-initializes pairs (and re-deploys if needed).">
             <button onClick={handleRestartBot} disabled={localLoading} className="transition-all hover:scale-105" style={{ opacity: localLoading ? 0.5 : 1, background: 'rgba(168,85,247,0.15)', border: '1px solid #a855f7', color: '#c4b5fd', padding: '5px 10px', borderRadius: '6px', fontSize: '11px', cursor: 'pointer', fontWeight: '600' }}>
               {localLoading === 'restart' ? '⏳' : '⟳'} Restart
             </button>
@@ -409,6 +429,7 @@ function ScreenerPanel() {
 										const scanBuyDex = pair.buyDex
 										const scanSellDex = pair.sellDex
 										const hasRouteMismatch = !!(pair.execBuyDex && pair.execSellDex && scanBuyDex && scanSellDex && (pair.execBuyDex !== scanBuyDex || pair.execSellDex !== scanSellDex))
+										const isExecutableRoute = !!(pair.execBuyDex && pair.execSellDex)
 										return displayBuyDex && displaySellDex ? (
 										  <span style={{ fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
 											<span>
@@ -416,9 +437,27 @@ function ScreenerPanel() {
 											  <span style={{ color: '#64748b' }}> → </span>
 											  <span style={{ color: '#f59e0b' }}>{displaySellDex}</span>
 											</span>
+											{isExecutableRoute && (
+											  <Tooltip text="✓ Executable route: this is the route the bot can trade right now.">
+												<span
+													style={{
+														fontSize: '10px',
+														padding: '2px 8px',
+														borderRadius: '999px',
+														background: 'rgba(16,185,129,0.12)',
+														border: '1px solid rgba(16,185,129,0.25)',
+														color: '#34d399',
+														fontWeight: 800,
+														whiteSpace: 'nowrap'
+													}}
+												>
+													✓ executable
+												</span>
+											  </Tooltip>
+											)}
 											{hasRouteMismatch && (
-											  <span
-													title={`Best scan route: ${scanBuyDex} → ${scanSellDex} (may include scan-only DEXs). Executable: ${pair.execBuyDex} → ${pair.execSellDex}.`}
+											  <Tooltip text={`Scan-only best: ${scanBuyDex} → ${scanSellDex}. Executable: ${pair.execBuyDex} → ${pair.execSellDex}. Scan-only DEXs may include Camelot/Balancer/Curve.`}>
+												<span
 													style={{
 														fontSize: '10px',
 														padding: '2px 8px',
@@ -429,9 +468,10 @@ function ScreenerPanel() {
 														fontWeight: 800,
 														whiteSpace: 'nowrap'
 													}}
-											  >
-												🛰 scan-best
-											  </span>
+												>
+													scan-only best
+												</span>
+											  </Tooltip>
 											)}
 										  </span>
 										) : '—'
@@ -557,9 +597,9 @@ function ScreenerPanel() {
                                 )}
                               </div>
                             ) : (
-                              <div style={{ color: '#64748b', fontSize: '12px' }}>
-                                No simulation results yet. Click <span style={{ color: '#a5b4fc', fontWeight: 600 }}>💰 Trade</span> to run analysis (and execute if configured).
-                              </div>
+									  <div style={{ color: '#64748b', fontSize: '12px' }}>
+										No simulation results yet. Click <span style={{ color: '#a5b4fc', fontWeight: 600 }}>🔍 Analyze</span> to run analysis, or click <span style={{ color: '#a5b4fc', fontWeight: 600 }}>💰 Trade</span> to skip analysis and execute directly.
+									  </div>
                             )}
                           </div>
                         </td>

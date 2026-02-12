@@ -107,7 +107,7 @@ function App() {
             Founded by <span style={{ color: '#8b5cf6', fontWeight: '600' }}>@drasticstatic</span>  •  Augmented via <span style={{ color: '#a5b4fc' }}>Claude Opus 4.5</span> and <span style={{ color: '#10b981' }}>GPT 5.2</span>
           </div>
           {/* Row 3: Built with + Button Links */}
-	          <div className="flex items-center justify-center gap-3" style={{ fontSize: '12px', textAlign: 'center', width: '100%' }}>
+		          <div className="flex items-center justify-center gap-5" style={{ fontSize: '12px', textAlign: 'center', width: '100%' }}>
             <span style={{ color: '#64748b' }}>Built with 💜</span>
             <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#a5b4fc', textDecoration: 'none', background: 'rgba(165,180,252,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(165,180,252,0.3)', fontWeight: '600' }}>About the builder</a>
             <a href="https://github.com/drasticstatic" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#9ca3af', textDecoration: 'none', background: 'rgba(156,163,175,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(156,163,175,0.3)', fontWeight: '600' }}>GitHub</a>
