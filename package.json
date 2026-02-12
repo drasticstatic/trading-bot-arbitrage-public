@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "start": "node bot.js"
+    "start": "node bot.js",
+    "build": "npm --prefix frontend run build"
   },
   "dependencies": {
     "big.js": "^6.2.1",

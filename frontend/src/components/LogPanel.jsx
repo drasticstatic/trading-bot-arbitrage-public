@@ -65,6 +65,7 @@ function LogPanel() {
           </span>
           {logs.length > 0 && (
             <button
+		            className="transition-all hover:scale-105"
               onClick={() => downloadJSON(`dappu-activity-log-${Date.now()}.json`, { exportedAt: new Date().toISOString(), logs })}
               style={{ fontSize: '10px', color: '#93c5fd', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: '4px', border: '1px solid rgba(59,130,246,0.25)', cursor: 'pointer', fontWeight: 700 }}
             >
@@ -73,6 +74,7 @@ function LogPanel() {
           )}
           {logs.length > 0 && (
             <button
+		            className="transition-all hover:scale-105"
               onClick={() => dispatch(clearLogs())}
               style={{ fontSize: '10px', color: '#ef4444', background: 'rgba(239,68,68,0.1)', padding: '2px 8px', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
             >

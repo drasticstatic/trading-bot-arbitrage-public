@@ -108,6 +108,29 @@ Be sure to look at [Uniswap documentation](https://docs.uniswap.org/contracts/v3
 ## Testing Bot on Mainnet
 For monitoring prices and detecting potential arbitrage opportunities, you do not need to deploy the contract. 
 
+## Fork freshness (`evm_mine`) + “behind blocks” indicator (local mode)
+
+When running with `PROJECT_SETTINGS.isLocal=true`, the bot uses a **Hardhat fork** (a snapshot of Arbitrum at a specific block).
+
+- The dashboard shows a **fork block number** and an **`evm_mine` indicator** so you can confirm the local chain is advancing.
+- The bot also compares your fork against **latest Arbitrum mainnet** and shows **“behind blocks”** and a **refork-needed warning**.
+
+Important: `evm_mine` advances the *local* fork’s block/time, but it **does not pull new mainnet swaps into an existing fork snapshot**. To get a newer snapshot, you must **re-fork** (restart/reset to latest).
+
+### Why the fork indicators can show “—” / null
+The “mainnet block” comparison requires the backend to call a **mainnet RPC** periodically. If that RPC is rate-limited or unavailable, the UI will show placeholders.
+
+To improve reliability:
+- Set `ALCHEMY_API_KEY` (recommended)
+- Or set `ARBITRUM_RPC_URL` to your own RPC endpoint
+- Tune polling thresholds:
+  - `FORK_MAINNET_BLOCK_POLL_MS` (default ~30s)
+  - `FORK_REFORK_LAG_BLOCKS` (default ~50 blocks)
+
+Related env toggles:
+- `AUTO_MINE_LOCAL_BLOCKS=0` to disable local `evm_mine`
+- `FORK_BLOCK_NUMBER=<number>` to pin the fork to a deterministic snapshot
+
 ### 1. Edit config.json
 Inside the *config.json* file, set **isDeployed** to **false** and **isLocal** to **false**.
 

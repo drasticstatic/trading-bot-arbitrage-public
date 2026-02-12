@@ -32,9 +32,17 @@ Last updated: 2026-01-30
 - ✅ **Route mismatch badge** - Screener marks when best scan route differs from executable route (scan-only vs executable)
 - ✅ **Screener counts fixed** - Header now shows visible/total/hidden counts (no longer changes with collapse)
 - ✅ **MEV indicators improved** - Testnet wallet shows MEV/Auto badges; trade history shows MEV when configured/protected
+- ✅ **Trade log MEV status** - Activity log records MEV state before trade submission (ON/private vs OFF/public vs configured-not-active)
+- ✅ **RPC label clarity** - Mainnet wallet RPC label now shows `custom:<hostname>` when using `ARBITRUM_RPC_URL`
 - ✅ **UI spacing polish** - Increased gaps in Activity header/buttons and wallet explorer links
 - ✅ **Deploy estimate layout** - Deploy details now 2-column centered layout
 - ✅ **Footer centering** - Row 1 and Row 3 explicitly centered
+- ✅ **Footer link spacing** - Increased spacing between 💜 / About / GitHub
+- ✅ **LogPanel button hover** - Export/Clear now have hover/scale affordance
+- ✅ **Trade history gas cleanup** - Gas paid now shows a single (precise) field instead of duplicate rounded/precise values
+- ✅ **Root build script** - `npm run build` at repo root builds the frontend
+- ✅ **README docs** - Added notes explaining fork freshness indicators + RPC rate limiting placeholders
+- ✅ **Pair list expanded** - Added USDC/USDT, ARB/USDT, WBTC/USDC, LINK/USDC, UNI/USDC, GMX/USDC
 
 ### 🔧 Current Issues
 1. **"Too little received" Error** - Expected behavior, contract rejects unprofitable trades
@@ -78,3 +86,4 @@ Last updated: 2026-01-30
 - ✅ Two-fee execution (fee0/fee1)
 - ✅ Trade history profit parsing
 - ✅ Auto-execute trigger with cooldown
+
