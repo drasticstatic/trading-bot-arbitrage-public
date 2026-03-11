@@ -7,7 +7,7 @@ import Tooltip from './Tooltip'
 
 function ScreenerPanel() {
   const dispatch = useDispatch()
-	const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings, fork } = useSelector(state => state.bot)
+  const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings, fork, perpStatus } = useSelector(state => state.bot)
   const [showConfirmModal, setShowConfirmModal] = useState(false)
   const [pendingTrade, setPendingTrade] = useState(null)
   const [hideFailedPairs, setHideFailedPairs] = useState(false)
@@ -388,6 +388,20 @@ function ScreenerPanel() {
                 <th style={{ background: '#0f172a' }}>Pair</th>
                 <th className="text-right" style={{ background: '#0f172a' }}>Best Route</th>
                 <th className="text-right" style={{ background: '#0f172a' }}>Spread</th>
+                <th className="text-center" style={{ background: '#0f172a' }}>
+                  <Tooltip text={perpStatus?.initialized ? `🔮 Perp DEX: ${perpStatus.exchange} (${perpStatus.cachedPairs} pairs)` : '⚠️ Perp DEX: not connected'}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      Perp
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: perpStatus?.initialized ? '#10b981' : '#64748b',
+                        display: 'inline-block'
+                      }} />
+                    </span>
+                  </Tooltip>
+                </th>
                 <th className="text-center" style={{ background: '#0f172a' }}>DEXs</th>
                 <th className="text-center" style={{ background: '#0f172a' }}>Action</th>
               </tr>
@@ -477,17 +491,47 @@ function ScreenerPanel() {
 										) : '—'
 									})()}
                       </td>
-								  {(() => {
-									const displayedSpread = pair.execDifference ?? pair.difference
-									const spreadNum = parseFloat(displayedSpread)
-									const hasOpp = (pair.hasExecutableOpportunity ?? pair.hasOpportunity)
-									const warn = Math.abs(spreadNum) >= threshold * 0.5
-									return (
-									  <td className={`spread-cell ${hasOpp ? 'spread-positive' : warn ? 'spread-warn' : ''}`}>
-										{spreadNum > 0 ? '+' : ''}{displayedSpread}%
-									  </td>
-									)
-								})()}
+                      {(() => {
+                        const displayedSpread = pair.execDifference ?? pair.difference
+                        const spreadNum = parseFloat(displayedSpread)
+                        const hasOpp = (pair.hasExecutableOpportunity ?? pair.hasOpportunity)
+                        const warn = Math.abs(spreadNum) >= threshold * 0.5
+                        return (
+                          <td className={`spread-cell ${hasOpp ? 'spread-positive' : warn ? 'spread-warn' : ''}`}>
+                            {spreadNum > 0 ? '+' : ''}{displayedSpread}%
+                          </td>
+                        )
+                      })()}
+                      {/* Perp Data Cell */}
+                      <td className="text-center" style={{ minWidth: '110px' }}>
+                        {pair.perp ? (
+                          <Tooltip text={`🔮 ${pair.perp.exchange}: $${Number(pair.perp.price).toFixed(4)} | Spot-Perp: ${pair.perp.spreadPct}% | Signal: ${pair.perp.signal}${pair.funding ? ` | Funding: ${(pair.funding.rate * 100).toFixed(4)}% (${pair.funding.rateAnnualized?.toFixed(1)}% APY)` : ''}`}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
+                              <span style={{
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                color: pair.perp.direction === 'perp_premium' ? '#f59e0b' : '#10b981'
+                              }}>
+                                {pair.perp.spreadPct > 0 ? '+' : ''}{pair.perp.spreadPct}%
+                              </span>
+                              {pair.funding && (
+                                <span style={{
+                                  fontSize: '9px',
+                                  padding: '1px 6px',
+                                  borderRadius: '999px',
+                                  background: Math.abs(pair.funding.rateAnnualized) > 50 ? 'rgba(239,68,68,0.15)' : 'rgba(100,116,139,0.15)',
+                                  color: Math.abs(pair.funding.rateAnnualized) > 50 ? '#fca5a5' : '#94a3b8',
+                                  fontWeight: 600
+                                }}>
+                                  {pair.funding.rateAnnualized?.toFixed(0)}% APY
+                                </span>
+                              )}
+                            </div>
+                          </Tooltip>
+                        ) : (
+                          <span style={{ fontSize: '11px', color: '#475569' }}>—</span>
+                        )}
+                      </td>
                       <td className="text-center">
                         <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
                           {pair.dexCount || 2} DEXs
@@ -518,7 +562,7 @@ function ScreenerPanel() {
 
                     {isExpanded && (
                       <tr>
-                        <td colSpan={5} style={{ padding: 0 }}>
+                        <td colSpan={6} style={{ padding: 0 }}>
                           <div style={{
                             padding: '14px 16px',
                             background: 'rgba(2, 6, 23, 0.35)',
