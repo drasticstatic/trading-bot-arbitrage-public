@@ -28,17 +28,6 @@ export default function PerpOpportunitiesPanel() {
   const { screenerPairs, perpStatus } = useSelector(state => state.bot)
   const [calculatorCapital, setCalculatorCapital] = useState(10000)
 
-  // Debug logging
-  console.log('[PERP PANEL] screenerPairs:', screenerPairs?.length || 0, 'items')
-  console.log('[PERP PANEL] perpStatus:', perpStatus)
-  if (screenerPairs?.length > 0) {
-    console.log('[PERP PANEL] First pair sample:', {
-      name: screenerPairs[0]?.name,
-      perp: screenerPairs[0]?.perp,
-      funding: screenerPairs[0]?.funding
-    })
-  }
-
   // Extract pairs with perp data
   const perpPairs = useMemo(() => {
     if (!screenerPairs) return []
