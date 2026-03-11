@@ -44,6 +44,17 @@ Last updated: 2026-01-30
 - ✅ **README docs** - Added notes explaining fork freshness indicators + RPC rate limiting placeholders
 - ✅ **Pair list expanded** - Added USDC/USDT, ARB/USDT, WBTC/USDC, LINK/USDC, UNI/USDC, GMX/USDC
 
+### ✅ Recently Completed (2026-02-12) — Perp DEX Integration
+- ✅ **CCXT library installed** - Hyperliquid and 110+ exchange support via npm
+- ✅ **perpDex.js helper** - New module for perp price feeds and funding rates
+- ✅ **Hyperliquid integration** - Real-time perp prices for ETH, ARB, BTC, LINK, UNI, GMX pairs
+- ✅ **Spot-perp spread calculation** - Compares spot prices vs perp prices, shows arbitrage direction
+- ✅ **Funding rate monitoring** - Fetches funding rates with annualized APY calculation
+- ✅ **Perp column in screener** - New column showing spot-perp spread % and funding APY
+- ✅ **Perp status indicator** - Table header shows perp DEX connection status (green dot when connected)
+- ✅ **Redux perpStatus** - Frontend state management for perp integration status
+- ✅ **WebSocket perpStatus** - SCREENER_UPDATE broadcast includes perp status and per-pair perp data
+
 ### 🔧 Current Issues
 1. **"Too little received" Error** - Expected behavior, contract rejects unprofitable trades
 2. **Mainnet ETH Balance Shows 0** - Verified wallet has 0 ETH on Arbitrum (funds on Ethereum mainnet need bridging)
@@ -76,6 +87,7 @@ Last updated: 2026-01-30
 ### 📊 Bot Status
 - **Executable DEXs**: Uniswap V3 ✓, PancakeSwap V3 ✓, SushiSwap V3 ✓
 - **Scan-Only DEXs**: Camelot (Algebra protocol)
+- **Perp DEXs (price feeds)**: Hyperliquid ✓ (via CCXT)
 - **Flash Loan Provider**: Balancer V2 Vault (zero fees)
 - **Contract Address**: 0xDB544459EeBf51Ee30D45C278D0b1a8C628C7947
 
