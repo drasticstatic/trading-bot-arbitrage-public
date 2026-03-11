@@ -2,6 +2,14 @@ import React, { useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import Tooltip from './Tooltip'
 
+const EXPECTED_UNAVAILABLE_PERP_MARKETS = ['MAGIC', 'GNS', 'GRAIL']
+
+function getExpectedUnavailablePerpToken(symbol = '') {
+  return String(symbol)
+    .split('/')
+    .find(token => EXPECTED_UNAVAILABLE_PERP_MARKETS.includes(token)) || null
+}
+
 // Funding rate APY color gradient (green=positive income, red=negative cost)
 function getFundingColor(apy) {
   if (apy === null || apy === undefined) return '#64748b'
@@ -25,7 +33,7 @@ function getSpreadColor(spreadPct) {
 }
 
 export default function PerpOpportunitiesPanel() {
-  const { screenerPairs, perpStatus } = useSelector(state => state.bot)
+	  const { screenerPairs, perpStatus, screenerTimestamp } = useSelector(state => state.bot)
   const [calculatorCapital, setCalculatorCapital] = useState(10000)
 
   // Extract pairs with perp data
@@ -70,6 +78,65 @@ export default function PerpOpportunitiesPanel() {
   const income = bestOpportunity
     ? calculateDeltaNeutralIncome(calculatorCapital, bestOpportunity.fundingAPY)
     : null
+	  const hasScreenerSnapshot = Boolean(screenerTimestamp || screenerPairs.length)
+	  const perpBootstrapping = hasScreenerSnapshot
+	    && perpStatus?.initialized
+	    && (!perpStatus?.lastFetchAt || (perpStatus?.fetchInFlight && perpPairs.length === 0))
+	  const expectedUnavailableSymbols = Array.from(new Set(
+	    screenerPairs
+	      .map(pair => (!pair.perp ? getExpectedUnavailablePerpToken(pair.symbol) : null))
+	      .filter(Boolean)
+	  ))
+	  const panelStatus = !hasScreenerSnapshot
+	    ? {
+	        label: 'Awaiting screener',
+	        background: 'rgba(59, 130, 246, 0.15)',
+	        color: '#93c5fd'
+	      }
+	    : !perpStatus
+	      ? {
+	          label: 'Perp status pending',
+	          background: 'rgba(51, 65, 85, 0.22)',
+	          color: '#94a3b8'
+	        }
+	      : !perpStatus.initialized
+	        ? {
+	            label: 'Perp unavailable',
+	            background: 'rgba(239, 68, 68, 0.15)',
+	            color: '#f87171'
+	          }
+	        : perpBootstrapping
+	          ? {
+	              label: 'Warming up',
+	              background: 'rgba(245, 158, 11, 0.15)',
+	              color: '#fcd34d'
+	            }
+	          : perpStatus.fetchInFlight
+	            ? {
+	                label: 'Refreshing cache',
+	                background: 'rgba(59, 130, 246, 0.15)',
+	                color: '#93c5fd'
+	              }
+	            : {
+	                label: `${perpStatus.cachedPairs || 0} cached pairs`,
+	                background: 'rgba(16, 185, 129, 0.15)',
+	                color: '#6ee7b7'
+	              }
+	  const heatmapEmptyMessage = !hasScreenerSnapshot
+	    ? 'Awaiting the first screener snapshot. Cold start can take several seconds before perp coverage can populate.'
+	    : perpBootstrapping
+	      ? 'Screener rows are live, but perp enrichment is still warming in the background.'
+	      : 'No current perp rows are available. Expected unavailable markets remain operator-visible as expected n/a, not as a transport outage.'
+	  const calculatorEmptyMessage = !hasScreenerSnapshot
+	    ? 'Awaiting first screener snapshot before delta-neutral opportunities can be calculated.'
+	    : perpBootstrapping
+	      ? 'Waiting for enough warmed perp rows to rank delta-neutral opportunities.'
+	      : 'No live perp-backed funding opportunity is available right now.'
+	  const liveTableEmptyMessage = !hasScreenerSnapshot
+	    ? 'Awaiting first screener snapshot.'
+	    : perpBootstrapping
+	      ? 'Perp enrichment warming — table will fill as background coverage completes.'
+	      : 'No live spot-perp rows yet.'
 
   return (
     <div className="glass rounded-xl p-5 mt-6" style={{
@@ -97,14 +164,51 @@ export default function PerpOpportunitiesPanel() {
             fontSize: '10px',
             padding: '3px 8px',
             borderRadius: '999px',
-            background: perpStatus?.initialized ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-            color: perpStatus?.initialized ? '#10b981' : '#ef4444',
+	            background: panelStatus.background,
+	            color: panelStatus.color,
             fontWeight: 600
           }}>
-            {perpStatus?.initialized ? `● ${perpStatus.cachedPairs || 0} Pairs` : '○ Offline'}
+	            {panelStatus.label}
           </span>
         </div>
       </div>
+
+	      {(!hasScreenerSnapshot || perpBootstrapping || expectedUnavailableSymbols.length > 0) && (
+	        <div aria-live="polite" role="status" style={{ display: 'grid', gap: '8px', marginBottom: '16px' }}>
+	          {(!hasScreenerSnapshot || perpBootstrapping) && (
+	            <div style={{
+	              borderRadius: '12px',
+	              padding: '12px 16px',
+	              border: !hasScreenerSnapshot ? '1px solid rgba(96, 165, 250, 0.35)' : '1px solid rgba(245, 158, 11, 0.35)',
+	              background: !hasScreenerSnapshot ? 'rgba(30, 64, 175, 0.18)' : 'rgba(120, 53, 15, 0.28)'
+	            }}>
+	              <div style={{ color: !hasScreenerSnapshot ? '#bfdbfe' : '#fde68a', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>
+	                {!hasScreenerSnapshot ? 'Cold start in progress' : 'Partial perp warm-up in progress'}
+	              </div>
+	              <div style={{ color: !hasScreenerSnapshot ? '#93c5fd' : '#fcd34d', fontSize: '12px', lineHeight: 1.5 }}>
+	                {!hasScreenerSnapshot
+	                  ? 'This panel waits on the first screener snapshot before it can render live perp coverage.'
+	                  : 'Spot rows are already live. Hyperliquid enrichment continues in the background, so heatmap, calculator, and spread rows may stay partial for a few seconds.'}
+	              </div>
+	            </div>
+	          )}
+	          {expectedUnavailableSymbols.length > 0 && (
+	            <div style={{
+	              borderRadius: '12px',
+	              padding: '12px 16px',
+	              border: '1px solid rgba(148, 163, 184, 0.28)',
+	              background: 'rgba(15, 23, 42, 0.42)'
+	            }}>
+	              <div style={{ color: '#e2e8f0', fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>
+	                Expected unavailable symbols remain normal
+	              </div>
+	              <div style={{ color: '#94a3b8', fontSize: '12px', lineHeight: 1.5 }}>
+	                {expectedUnavailableSymbols.join(', ')} currently have no expected Hyperliquid perp market. Missing rows for those symbols should not be interpreted as websocket failure or a full outage.
+	              </div>
+	            </div>
+	          )}
+	        </div>
+	      )}
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -121,7 +225,7 @@ export default function PerpOpportunitiesPanel() {
 
           {perpPairs.length === 0 ? (
             <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px' }}>
-              No perp data available
+	              {heatmapEmptyMessage}
             </div>
           ) : (
             <div className="grid grid-cols-3 gap-2">
@@ -269,7 +373,7 @@ export default function PerpOpportunitiesPanel() {
             </div>
           ) : (
             <div style={{ color: '#64748b', fontSize: '12px', textAlign: 'center', padding: '24px' }}>
-              Waiting for perp data...
+	              {calculatorEmptyMessage}
             </div>
           )}
         </div>
@@ -299,8 +403,14 @@ export default function PerpOpportunitiesPanel() {
                 <th style={{ textAlign: 'center', padding: '8px', color: '#64748b', fontWeight: 600 }}>Signal</th>
               </tr>
             </thead>
-            <tbody>
-              {perpPairs.slice(0, 8).map(pair => (
+	            <tbody>
+	              {perpPairs.length === 0 ? (
+	                <tr>
+	                  <td colSpan={6} style={{ padding: '16px', textAlign: 'center', color: '#64748b' }}>
+	                    {liveTableEmptyMessage}
+	                  </td>
+	                </tr>
+	              ) : perpPairs.slice(0, 8).map(pair => (
                 <tr key={pair.name} style={{ borderBottom: '1px solid rgba(100, 116, 139, 0.1)' }}>
                   <td style={{ padding: '8px', color: '#e2e8f0', fontWeight: 600 }}>{pair.name}</td>
                   <td style={{ padding: '8px', textAlign: 'right', color: '#94a3b8' }}>${pair.spotPrice?.toFixed(4) || '-'}</td>
@@ -324,7 +434,7 @@ export default function PerpOpportunitiesPanel() {
                     </span>
                   </td>
                 </tr>
-              ))}
+	              ))}
             </tbody>
           </table>
         </div>
