@@ -5,6 +5,14 @@ import { clearTrades } from '../store/botSlice'
 
 import Tooltip from './Tooltip'
 
+const EXPECTED_UNAVAILABLE_PERP_MARKETS = ['MAGIC', 'GNS', 'GRAIL']
+
+function getExpectedUnavailablePerpToken(symbol = '') {
+  return String(symbol)
+    .split('/')
+    .find(token => EXPECTED_UNAVAILABLE_PERP_MARKETS.includes(token)) || null
+}
+
 function ScreenerPanel() {
   const dispatch = useDispatch()
   const { screenerPairs, screenerBlock, screenerTimestamp, threshold, selectedPair, analysisResult, analysisByPair, isExecuting, isTestMode, settings, fork, perpStatus } = useSelector(state => state.bot)
@@ -112,6 +120,83 @@ function ScreenerPanel() {
 	const shownCount = displayedPairs.length
 	const visibleCount = visiblePairs.length
 	const totalCount = screenerPairs.length
+	const hasScreenerSnapshot = Boolean(screenerTimestamp || screenerBlock || screenerPairs.length)
+	const hasPerpCoverage = screenerPairs.some(pair => pair.perp?.price)
+	const perpBootstrapping = hasScreenerSnapshot
+	  && perpStatus?.initialized
+	  && (!perpStatus?.lastFetchAt || (perpStatus?.fetchInFlight && !hasPerpCoverage))
+	const expectedUnavailableSymbols = Array.from(new Set(
+	  screenerPairs
+	    .map(pair => (!pair.perp ? getExpectedUnavailablePerpToken(pair.symbol) : null))
+	    .filter(Boolean)
+	))
+	const runtimeNotices = [
+	  fork?.needsRefork && {
+	    key: 'refork',
+	    title: 'Refork needed',
+	    message: `Local fork is ~${fork.behindBlocks?.toLocaleString?.() || fork.behindBlocks} blocks behind mainnet. Restart the bot to refresh the snapshot.`,
+	    border: '1px solid rgba(239, 68, 68, 0.35)',
+	    background: 'rgba(127, 29, 29, 0.35)',
+	    titleColor: '#fecaca',
+	    textColor: '#fca5a5'
+	  },
+	  !hasScreenerSnapshot && {
+	    key: 'startup',
+	    title: 'Awaiting first screener snapshot',
+	    message: 'Cold start can take several seconds before the first usable spot rows arrive.',
+	    border: '1px solid rgba(96, 165, 250, 0.35)',
+	    background: 'rgba(30, 64, 175, 0.18)',
+	    titleColor: '#bfdbfe',
+	    textColor: '#93c5fd'
+	  },
+	  perpBootstrapping && {
+	    key: 'perp-warmup',
+	    title: 'Screener live, perp enrichment warming',
+	    message: 'Spot rows are live. Perp coverage is still filling in from background enrichment, so some rows may temporarily show warming or expected n/a.',
+	    border: '1px solid rgba(245, 158, 11, 0.35)',
+	    background: 'rgba(120, 53, 15, 0.28)',
+	    titleColor: '#fde68a',
+	    textColor: '#fcd34d'
+	  },
+	  (hasScreenerSnapshot && expectedUnavailableSymbols.length > 0) && {
+	    key: 'expected-unavailable',
+	    title: 'Expected unavailable perp markets',
+	    message: `${expectedUnavailableSymbols.join(', ')} currently read as expected n/a on Hyperliquid. This is not a websocket failure or total perp outage.`,
+	    border: '1px solid rgba(148, 163, 184, 0.28)',
+	    background: 'rgba(15, 23, 42, 0.42)',
+	    titleColor: '#e2e8f0',
+	    textColor: '#94a3b8'
+	  }
+	].filter(Boolean)
+	const perpHeaderState = !hasScreenerSnapshot
+	  ? {
+	      color: '#60a5fa',
+	      tooltip: 'Spot screener is still waiting on its first snapshot. Perp enrichment starts after the first screener rows arrive.'
+	    }
+	  : !perpStatus
+	    ? {
+	        color: '#64748b',
+	        tooltip: 'Perp status has not arrived yet.'
+	      }
+	    : !perpStatus.initialized
+	      ? {
+	          color: '#ef4444',
+	          tooltip: perpStatus.error ? `Perp exchange unavailable: ${perpStatus.error}` : 'Perp exchange is not initialized.'
+	        }
+	      : perpBootstrapping
+	        ? {
+	            color: '#f59e0b',
+	            tooltip: 'Perp enrichment is still warming in the background. Missing rows during this phase do not imply websocket loss.'
+	          }
+	        : perpStatus.fetchInFlight
+	          ? {
+	              color: '#60a5fa',
+	              tooltip: `${perpStatus.exchange}: refresh in flight. Cached perp rows stay visible while newer data loads.`
+	            }
+	          : {
+	              color: '#10b981',
+	              tooltip: `${perpStatus.exchange}: ${perpStatus.cachedPairs || 0} cached perp markets. Expected unavailable symbols remain marked as expected n/a.`
+	            }
 
   return (
     <div className="screener-card" style={{ position: 'relative' }}>
@@ -275,7 +360,7 @@ function ScreenerPanel() {
 		              <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '999px', background: '#10b981', marginLeft: '6px', animation: 'pulse 1.2s infinite' }} />
 		            )}
 		            <span style={{ color: '#475569', margin: '0 6px' }}>•</span>
-		            <Tooltip
+	            <Tooltip
 		              text={
 		                (typeof fork?.behindBlocks === 'number')
 		                  ? `Fork freshness: ~${fork.behindBlocks.toLocaleString()} blocks behind Arbitrum mainnet. If this grows, restart/refork to refresh snapshot.`
@@ -290,7 +375,7 @@ function ScreenerPanel() {
 		                  fontWeight: 800
 		                }}
 		              >
-		                {(typeof fork?.behindBlocks === 'number') ? `${fork.behindBlocks.toLocaleString()} behind` : '— behind'}
+	                {(typeof fork?.behindBlocks === 'number') ? `Fork ${fork.behindBlocks.toLocaleString()} behind` : 'Fork freshness —'}
 		              </span>
 		            </Tooltip>
 		            {fork?.needsRefork && (
@@ -307,7 +392,7 @@ function ScreenerPanel() {
 		                      fontWeight: 800
 		                    }}
 		                  >
-		                    REFORK
+	                    REFORK NEEDED
 		                  </span>
 		                </Tooltip>
 		              </>
@@ -374,11 +459,40 @@ function ScreenerPanel() {
         </div>
       )}
 
+	      {runtimeNotices.length > 0 && (
+	        <div aria-live="polite" role="status" style={{ display: 'grid', gap: '8px', padding: '0 16px 16px' }}>
+	          {runtimeNotices.map((notice) => (
+	            <div
+	              key={notice.key}
+	              style={{
+	                border: notice.border,
+	                background: notice.background,
+	                borderRadius: '12px',
+	                padding: '12px 16px'
+	              }}
+	            >
+	              <div style={{ color: notice.titleColor, fontSize: '12px', fontWeight: 700, marginBottom: '4px' }}>
+	                {notice.title}
+	              </div>
+	              <div style={{ color: notice.textColor, fontSize: '12px', lineHeight: 1.5 }}>
+	                {notice.message}
+	              </div>
+	            </div>
+	          ))}
+	        </div>
+	      )}
+
       {/* Table */}
       {displayedPairs.length === 0 ? (
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>{screenerPairs.length > 0 ? 'All pairs filtered out - click "Show All" above' : 'Loading pairs...'}</p>
+	          <p>
+	            {screenerPairs.length > 0
+	              ? 'All pairs filtered out - click "Show All" above'
+	              : hasScreenerSnapshot
+	                ? 'Waiting for first usable screener rows...'
+	                : 'Awaiting first screener snapshot... cold start can take a few seconds.'}
+	          </p>
         </div>
       ) : (
         <div className="table-wrapper" style={{ maxHeight: '500px', overflowY: 'auto' }}>
@@ -388,15 +502,15 @@ function ScreenerPanel() {
                 <th style={{ background: '#0f172a' }}>Pair</th>
                 <th className="text-right" style={{ background: '#0f172a' }}>Best Route</th>
                 <th className="text-right" style={{ background: '#0f172a' }}>Spread</th>
-                <th className="text-center" style={{ background: '#0f172a' }}>
-                  <Tooltip text={perpStatus?.initialized ? `🔮 Perp DEX: ${perpStatus.exchange} (${perpStatus.cachedPairs} pairs)` : '⚠️ Perp DEX: not connected'}>
+	                <th className="text-center" style={{ background: '#0f172a' }}>
+	                  <Tooltip text={perpHeaderState.tooltip}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       Perp
                       <span style={{
                         width: '6px',
                         height: '6px',
                         borderRadius: '50%',
-                        background: perpStatus?.initialized ? '#10b981' : '#64748b',
+	                        background: perpHeaderState.color,
                         display: 'inline-block'
                       }} />
                     </span>
@@ -503,7 +617,7 @@ function ScreenerPanel() {
                         )
                       })()}
                       {/* Perp Data Cell */}
-                      <td className="text-center" style={{ minWidth: '110px' }}>
+	                      <td className="text-center" style={{ minWidth: '110px' }}>
                         {pair.perp ? (
                           <Tooltip text={`🔮 ${pair.perp.exchange}: $${Number(pair.perp.price).toFixed(4)} | Spot-Perp: ${pair.perp.spreadPct}% | Signal: ${pair.perp.signal}${pair.funding ? ` | Funding: ${(pair.funding.rate * 100).toFixed(4)}% (${pair.funding.rateAnnualized?.toFixed(1)}% APY)` : ''}`}>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2px' }}>
@@ -529,7 +643,71 @@ function ScreenerPanel() {
                             </div>
                           </Tooltip>
                         ) : (
-                          <span style={{ fontSize: '11px', color: '#475569' }}>—</span>
+	                          (() => {
+	                            const expectedUnavailableToken = getExpectedUnavailablePerpToken(pair.symbol)
+	                            const pendingWarmup = perpBootstrapping && !expectedUnavailableToken
+	                            const refreshingMissing = !pendingWarmup && perpStatus?.initialized && perpStatus?.fetchInFlight && !expectedUnavailableToken
+	                            const fallback = expectedUnavailableToken
+	                              ? {
+	                                  label: 'expected n/a',
+	                                  text: `${expectedUnavailableToken} is currently expected to be unavailable on Hyperliquid. This does not indicate a websocket failure.`,
+	                                  background: 'rgba(100, 116, 139, 0.16)',
+	                                  border: '1px solid rgba(148, 163, 184, 0.25)',
+	                                  color: '#cbd5e1'
+	                                }
+	                              : pendingWarmup
+	                                ? {
+	                                    label: 'warming',
+	                                    text: 'Spot screener data is live. Perp enrichment is still warming in the background for this row.',
+	                                    background: 'rgba(245, 158, 11, 0.14)',
+	                                    border: '1px solid rgba(245, 158, 11, 0.24)',
+	                                    color: '#fcd34d'
+	                                  }
+	                                : refreshingMissing
+	                                  ? {
+	                                      label: 'refreshing',
+	                                      text: 'Perp refresh is in flight. Cached coverage remains available while this row waits for the latest enrichment pass.',
+	                                      background: 'rgba(59, 130, 246, 0.14)',
+	                                      border: '1px solid rgba(96, 165, 250, 0.24)',
+	                                      color: '#93c5fd'
+	                                    }
+	                                  : perpStatus?.initialized
+	                                    ? {
+	                                        label: 'n/a',
+	                                        text: 'No current perp match is available for this spot pair on the configured perp venue.',
+	                                        background: 'rgba(51, 65, 85, 0.28)',
+	                                        border: '1px solid rgba(100, 116, 139, 0.24)',
+	                                        color: '#94a3b8'
+	                                      }
+	                                    : {
+	                                        label: '—',
+	                                        text: perpStatus?.error ? `Perp exchange unavailable: ${perpStatus.error}` : 'Perp status pending.',
+	                                        background: 'rgba(51, 65, 85, 0.16)',
+	                                        border: '1px solid rgba(71, 85, 105, 0.24)',
+	                                        color: '#64748b'
+	                                      }
+
+	                            return (
+	                              <Tooltip text={fallback.text}>
+	                                <span style={{
+	                                  display: 'inline-flex',
+	                                  alignItems: 'center',
+	                                  justifyContent: 'center',
+	                                  minWidth: '72px',
+	                                  padding: '2px 8px',
+	                                  borderRadius: '999px',
+	                                  fontSize: '10px',
+	                                  fontWeight: 700,
+	                                  letterSpacing: '0.01em',
+	                                  background: fallback.background,
+	                                  border: fallback.border,
+	                                  color: fallback.color
+	                                }}>
+	                                  {fallback.label}
+	                                </span>
+	                              </Tooltip>
+	                            )
+	                          })()
                         )}
                       </td>
                       <td className="text-center">
