@@ -27,6 +27,14 @@
 - Flashloan-masterclass / Aave-leverage strategy integration.
 - Optional micro-follow-up only: make `Settings updated` feedback copy human-readable instead of showing internal keys such as `autoExecute`.
 
+## Production RPC (future)
+
+- Upgrade Alchemy to Growth tier (330 CU/s) for sustained high-throughput monitoring
+- Add secondary RPC fallback (public Arbitrum RPC as backup when primary is rate-limited)
+- Implement RPC request batching (eth_call multicall) to reduce total call count
+- Consider WebSocket subscriptions for price feeds instead of polling
+- Switch back to WebSocket provider when on a paid RPC plan (lower latency for execution, but requires higher CU/s limit)
+
 ## Boundaries
 
 - This mirror is secondary to the live Intent spec and workspace notes.

@@ -7,6 +7,23 @@ import "@balancer-labs/v2-interfaces/contracts/solidity-utils/openzeppelin/IERC2
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
 /**
+ * @dev Algebra protocol router interface (used by Camelot V3 on Arbitrum).
+ *      Differs from Uniswap V3: no `fee` parameter — the pool sets fees dynamically.
+ */
+interface IAlgebraSwapRouter {
+    struct ExactInputSingleParams {
+        address tokenIn;
+        address tokenOut;
+        address recipient;
+        uint256 deadline;
+        uint256 amountIn;
+        uint256 amountOutMinimum;
+        uint160 sqrtPriceLimitX96;
+    }
+    function exactInputSingle(ExactInputSingleParams calldata params) external payable returns (uint256 amountOut);
+}
+
+/**
  * @title Arbitrage
  * @notice Secure flash loan arbitrage contract for Uniswap V3 / Pancakeswap V3
  * @dev Security features:
@@ -29,6 +46,9 @@ contract Arbitrage is IFlashLoanRecipient {
 
     // Whitelisted routers - only these can be used for swaps
     mapping(address => bool) public whitelistedRouters;
+
+    // Algebra-protocol routers (e.g. Camelot V3) — use different swap interface (no fee param)
+    mapping(address => bool) public algebraRouters;
 
     // ============ Structs ============
     struct Trade {
@@ -59,6 +79,7 @@ contract Arbitrage is IFlashLoanRecipient {
     event FlashLoanReceived(address indexed token, uint256 amount, uint256 fee, uint256 amountOwed);
     event FlashLoanRepaid(address indexed token, uint256 amountOwed);
     event RouterWhitelisted(address indexed router, bool status);
+    event AlgebraRouterSet(address indexed router, bool isAlgebra);
     event OwnershipTransferInitiated(address indexed currentOwner, address indexed pendingOwner);
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
     event EmergencyWithdraw(address indexed token, uint256 amount);
@@ -86,13 +107,16 @@ contract Arbitrage is IFlashLoanRecipient {
     constructor() {
         owner = msg.sender;
 
-        // Whitelist known good routers (Arbitrum addresses)
+        // Whitelist known good routers (Arbitrum mainnet addresses)
         // Uniswap V3 Router
         whitelistedRouters[0xE592427A0AEce92De3Edee1F18E0157C05861564] = true;
         // Pancakeswap V3 Router
         whitelistedRouters[0x1b81D678ffb9C0263b24A97847620C99d213eB14] = true;
         // Sushiswap V3 Router
         whitelistedRouters[0x8A21F6768C1f8075791D08546Dadf6daA0bE820c] = true;
+        // Camelot V3 Router (Algebra protocol — no fee param)
+        whitelistedRouters[0xc873fEcbd354f5A56E00E710B90EF4201db2448d] = true;
+        algebraRouters[0xc873fEcbd354f5A56E00E710B90EF4201db2448d] = true;
     }
 
     // ============ External Functions ============
@@ -203,6 +227,17 @@ contract Arbitrage is IFlashLoanRecipient {
     }
 
     /**
+     * @notice Mark a whitelisted router as Algebra-protocol (e.g. Camelot V3).
+     *         Algebra routers use a different exactInputSingle signature (no fee param).
+     *         Router must already be whitelisted before calling this.
+     */
+    function setAlgebraRouter(address _router, bool _isAlgebra) external onlyOwner {
+        require(whitelistedRouters[_router], "Router not whitelisted");
+        algebraRouters[_router] = _isAlgebra;
+        emit AlgebraRouterSet(_router, _isAlgebra);
+    }
+
+    /**
      * @notice Pause/unpause the contract
      */
     function setPaused(bool _paused) external onlyOwner {
@@ -270,39 +305,46 @@ contract Arbitrage is IFlashLoanRecipient {
         _safeApprove(_tokenIn, _router, 0);
         _safeApprove(_tokenIn, _router, _amountIn);
 
-        // Setup swap parameters (currently formatted for Uniswap V3)
-        // This can be adapted for other DEXs by changing the parameters accordingly
-        // For Uniswap V3, we use ExactInputSingleParams
-        // to swap a single token for another token.
-        // This is a Uniswap V3 specific function, so ensure the router supports it.
-        // If using a different DEX, you may need to adjust the parameters accordingly.
-        // Note: The fee is a Uniswap V3 specific parameter, so ensure the router supports it.
-        // If using a different DEX, you may need to adjust the parameters accordingly.
-        // The fee is typically 3000 for Uniswap V3, but can vary based on the pool.
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: _tokenIn,
-                tokenOut: _tokenOut,
-                fee: _fee,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: _amountIn,
-                amountOutMinimum: _amountOut,
-                sqrtPriceLimitX96: 0
-            });
-
-        // Perform swap
         uint256 amountOut;
-        try ISwapRouter(_router).exactInputSingle(params) returns (uint256 out) {
-            amountOut = out;
-        } catch (bytes memory reason) {
-            if (reason.length == 0) {
-                revert("V3 swap failed");
-            }
 
-            // Bubble up original revert data for better debugging.
-            assembly {
-                revert(add(reason, 32), mload(reason))
+        if (algebraRouters[_router]) {
+            // Algebra protocol (Camelot V3) — no fee param, pool sets fees dynamically
+            IAlgebraSwapRouter.ExactInputSingleParams memory params = IAlgebraSwapRouter
+                .ExactInputSingleParams({
+                    tokenIn: _tokenIn,
+                    tokenOut: _tokenOut,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _amountIn,
+                    amountOutMinimum: _amountOut,
+                    sqrtPriceLimitX96: 0
+                });
+
+            try IAlgebraSwapRouter(_router).exactInputSingle(params) returns (uint256 out) {
+                amountOut = out;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) revert("Algebra swap failed");
+                assembly { revert(add(reason, 32), mload(reason)) }
+            }
+        } else {
+            // Uniswap V3 / PancakeSwap V3 — requires explicit fee tier
+            ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
+                .ExactInputSingleParams({
+                    tokenIn: _tokenIn,
+                    tokenOut: _tokenOut,
+                    fee: _fee,
+                    recipient: address(this),
+                    deadline: block.timestamp,
+                    amountIn: _amountIn,
+                    amountOutMinimum: _amountOut,
+                    sqrtPriceLimitX96: 0
+                });
+
+            try ISwapRouter(_router).exactInputSingle(params) returns (uint256 out) {
+                amountOut = out;
+            } catch (bytes memory reason) {
+                if (reason.length == 0) revert("V3 swap failed");
+                assembly { revert(add(reason, 32), mload(reason)) }
             }
         }
 
