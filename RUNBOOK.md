@@ -377,6 +377,71 @@ If anything goes wrong at any stage:
 
 The guiding principle: **when in doubt, go back to monitor mode.**
 
+## MEV Protection (Flashbots / Private Mempool)
+
+### What is front-running and why does it matter?
+
+When you submit a transaction to the public Ethereum/Arbitrum mempool, it is visible to everyone — including MEV bots (searchers). A searcher can see your pending arbitrage transaction, copy the same trade with a higher gas price, and get their version included in the block before yours. This is called **front-running**. The result: your transaction executes after theirs, the spread has already collapsed, and your trade either reverts or loses money.
+
+For an arbitrage bot, front-running is a direct threat to profitability. Every profitable opportunity that leaks to the public mempool can be stolen.
+
+### How Flashbots Protect works
+
+[Flashbots Protect](https://docs.flashbots.net/flashbots-protect/overview) is a private RPC endpoint that accepts your signed transaction and forwards it **directly to block builders** without ever broadcasting it to the public mempool. Key properties:
+
+- Your transaction never appears in the public pending transaction pool.
+- It lands in a block normally — visible on-chain after inclusion.
+- There is no extra cost. Gas is paid as normal.
+- If the transaction is not included within a set number of blocks, it is dropped silently (no public trace).
+
+The `FLASHBOTS_RPC_URL` config key points to the private RPC endpoint. For Arbitrum, the Flashbots relay is `https://arbitrum-relay.flashbots.net`. Alternative providers (e.g. Alchemy private transactions, Blocknative) can be substituted via the same key.
+
+### How this bot implements it
+
+- **Read calls** (price quotes, pool checks, gas estimates) always use the regular Alchemy provider. These do not submit transactions, so there is nothing to hide.
+- **Execution transactions** (the flash loan + arbitrage call) use a second provider — `executionProvider` — that is initialized from `config.FLASHBOTS_RPC_URL`. When a private RPC is configured, the execution wallet is connected to that provider, so the transaction is submitted privately.
+- If `FLASHBOTS_RPC_URL` is not set, `executionProvider` falls back to the normal provider and a warning is logged at startup:
+
+```
+[MEV] FLASHBOTS_RPC_URL not set — execution via public RPC (front-running risk)
+```
+
+### Configuration
+
+In `config.json`:
+
+```json
+"FLASHBOTS_RPC_URL": "https://arbitrum-relay.flashbots.net"
+```
+
+Or override per-environment in `.env` (the env variable takes priority if you add support for `process.env.FLASHBOTS_RPC_URL`). The default value in `config.json` is the Flashbots Arbitrum relay.
+
+Alternative private RPC endpoints:
+- Flashbots (Arbitrum): `https://arbitrum-relay.flashbots.net`
+- Alchemy: uses `eth_sendPrivateTransaction` on the same Alchemy URL (already supported via the MEV Protection toggle in the UI)
+- Blocknative: `https://api.blocknative.com/v1/auction` (different auth model)
+
+### How to verify a transaction went private
+
+1. Submit a trade with MEV Protection enabled.
+2. Note the transaction hash logged by the bot.
+3. Open [Arbiscan](https://arbiscan.io) and search for the hash.
+4. If it shows as included in a block with **no pending/mempool history** (i.e., it appears directly in the block without a prior "pending" state), it was submitted privately.
+5. You can also check the Flashbots transparency dashboard at [https://transparency.flashbots.net](https://transparency.flashbots.net) to see if your transaction was routed through their system.
+
+### Fallback behavior
+
+If `FLASHBOTS_RPC_URL` is not set (or set to an empty string):
+
+- The bot initializes normally — no crash.
+- `executionProvider` is set to the regular `provider`.
+- A warning is printed at startup (see above).
+- Execution transactions go through the public mempool as before.
+
+This ensures graceful degradation: the bot remains fully functional without private mempool access, with front-running risk noted in logs.
+
+---
+
 ## Q&A Log — Pre-Mainnet Questions (2026-04-09)
 
 This section records questions asked before the first mainnet deployment, with answers, so you or another agent can pick up context quickly.
