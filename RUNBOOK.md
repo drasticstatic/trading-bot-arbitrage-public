@@ -376,3 +376,95 @@ If anything goes wrong at any stage:
 5. **Do not resume execution** until the root cause is understood
 
 The guiding principle: **when in doubt, go back to monitor mode.**
+
+## Q&A Log — Pre-Mainnet Questions (2026-04-09)
+
+This section records questions asked before the first mainnet deployment, with answers, so you or another agent can pick up context quickly.
+
+### Q: What is BOT_API_TOKEN and do I need it?
+
+**Short answer:** It's a bearer token that protects the bot's REST API (`/api/status`, `/api/logs`, `/api/settings`, etc.) from being called by anyone other than you. If it's unset, the server falls back to localhost-only access — fine for local use, but recommended for production.
+
+**How it works:**
+
+When `BOT_API_TOKEN` is set in `.env`, every HTTP request to the bot's API must include the header:
+
+```
+Authorization: Bearer <your-token>
+```
+
+Without this header, the server returns a `401 Unauthorized` response. The WebSocket connection (used by the live dashboard) is **not** affected — it stays open to localhost.
+
+**When you need it:**
+
+- You plan to access the dashboard from outside the machine running the bot (e.g., via a VPN, SSH tunnel, or public IP)
+- You're running the bot on a VPS or cloud instance
+- You want to use the REST API from another tool or script
+
+**When you can skip it:**
+
+- You only ever access the dashboard from the same machine (`localhost:5050` in a browser)
+- You're in monitor-only mode and not concerned about API exposure
+
+**How to generate one:**
+
+```bash
+node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Add the output to `.env`:
+
+```
+BOT_API_TOKEN=a3f9c2e1...your-random-string-here
+```
+
+### Q: Is the "Estimate Deploy Cost" button still accurate?
+
+**Yes — and now more accurate than before.**
+
+- **Gas estimate:** Calls `provider.estimateGas()` against live Arbitrum using the actual compiled bytecode. Updates automatically if the contract changes.
+- **USD estimate:** Previously hardcoded at $3,500/ETH. Now fetches live ETH price from Hyperliquid perp data (same source the bot uses for spread calculations), with $3,500 as fallback if the request fails.
+
+**Actual expected deployment cost:** ~3.1–3.3M gas × Arbitrum base fee (0.01–0.05 gwei) = roughly **$0.05–$0.25** at current prices. Very cheap.
+
+### Q: How much ETH do I actually need, and what for?
+
+The flash loan architecture means **you never need to fund the trade itself** — Balancer lends the tokens, you arbitrage, repay within the same transaction. Your wallet only needs ETH for gas.
+
+| Item | Cost | Notes |
+| --- | --- | --- |
+| Contract deployment | ~$0.05–$0.25 | One-time |
+| Per trade (gas) | ~$0.01–$0.05 | ~600k gas × Arbitrum base fee |
+| Flash loan fee | 0% | Balancer V2 charges no fee |
+| DEX swap fee | ~0.05–0.30% of loan amount | Taken by the pool on each leg |
+| Wallet minimum for deployment | 0.001 ETH ($1–2) | You have 0.0014 ETH — enough |
+| Wallet minimum for sustained trading | 0.01–0.05 ETH | RUNBOOK Stage 2 recommendation |
+
+**With 0.0014 ETH:** You can deploy the contract but will have limited gas runway for trades (47–233 trades at current gas prices before running dry). Topping up to 0.003–0.01 ETH ($5–15) before Stage 3 is recommended.
+
+**Trade size vs profit:** `maxTradeAmountToken0: "0.01"` WETH (≈$15 loan) is the Stage 3 setting. To net profit, the spread must exceed total DEX fees (~0.3–0.6% round trip). At a 0.42% spread (GMX/WETH observed), you're borderline — wait for the spread to widen to 0.5%+ before expecting consistent profit.
+
+### Q: What is the Camelot contract compatibility situation?
+
+**Summary:** Camelot uses the Algebra protocol, which has a different swap interface than Uniswap V3 (no `fee` parameter). The `Arbitrage.sol` contract was updated to handle both.
+
+**What was fixed:** Added `IAlgebraSwapRouter` interface inline in the contract. The `_swapOnV3` function now branches:
+
+- If the router is flagged as an Algebra router → calls `exactInputSingle` without `fee`
+- Otherwise → uses the standard Uniswap V3 `exactInputSingle` with `fee`
+
+`setAlgebraRouter(address, bool)` is an owner-only function that lets you flag additional Algebra-compatible routers post-deploy.
+
+The Camelot router (`0xc873fEcbd354f5A56E00E710B90EF4201db2448d`) is whitelisted and flagged as Algebra in the constructor — no post-deploy call needed.
+
+### Q: What's left before mainnet? (Checklist)
+
+| Step | Status | Notes |
+| --- | --- | --- |
+| Deploy updated contract | Not done | npx hardhat ignition deploy ignition/modules/Arbitrage.js --network arbitrum |
+| Verify on Arbiscan | Not done | npx hardhat verify --network arbitrum <ADDRESS> |
+| Add ARBITRAGE_ADDRESS to .env | Not done | Fill in after deploy |
+| Add BOT_API_TOKEN to .env | Recommended | Any random 32+ char string |
+| Top up wallet to 0.01+ ETH | Needed | Currently 0.0014 ETH — enough to deploy, tight for trading |
+| 24-hour monitor run (GO_NOGO.md gate) | Not started | Run before switching to execute mode |
+| Switch tradingMode to manual | Last step | Only after GO/NO-GO criteria met |
