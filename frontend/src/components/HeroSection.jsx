@@ -52,15 +52,6 @@ function HeroSection() {
     setDraftSettings(settings)
   }, [settings, showSliderModal])
 
-  const getSettingFeedbackLabel = (key) => ({
-    autoExecute: 'Auto Execute',
-    gasLimit: 'Gas Limit',
-    gasPrice: 'Gas Price',
-    mevProtection: 'MEV Shield',
-    priceDifference: 'Price Threshold',
-    skipConfirmation: 'Fast Trade'
-  }[key] || key)
-
   const handleEstimateDeploy = () => {
     // Toggle visibility if already showing estimate
     if (deployEstimate && !estimating) {
@@ -133,7 +124,7 @@ function HeroSection() {
     if (pendingToggle) {
       console.log(`[TOGGLE] ✓ Confirmed: ${pendingToggle.key} = ${pendingToggle.value}`)
       handleSettingChange(pendingToggle.key, pendingToggle.value)
-      setSettingsFeedback(`✓ Updated ${getSettingFeedbackLabel(pendingToggle.key)}`)
+      setSettingsFeedback(`✓ Updated ${pendingToggle.key}`)
       setTimeout(() => setSettingsFeedback(null), 2500)
     }
     setShowToggleModal(false)
@@ -255,7 +246,7 @@ function HeroSection() {
 
       setDraftSettings(prev => ({ ...prev, [pendingSlider.key]: pendingSlider.value }))
 
-      setSettingsFeedback(`✓ Applied ${getSettingFeedbackLabel(pendingSlider.key)}`)
+      setSettingsFeedback(`✓ Applied ${pendingSlider.key}`)
       setTimeout(() => setSettingsFeedback(null), 2500)
     }
     setShowSliderModal(false)
