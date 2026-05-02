@@ -1,0 +1,20 @@
+{
+  "_note": "Secondary filter — see .github/workflows/sync-public.yml for the authoritative protection layer. Run locally with: npx gitexporter gitexporter.config.json",
+  "forceReCreateRepo": true,
+  "sourceRepoPath": ".",
+  "targetRepoPath": "../trading-bot-arbitrage-public",
+  "ignoredPaths": [
+    "bot.js",
+    "helpers/",
+    "scripts/",
+    "config.json",
+    "data/",
+    "CLAUDE.md",
+    ".augmentignore",
+    ".gitignore",
+    ".github/",
+    ".augment/",
+    "gitexporter.config.json",
+    "*.code-workspace"
+  ]
+}

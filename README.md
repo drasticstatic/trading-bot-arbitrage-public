@@ -1,5 +1,7 @@
 # Trading Bot Demo
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey?style=flat)](https://github.com/drasticstatic/.github)
+
 ## How To Start Bot
 This is a simple trading bot demo that monitors swap events on Uniswap V3 and Pancakeswap V3 exchanges. When a swap event occurs, it checks the price difference between the two exchanges for a specified token pair. If a significant price difference is detected, it executes an arbitrage trade using a flash loan from Balancer.
 
