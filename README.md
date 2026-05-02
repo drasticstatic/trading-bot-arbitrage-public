@@ -4,6 +4,8 @@
 
 A web dashboard for monitoring and executing cross-exchange arbitrage opportunities on Uniswap V3 and PancakeSwap V3. Detects price divergence between DEX pairs, estimates profitability, and executes flash-loan-backed arbitrage trades via a deployed Solidity contract.
 
+**[Live Demo →](https://drasticstatic.github.io/trading-bot-arbitrage-public/)**
+
 ---
 
 ## What It Does
@@ -28,6 +30,18 @@ A web dashboard for monitoring and executing cross-exchange arbitrage opportunit
 | Exchange 1 | [Uniswap V3](https://docs.uniswap.org/contracts/v3/overview) |
 | Exchange 2 | [PancakeSwap V3](https://docs.pancakeswap.finance/) |
 | Frontend | React + Vite |
+
+---
+
+## Screenshots / Demo
+
+> _Screenshots coming soon — add your dashboard previews here._
+
+<!--
+Example:
+![Dashboard](./frontend/public/screenshot-dashboard.png)
+![Trade Log](./frontend/public/screenshot-log.png)
+-->
 
 ---
 
