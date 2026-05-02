@@ -108,20 +108,7 @@ Be sure to look at [Uniswap documentation](https://docs.uniswap.org/contracts/v3
 ## Testing Bot on Mainnet
 For monitoring prices and detecting potential arbitrage opportunities, you do not need to deploy the contract. 
 
-## Production Deployment
-
-This bot supports a staged path from local testing to live Arbitrum execution. See **[RUNBOOK.md](RUNBOOK.md)** for the full step-by-step guide.
-
-**Stages:**
-1. **Monitor-only** — observe real Arbitrum prices with no execution (`tradingMode: "monitor"`)
-2. **Manual execution** — operator-initiated trades with conservative caps (`tradingMode: "manual"`)
-3. **Guarded automation** — rate-limited auto-execution after manual validation (`tradingMode: "auto"`)
-
-The bot defaults to **monitor-only mode**. Execution is gated by `tradingMode` in `config.json`, with additional safety controls including trade amount caps, force-execute loss limits, rate limiting, contract pause, and emergency withdraw.
-
-Copy `.env.example` to `.env` and fill in your values before starting. Never commit `.env` or real credentials.
-
-## Fork freshness (`evm_mine`) + "behind blocks" indicator (local mode)
+## Fork freshness (`evm_mine`) + “behind blocks” indicator (local mode)
 
 When running with `PROJECT_SETTINGS.isLocal=true`, the bot uses a **Hardhat fork** (a snapshot of Arbitrum at a specific block).
 
