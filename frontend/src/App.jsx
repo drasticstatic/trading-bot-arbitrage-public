@@ -6,6 +6,7 @@ import ScreenerPanel from './components/ScreenerPanel'
 import LogPanel from './components/LogPanel'
 import TradeExecutionOverlay from './components/TradeExecutionOverlay'
 import TradeExecutionCard from './components/TradeExecutionCard'
+import GHPagesBanner from './components/GHPagesBanner'
 
 // Simple confetti component
 function Confetti({ show }) {
@@ -61,6 +62,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <GHPagesBanner />
       <Confetti show={showConfetti} />
       <TradeExecutionOverlay />
 
