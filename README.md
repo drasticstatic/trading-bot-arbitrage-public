@@ -1,10 +1,13 @@
 # DEX Arbitrage Bot — Frontend Demo
 
+[![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=flat)](https://drasticstatic.github.io/trading-bot-arbitrage-public/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey?style=flat)](https://github.com/drasticstatic/.github)
 
-A web dashboard for monitoring and executing cross-exchange arbitrage opportunities on Uniswap V3 and PancakeSwap V3. Detects price divergence between DEX pairs, estimates profitability, and executes flash-loan-backed arbitrage trades via a deployed Solidity contract.
+**[→ View Live Demo](https://drasticstatic.github.io/trading-bot-arbitrage-public/)**
 
-**[Live Demo →](https://drasticstatic.github.io/trading-bot-arbitrage-public/)**
+> **Note:** The live demo is a UI showcase. Live arbitrage signals, the price screener, and trade execution require the local bot backend + Hardhat fork node running with an Alchemy API key. The full dashboard is explorable without the backend.
+
+A web dashboard for monitoring and executing cross-exchange arbitrage opportunities on Uniswap V3 and PancakeSwap V3. Detects price divergence between DEX pairs, estimates profitability, and executes flash-loan-backed arbitrage trades via a deployed Solidity contract.
 
 ---
 
