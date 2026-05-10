@@ -2,6 +2,7 @@
 
 [![Live Demo](https://img.shields.io/badge/demo-live-brightgreen?style=flat)](https://drasticstatic.github.io/trading-bot-arbitrage-public/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-lightgrey?style=flat)](https://github.com/drasticstatic/.github)
+[![Sync](https://github.com/drasticstatic/trading-bot_arbitrage_DAPPUv3_hardhat_UNI-CAKE/actions/workflows/sync-public.yml/badge.svg)](https://github.com/drasticstatic/trading-bot_arbitrage_DAPPUv3_hardhat_UNI-CAKE/actions/workflows/sync-public.yml)
 
 **[→ View Live Demo](https://drasticstatic.github.io/trading-bot-arbitrage-public/)**
 
