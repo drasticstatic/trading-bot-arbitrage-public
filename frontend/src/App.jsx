@@ -3,10 +3,10 @@ import { useDispatch, useSelector } from 'react-redux'
 import { connectWebSocket } from './store/websocket'
 import HeroSection from './components/HeroSection'
 import ScreenerPanel from './components/ScreenerPanel'
-import PerpOpportunitiesPanel from './components/PerpOpportunitiesPanel'
 import LogPanel from './components/LogPanel'
 import TradeExecutionOverlay from './components/TradeExecutionOverlay'
 import TradeExecutionCard from './components/TradeExecutionCard'
+import GHPagesBanner from './components/GHPagesBanner'
 
 // Simple confetti component
 function Confetti({ show }) {
@@ -62,6 +62,7 @@ function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      <GHPagesBanner />
       <Confetti show={showConfetti} />
       <TradeExecutionOverlay />
 
@@ -78,9 +79,6 @@ function App() {
 
         {/* Screener Table */}
         <ScreenerPanel />
-
-        {/* Perp Opportunities Panel */}
-        <PerpOpportunitiesPanel />
 
         {/* Trade Execution Terminal + Activity - Side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">

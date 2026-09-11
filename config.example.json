@@ -1,0 +1,21 @@
+{
+  "_note": "Template configuration — copy to config.json and fill in your values. Never commit config.json (it is gitignored). See SECURITY.md for private key handling.",
+  "PROJECT_SETTINGS": {
+    "isLocal": true,
+    "isDeployed": false,
+    "ARBITRAGE_ADDRESS": "0xYOUR_DEPLOYED_CONTRACT_ADDRESS",
+    "PRICE_UNITS": 4,
+    "PRICE_DIFFERENCE": 0.0,
+    "GAS_LIMIT": 600000,
+    "GAS_PRICE": 0.00000001
+  },
+  "PAIRS": [
+    {
+      "name": "TOKEN_A/TOKEN_B",
+      "token0": "0xTOKEN_A_ADDRESS",
+      "token1": "0xTOKEN_B_ADDRESS",
+      "fee": 500,
+      "enabled": false
+    }
+  ]
+}
