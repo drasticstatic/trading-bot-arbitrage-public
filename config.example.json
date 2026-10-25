@@ -13,13 +13,18 @@
   "livePairs": ["ARB/WETH", "WETH/USDC", "PENDLE/WETH", "GMX/WETH", "RDNT/WETH", "LINK/WETH"],
   "liveDexes": ["Uniswap", "PancakeSwap", "Camelot"],
   "livePollingInterval": 15000,
+  "discoverFeeTiers": true,
+  "feeTiers": { "Uniswap": [100, 500, 3000, 10000], "PancakeSwap": [100, 500, 2500, 10000] },
+  "minVenueReserveWeth": 1,
+  "multicallPricing": true,
   "edgeStudy": {
     "enabled": true,
-    "candidateFloorPct": 0.1,
+    "candidateFloorPct": 0,
     "sizeLadderEth": ["0.01", "0.05", "0.1", "0.5", "1"],
     "simCooldownMs": 60000,
     "flashLoanFeeBps": 0,
     "studyDays": 7,
+    "studyStartedAt": null,
     "infraCostUsdPerDay": 0
   },
   "PAIRS": [
