@@ -9,6 +9,19 @@
     "GAS_LIMIT": 600000,
     "GAS_PRICE": 0.00000001
   },
+  "tradingMode": "monitor",
+  "livePairs": ["ARB/WETH", "WETH/USDC", "PENDLE/WETH", "GMX/WETH", "RDNT/WETH", "LINK/WETH"],
+  "liveDexes": ["Uniswap", "PancakeSwap", "Camelot"],
+  "livePollingInterval": 15000,
+  "edgeStudy": {
+    "enabled": true,
+    "candidateFloorPct": 0.1,
+    "sizeLadderEth": ["0.01", "0.05", "0.1", "0.5", "1"],
+    "simCooldownMs": 60000,
+    "flashLoanFeeBps": 0,
+    "studyDays": 7,
+    "infraCostUsdPerDay": 0
+  },
   "PAIRS": [
     {
       "name": "TOKEN_A/TOKEN_B",

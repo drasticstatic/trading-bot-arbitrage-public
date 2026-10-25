@@ -27,6 +27,9 @@ const initialState = {
   // Perp DEX status
   perpStatus: null,
 
+  // Monitor-only edge study (live Arbitrum) — null when the study is not running
+  edge: null,
+
   // Selected pair for trading
   selectedPair: null,
 
@@ -69,13 +72,17 @@ const botSlice = createSlice({
       state.connected = action.payload
     },
     setInitialState: (state, action) => {
-      const { isRunning, isExecuting, isTestMode, settings, recentLogs, wallet } = action.payload
+      const { isRunning, isExecuting, isTestMode, settings, recentLogs, wallet, edge } = action.payload
       state.isRunning = isRunning
       state.isExecuting = isExecuting
       if (isTestMode !== undefined) state.isTestMode = isTestMode
       if (settings) state.settings = settings
       if (recentLogs) state.logs = recentLogs
       if (wallet !== undefined) state.wallet = wallet
+      if (edge !== undefined) state.edge = edge
+    },
+    setEdge: (state, action) => {
+      state.edge = action.payload
     },
     setBotStatus: (state, action) => {
       if (action.payload.isRunning !== undefined) state.isRunning = action.payload.isRunning
@@ -160,6 +167,7 @@ export const {
   setInitialState,
   setBotStatus,
   setWalletInfo,
+  setEdge,
   updateScreener,
   setSelectedPair,
   setAnalysisResult,

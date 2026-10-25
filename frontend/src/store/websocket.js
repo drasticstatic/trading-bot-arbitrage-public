@@ -3,6 +3,7 @@ import {
   setInitialState,
   setBotStatus,
   setWalletInfo,
+  setEdge,
   updateScreener,
   setSelectedPair,
   setAnalysisResult,
@@ -81,6 +82,9 @@ export function connectWebSocket(dispatch) {
           break
         case 'SCREENER_UPDATE':
           dispatch(updateScreener(payload))
+          break
+        case 'EDGE_UPDATE':
+          dispatch(setEdge(payload))
           break
         case 'PAIR_SELECTED':
           dispatch(setSelectedPair(payload))
