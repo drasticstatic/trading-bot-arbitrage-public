@@ -4,6 +4,7 @@ import {
   setBotStatus,
   setWalletInfo,
   setEdge,
+  setEdgeSnapshot,
   updateScreener,
   setSelectedPair,
   setAnalysisResult,
@@ -18,9 +19,31 @@ import {
 
 let ws = null
 let reconnectTimeout = null
+let snapshotLoaded = false
+
+// The public mirror has no bot behind it. The daily report publishes a snapshot of the edge study
+// (frontend/public/edge/latest.json → <base>/edge/latest.json); load it so the page shows the real
+// study instead of an empty shell. Aggregates and public pool prices only.
+export async function loadEdgeSnapshot(dispatch) {
+  if (snapshotLoaded) return
+  const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/'
+  try {
+    const res = await fetch(`${base.replace(/\/?$/, '/')}edge/latest.json`, { cache: 'no-store' })
+    if (!res.ok) return
+    const snap = await res.json()
+    if (snap && snap.edge) {
+      snapshotLoaded = true
+      dispatch(setEdgeSnapshot(snap))
+    }
+  } catch {
+    // no snapshot published yet
+  }
+}
 
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const isStaticHost = /github\.io$|githubusercontent\.com$/.test(window.location.hostname)
+  if (isStaticHost) loadEdgeSnapshot(dispatch)
 
   // Support both Vite (`import.meta.env.VITE_WS_URL`) and legacy CRA-style (`process.env.REACT_APP_WS_URL`).
   const explicitUrl =

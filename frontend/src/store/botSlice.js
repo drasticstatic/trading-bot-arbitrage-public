@@ -29,6 +29,10 @@ const initialState = {
 
   // Monitor-only edge study (live Arbitrum) — null when the study is not running
   edge: null,
+  // Every pool the bot prices right now (pair, venue key, dex, fee, price, reserves)
+  venues: [],
+  // Set when the edge state came from a published snapshot (GitHub Pages) rather than the live socket
+  edgeSnapshotAt: null,
 
   // Selected pair for trading
   selectedPair: null,
@@ -99,6 +103,14 @@ const botSlice = createSlice({
       state.threshold = action.payload.threshold
       state.fork = action.payload.fork ?? null
       state.perpStatus = action.payload.perpStatus ?? null
+      if (Array.isArray(action.payload.venues)) state.venues = action.payload.venues
+    },
+    setEdgeSnapshot: (state, action) => {
+      const { edge, venues, generatedAt, threshold } = action.payload || {}
+      if (edge) state.edge = edge
+      if (Array.isArray(venues)) state.venues = venues
+      if (Number.isFinite(Number(threshold))) state.threshold = Number(threshold)
+      state.edgeSnapshotAt = generatedAt || Date.now()
     },
     setSelectedPair: (state, action) => {
       state.selectedPair = action.payload
@@ -169,6 +181,7 @@ export const {
   setWalletInfo,
   setEdge,
   updateScreener,
+  setEdgeSnapshot,
   setSelectedPair,
   setAnalysisResult,
   setOpportunity,

@@ -5,8 +5,12 @@ import { useSelector } from 'react-redux'
  * EdgeStudyPanel — the monitor-only edge study, read as a finding.
  *
  * One sentence states what the live data says so far. Everything under it is the evidence:
- * the spread tape (last hour, every pair), the size ladder of the best simulated candidate,
- * today's spread distribution, and the decision rule the study exists to settle.
+ * the spread tape (last hour, every pair, after pool fees), the size ladder of the best simulated
+ * candidate, today's spread distribution, the live venue map (every pool the study prices, placed
+ * by how far its price sits from the pair's mid), and the decision rule the study exists to settle.
+ *
+ * "After pool fees" is the quantity that matters across fee tiers: a 0.8% gap to a 1% pool is not
+ * an opportunity, a 0.12% gap between two 0.05% pools is. The threshold is compared to it.
  * Renders nothing when the study is not running (local fork, or EDGE_STUDY=0).
  */
 
@@ -26,6 +30,11 @@ const fmtUsd = (n) => {
   return `${v < 0 ? '−' : ''}$${s}`
 }
 const fmtPct = (n, d = 2) => (Number.isFinite(Number(n)) ? `${Number(n).toFixed(d)}%` : '—')
+const fmtSignedPct = (n, d = 2) => (Number.isFinite(Number(n)) ? `${Number(n) > 0 ? '+' : Number(n) < 0 ? '−' : ''}${Math.abs(Number(n)).toFixed(d)}%` : '—')
+const fmtBps = (n) => (Number.isFinite(n) ? `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(1)} bp` : '—')
+const fmtReserve = (w) => (!Number.isFinite(w) ? '' : w >= 1000 ? `${(w / 1000).toFixed(1)}k WETH` : `${w.toFixed(w >= 100 ? 0 : 1)} WETH`)
+// the spread the rule is judged on: after pool fees when the bot reports it, else the raw screener spread
+const ruleSpread = (pt) => (pt ? (Number.isFinite(pt.n) ? pt.n : Number.isFinite(pt.e) ? pt.e : pt.s) : null)
 const fmtHours = (h) => {
   if (!Number.isFinite(h)) return '—'
   if (h < 1) return `${Math.max(1, Math.round(h * 60))} min`
@@ -60,11 +69,15 @@ function Finding({ edge }) {
   const best = edge.best
   const n = (v) => <span className="edge-num">{v}</span>
 
+  const floorClause = Number(floor) > 0
+    ? <>cleared {n(fmtPct(floor))} after pool fees</>
+    : <>showed a positive spread after pool fees</>
+
   if (!edge.lastTickAt) {
     return (
       <p className="edge-finding">
-        Waiting for the first poll from live Arbitrum. Once prices land, every spread is logged and
-        anything above {n(fmtPct(floor))} gets a quoted round trip.
+        Waiting for the first poll from live Arbitrum. Once prices land, every pool is priced at one
+        block, and any route that {Number(floor) > 0 ? <>clears {n(fmtPct(floor))}</> : 'is positive'} after pool fees gets a quoted round trip.
       </p>
     )
   }
@@ -86,11 +99,14 @@ function Finding({ edge }) {
     ? <> ({n(failed)} of them could not be quoted and were left out, usually an empty pool on one side.)</>
     : null
 
+  const venueCount = edge.venueCount
+  const venueClause = venueCount ? <> across {n(venueCount)} live pools</> : null
+
   return (
     <p className="edge-finding">
-      Over {n(fmtHours(hours))} on live Arbitrum, {n(edge.candidates)} {edge.candidates === 1 ? 'candidate' : 'candidates'} crossed {n(fmtPct(floor))}.
+      Over {n(fmtHours(hours))} on live Arbitrum{venueClause}, {n(edge.candidates)} {edge.candidates === 1 ? 'route' : 'routes'} {floorClause}.
       {failedClause}
-      {' '}{n(edge.cleared)} cleared swap fees, flash-loan fee and gas; {n(edge.wouldFire)} would have fired at the bot’s threshold.
+      {' '}{n(edge.cleared)} also cleared gas and the flash-loan fee in a quoted round trip; {n(edge.wouldFire)} would have fired at the bot’s threshold.
       {bestClause}
     </p>
   )
@@ -104,29 +120,40 @@ function SpreadTape({ edge, threshold }) {
   const labelW = 96
   const rowH = 44
   const padR = 8
-  const pairs = useMemo(() => Object.keys(edge.series || {}).sort(), [edge.series])
-  const floor = Number(edge.settings?.candidateFloorPct) || 0.1
+  // pairs that stopped reporting (a pool set that discovery now skips) drop off the tape after 20 min
+  const pairs = useMemo(() => {
+    const series = edge.series || {}
+    const latest = Math.max(0, ...Object.values(series).map(a => a[a.length - 1]?.t || 0))
+    return Object.keys(series).filter(p => (series[p][series[p].length - 1]?.t || 0) >= latest - 20 * 60000).sort()
+  }, [edge.series])
+  const floor = Number(edge.settings?.candidateFloorPct) || 0
   const th = Number(threshold) || 0.3
 
   const domain = useMemo(() => {
-    let tMin = Infinity, tMax = -Infinity, sMax = 0
+    let tMin = Infinity, tMax = -Infinity, sMax = 0, sMin = 0
     for (const p of pairs) for (const pt of edge.series[p]) {
       if (pt.t < tMin) tMin = pt.t
       if (pt.t > tMax) tMax = pt.t
-      if (pt.s > sMax) sMax = pt.s
+      const v = ruleSpread(pt)
+      if (Number.isFinite(v)) { if (v > sMax) sMax = v; if (v < sMin) sMin = v }
     }
     if (!Number.isFinite(tMin)) { tMin = Date.now() - 3600000; tMax = Date.now() }
     if (tMax - tMin < 10 * 60000) tMin = tMax - 10 * 60000
-    // One dead pool can report a 50% "spread"; cap the shared scale so the real pairs stay readable
-    // and let outliers pin to the top of their row (the row label still shows the true value).
-    const yMax = Math.min(Math.max(th * 1.4, sMax * 1.1, floor * 2.5), Math.max(th * 4, 2))
-    return { tMin, tMax, yMax }
+    // After pool fees most routes sit below zero. Keep zero and the threshold on every row, cap the
+    // scale so one broken pool cannot flatten the rest, and let outliers pin to the row edge
+    // (the row label still shows the true value).
+    const yMax = Math.min(Math.max(th * 1.3, sMax * 1.15, 0.05), Math.max(th * 4, 2))
+    const yMin = Math.max(Math.min(-th * 0.5, sMin * 1.15), -Math.max(th * 3, 1))
+    return { tMin, tMax, yMax, yMin }
   }, [pairs, edge.series, th, floor])
 
   const plotW = Math.max(0, width - labelW - padR)
   // x is relative to the plot svg (0..plotW); the label column sits to its left
   const x = (t) => ((t - domain.tMin) / (domain.tMax - domain.tMin || 1)) * plotW
-  const y = (s, h = rowH) => h - 6 - (Math.min(s, domain.yMax) / domain.yMax) * (h - 12)
+  const y = (s, h = rowH) => {
+    const v = Math.max(domain.yMin, Math.min(domain.yMax, Number.isFinite(s) ? s : domain.yMin))
+    return h - 6 - ((v - domain.yMin) / (domain.yMax - domain.yMin || 1)) * (h - 12)
+  }
 
   const onMove = (e) => {
     const rect = ref.current.getBoundingClientRect()
@@ -152,25 +179,29 @@ function SpreadTape({ edge, threshold }) {
       {pairs.map((p) => {
         const arr = edge.series[p]
         const d = arr.length
-          ? arr.map((pt, i) => `${i ? 'L' : 'M'}${x(pt.t).toFixed(1)},${y(pt.s).toFixed(1)}`).join(' ')
+          ? arr.map((pt, i) => `${i ? 'L' : 'M'}${x(pt.t).toFixed(1)},${y(ruleSpread(pt)).toFixed(1)}`).join(' ')
           : ''
         const last = arr[arr.length - 1]
-        const marks = (edge.markers?.[p] || []).filter(m => m.t >= domain.tMin)
+        const lastRule = ruleSpread(last)
+        // a quoted round trip that did not clear costs is the normal case now; only cleared / fired earn a mark
+        const marks = (edge.markers?.[p] || []).filter(m => m.t >= domain.tMin && (m.clears || m.fired))
         return (
           <div className="edge-tape-row" key={p}>
             <div className="edge-row-label">
               <span>{p}</span>
-              <span className="edge-row-value">{last ? fmtPct(last.s) : '—'}</span>
+              <span className="edge-row-value" title={last && Number.isFinite(last.n) ? `gross ${fmtPct(last.e ?? last.s)} on the executable route` : undefined}>
+                {last ? fmtSignedPct(lastRule) : '—'}
+              </span>
             </div>
             <svg width={plotW + padR} height={rowH} className="edge-tape-svg" aria-hidden="true">
-              {/* threshold + floor rules */}
+              {/* threshold (dashed), zero / floor (solid faint) */}
               <line x1={0} x2={plotW} y1={y(th)} y2={y(th)} className="edge-rule-threshold" />
-              <line x1={0} x2={plotW} y1={y(floor)} y2={y(floor)} className="edge-rule-floor" />
-              <line x1={0} x2={plotW} y1={rowH - 6} y2={rowH - 6} className="edge-rule-base" />
+              <line x1={0} x2={plotW} y1={y(0)} y2={y(0)} className="edge-rule-zero" />
+              {floor > 0 && <line x1={0} x2={plotW} y1={y(floor)} y2={y(floor)} className="edge-rule-floor" />}
               {d && <path d={d} className="edge-line" />}
               {marks.map((m, i) => {
                 const pt = arr.reduce((a, b) => (Math.abs(b.t - m.t) < Math.abs((a?.t ?? Infinity) - m.t) ? b : a), null)
-                const cy = pt ? y(pt.s) : rowH / 2
+                const cy = pt ? y(ruleSpread(pt)) : rowH / 2
                 const cls = m.fired ? 'edge-mark-fired' : m.clears ? 'edge-mark-cleared' : 'edge-mark'
                 return <circle key={i} cx={x(m.t)} cy={cy} r={m.fired || m.clears ? 4.5 : 3.5} className={cls} />
               })}
@@ -181,7 +212,7 @@ function SpreadTape({ edge, threshold }) {
       })}
       <div className="edge-tape-axis" style={{ marginLeft: labelW }}>
         <span>{fmtClock(domain.tMin)}</span>
-        <span>threshold {fmtPct(th)} · floor {fmtPct(floor)}</span>
+        <span>after pool fees · threshold {fmtPct(th)} dashed · zero solid</span>
         <span>{fmtClock(domain.tMax)}</span>
       </div>
       {hover && (
@@ -190,7 +221,7 @@ function SpreadTape({ edge, threshold }) {
           {hoverRows.map(({ p, pt }) => (
             <div className="edge-tooltip-row" key={p}>
               <span>{p}</span>
-              <span>{pt ? fmtPct(pt.s) : '—'}</span>
+              <span>{pt ? fmtSignedPct(ruleSpread(pt)) : '—'}</span>
             </div>
           ))}
         </div>
@@ -218,7 +249,9 @@ function SizeLadder({ candidate }) {
   return (
     <div ref={ref}>
       <div className="edge-ladder-title">
-        {candidate.symbol} · {candidate.buyDex} → {candidate.sellDex} · screener spread {fmtPct(candidate.spreadPct)} · gas {fmtEth(candidate.gasCostEth, 6).replace('+', '')} · {fmtClock(candidate.ts)}
+        {candidate.symbol} · {candidate.buyDex} → {candidate.sellDex} · spread {fmtPct(candidate.spreadPct)}
+        {Number.isFinite(candidate.feePct) ? <> gross, {fmtSignedPct(candidate.netSpreadPct)} after {fmtPct(candidate.feePct, 3)} pool fees</> : null}
+        {' '}· gas {fmtEth(candidate.gasCostEth, 6).replace('+', '')} · {fmtClock(candidate.ts)}
       </div>
       <svg width={Math.max(0, width)} height={rows.length * 26 + 8} role="img" aria-label="Net result by trade size">
         <line x1={zeroX} x2={zeroX} y1={2} y2={rows.length * 26 + 2} className="edge-rule-zero" />
@@ -255,7 +288,7 @@ function SizeLadder({ candidate }) {
 function SpreadHistogram({ edge }) {
   const hist = edge.today?.spreadHist || {}
   const order = edge.bucketOrder || Object.keys(hist)
-  const floor = Number(edge.settings?.candidateFloorPct) || 0.1
+  const floor = Number(edge.settings?.candidateFloorPct) || 0
   const max = Math.max(1, ...order.map(b => hist[b] || 0))
   const total = order.reduce((a, b) => a + (hist[b] || 0), 0)
   const floorIdx = order.findIndex(b => {
@@ -278,7 +311,7 @@ function SpreadHistogram({ edge }) {
           </div>
         )
       })}
-      <div className="edge-hist-foot">{plural(total, 'pair sample', 'pair samples')} today, spread in percent</div>
+      <div className="edge-hist-foot">{plural(total, 'pair sample', 'pair samples')} today · best route after pool fees, in percent · negatives land in the first bucket</div>
     </div>
   )
 }
@@ -295,7 +328,7 @@ function DecisionRule({ edge }) {
 
   let reading
   if (!edge.lastTickAt) reading = 'No reading yet.'
-  else if (edge.wouldFire === 0) reading = `Reading so far: nothing would have fired. If that holds for ${target} days, the answer is "not with this pair set and fee tier" and funding stays off the table at zero cost.`
+  else if (edge.wouldFire === 0) reading = `Reading so far: nothing would have fired. If that holds for ${target} days, the answer is "not with this pair set on these venues" and funding stays off the table at zero cost.`
   else reading = `Reading so far: about ${perDay.toFixed(1)} would-fire ${perDay === 1 ? 'candidate' : 'candidates'} per day${infra ? `, against $${infra}/day of infrastructure` : ''}. ${enough ? 'The week is in; decide from the daily lines in HANDOFF.md.' : 'Too early to size anything; let the week finish.'}`
 
   return (
@@ -309,10 +342,130 @@ function DecisionRule({ edge }) {
   )
 }
 
+// ---------- live venue map ----------
+
+/**
+ * Every pool the study prices, one strip per pair, placed by its price's distance from the pair's
+ * reserve-weighted mid in basis points. Dot area follows the WETH reserve, so a deep pool reads as
+ * deep and a thin one as thin. The spread the tape plots is the distance between two of these dots,
+ * minus their two fees — this is where it comes from.
+ */
+function VenueMap({ venues }) {
+  const [ref, width] = useWidth()
+  const labelW = 96
+  const padR = 12
+  const rowH = 54
+  const plotW = Math.max(0, width - labelW - padR)
+
+  const rows = useMemo(() => {
+    const byPair = new Map()
+    for (const v of venues || []) {
+      if (!Number.isFinite(Number(v.price)) || Number(v.price) <= 0) continue
+      if (!byPair.has(v.pair)) byPair.set(v.pair, { pair: v.pair, symbol: v.symbol, venues: [] })
+      byPair.get(v.pair).venues.push(v)
+    }
+    const out = []
+    for (const row of byPair.values()) {
+      const weth = (v) => {
+        const r = v.reserves
+        if (!r) return 1
+        const sym = String(row.symbol || '')
+        // symbol is token1/token0; reserves.token0 is in token0 units
+        const [t1, t0] = sym.split('/')
+        if (t0 === 'WETH') return Math.max(0.01, r.token0)
+        if (t1 === 'WETH') return Math.max(0.01, r.token1)
+        return Math.max(0.01, r.token1) // stable pairs: token1 is the quote side
+      }
+      const ws = row.venues.map(weth)
+      const wsum = ws.reduce((a, b) => a + b, 0) || 1
+      const mid = row.venues.reduce((a, v, i) => a + Number(v.price) * ws[i], 0) / wsum
+      const pts = row.venues.map((v, i) => ({
+        ...v,
+        bps: ((Number(v.price) - mid) / mid) * 10000,
+        weth: ws[i],
+        label: `${v.dex === 'PancakeSwap' ? 'Cake' : v.dex === 'Uniswap' ? 'Uni' : v.dex}${v.fee !== null && v.fee !== undefined ? ` ${Number((v.fee / 10000).toFixed(4))}%` : ''}`
+      })).sort((a, b) => a.bps - b.bps)
+      out.push({ ...row, mid, pts })
+    }
+    return out.sort((a, b) => a.symbol.localeCompare(b.symbol))
+  }, [venues])
+
+  const maxAbs = useMemo(() => {
+    let m = 0
+    for (const r of rows) for (const p of r.pts) m = Math.max(m, Math.abs(p.bps))
+    return Math.min(100, Math.max(8, m * 1.15))
+  }, [rows])
+  const maxW = useMemo(() => Math.max(1, ...rows.flatMap(r => r.pts.map(p => p.weth))), [rows])
+
+  if (!rows.length) return <div className="edge-empty">Venues appear after the first poll: every pool with real reserves, on every fee tier, for every live pair.</div>
+
+  // square-root scale: the cheap pools that make routes sit within a few bp of mid and need room,
+  // the 1% pools sit tens of bp out and only need to be visible
+  const sq = (v) => Math.sign(v) * Math.sqrt(Math.abs(v))
+  const x = (bps) => plotW / 2 + (sq(Math.max(-maxAbs, Math.min(maxAbs, bps))) / sq(maxAbs)) * (plotW / 2 - 10)
+  const r = (w) => 3 + 6 * Math.sqrt(Math.log10(1 + w) / Math.log10(1 + maxW))
+  const ticks = [1, 5, 20, 60].filter(t => t < maxAbs)
+
+  return (
+    <div className="edge-venues" ref={ref}>
+      {rows.map(row => {
+        // pools within a few px of each other are one cluster with one label; adjacent clusters
+        // alternate between two label lanes so names do not collide
+        const clusters = []
+        for (const p of row.pts) {
+          const px = x(p.bps)
+          const last = clusters[clusters.length - 1]
+          if (last && px - last.x1 < 18) { last.pts.push(p); last.x1 = px } else clusters.push({ x0: px, x1: px, pts: [p] })
+        }
+        let lastLabelX = -Infinity, lane = 0
+        for (const c of clusters) {
+          c.cx = (c.x0 + c.x1) / 2
+          lane = c.cx - lastLabelX < 64 ? 1 - lane : 0
+          c.lane = lane
+          lastLabelX = c.cx
+          c.label = c.pts.length === 1 ? c.pts[0].label : `${c.pts.length} pools`
+        }
+        return (
+          <div className="edge-tape-row edge-venue-row" key={row.pair} style={{ height: rowH }}>
+            <div className="edge-row-label">
+              <span>{row.symbol}</span>
+              <span className="edge-row-value">{plural(row.pts.length, 'pool', 'pools')}</span>
+            </div>
+            <svg width={plotW + padR} height={rowH} className="edge-tape-svg" role="img" aria-label={`${row.symbol}: pool prices relative to mid`}>
+              <line x1={0} x2={plotW} y1={18} y2={18} className="edge-rule-base" />
+              {ticks.flatMap(t => [-t, t]).map(t => (
+                <line key={t} x1={x(t)} x2={x(t)} y1={14} y2={22} className="edge-rule-base" />
+              ))}
+              <line x1={x(0)} x2={x(0)} y1={6} y2={30} className="edge-rule-zero" />
+              {row.pts.map((p) => (
+                <g key={p.key} className="edge-venue-pt">
+                  <title>{`${p.key} · ${fmtBps(p.bps)} from mid · ${fmtReserve(p.weth)}${p.fee === null || p.fee === undefined ? ' · dynamic fee' : ''}`}</title>
+                  <circle cx={x(p.bps)} cy={18} r={r(p.weth)} className="edge-venue-dot" />
+                </g>
+              ))}
+              {clusters.map((c, i) => (
+                <text key={i} x={c.cx} y={c.lane ? 50 : 39} textAnchor="middle" className="edge-svg-muted edge-venue-label">
+                  <title>{c.pts.map(p => `${p.label} ${fmtBps(p.bps)} · ${fmtReserve(p.weth)}`).join('\n')}</title>
+                  {c.label}
+                </text>
+              ))}
+            </svg>
+          </div>
+        )
+      })}
+      <div className="edge-tape-axis" style={{ marginLeft: labelW }}>
+        <span>−{maxAbs.toFixed(0)} bp</span>
+        <span>price vs the pair’s reserve-weighted mid · square-root scale, ticks at {ticks.join(', ')} bp · dot area = WETH in the pool · hover a dot or a label</span>
+        <span>+{maxAbs.toFixed(0)} bp</span>
+      </div>
+    </div>
+  )
+}
+
 // ---------- panel ----------
 
 export default function EdgeStudyPanel() {
-  const { edge, threshold, settings } = useSelector(state => state.bot)
+  const { edge, threshold, settings, venues, edgeSnapshotAt } = useSelector(state => state.bot)
   if (!edge || !edge.enabled) return null
 
   const pct = Math.max(0, Math.min(100, edge.progress?.pct || 0))
@@ -327,7 +480,7 @@ export default function EdgeStudyPanel() {
         <div>
           <h2 className="edge-title">Edge study</h2>
           <div className="edge-sub">
-            Live Arbitrum, monitor only · {edge.polls} polls{edge.lastBlock ? ` · block ${edge.lastBlock}` : ''}
+            {edgeSnapshotAt ? `Snapshot from ${new Date(edgeSnapshotAt).toLocaleString()} · ` : ''}Live Arbitrum, monitor only · {edge.polls} polls{edge.lastBlock ? ` · block ${edge.lastBlock}` : ''}
             {edge.gasPriceGwei ? ` · gas ${Number(edge.gasPriceGwei).toFixed(3)} gwei` : ''}
             {edge.wethUsd ? ` · ETH ${fmtUsd(edge.wethUsd)}` : ''}
             {stale ? <span className="edge-stale"> · no poll for {fmtHours((Date.now() - edge.lastTickAt) / 3600000)}</span> : null}
@@ -343,12 +496,12 @@ export default function EdgeStudyPanel() {
 
       <div className="edge-grid">
         <div className="edge-cell edge-cell-tape">
-          <h3 className="edge-h3">Spread tape, last hour</h3>
+          <h3 className="edge-h3">Best route after pool fees, last hour</h3>
           <SpreadTape edge={edge} threshold={th} />
           <div className="edge-legend">
             <span><i className="edge-dot edge-dot-fired" /> would have fired</span>
-            <span><i className="edge-dot edge-dot-cleared" /> cleared costs, under threshold</span>
-            <span><i className="edge-dot edge-dot-plain" /> simulated, did not clear</span>
+            <span><i className="edge-dot edge-dot-cleared" /> cleared gas and fees, under threshold</span>
+            <span>{plural(edge.simulated || 0, 'round trip quoted', 'round trips quoted')} so far, {edge.cleared || 0} cleared</span>
           </div>
         </div>
         <div className="edge-cell">
@@ -358,6 +511,10 @@ export default function EdgeStudyPanel() {
         <div className="edge-cell">
           <h3 className="edge-h3">Today’s spread distribution</h3>
           <SpreadHistogram edge={edge} />
+        </div>
+        <div className="edge-cell edge-cell-venues">
+          <h3 className="edge-h3">Live venues: where each pool prices the pair</h3>
+          <VenueMap venues={venues?.length ? venues : edge.venues} />
         </div>
       </div>
 

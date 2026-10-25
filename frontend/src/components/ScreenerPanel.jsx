@@ -501,7 +501,11 @@ function ScreenerPanel() {
               <tr>
                 <th style={{ background: '#0f172a' }}>Pair</th>
                 <th className="text-right" style={{ background: '#0f172a' }}>Best Route</th>
-                <th className="text-right" style={{ background: '#0f172a' }}>Spread</th>
+                <th className="text-right" style={{ background: '#0f172a' }}>
+                  <Tooltip text="Spread after both pool fees on the best executable route. The threshold is compared to this number; the gross price gap and the two fees sit underneath.">
+                    <span>Spread after fees</span>
+                  </Tooltip>
+                </th>
 	                <th className="text-center" style={{ background: '#0f172a' }}>
 	                  <Tooltip text={perpHeaderState.tooltip}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
@@ -516,7 +520,7 @@ function ScreenerPanel() {
                     </span>
                   </Tooltip>
                 </th>
-                <th className="text-center" style={{ background: '#0f172a' }}>DEXs</th>
+                <th className="text-center" style={{ background: '#0f172a' }}>Venues</th>
                 <th className="text-center" style={{ background: '#0f172a' }}>Action</th>
               </tr>
             </thead>
@@ -606,13 +610,21 @@ function ScreenerPanel() {
 									})()}
                       </td>
                       {(() => {
-                        const displayedSpread = pair.execDifference ?? pair.difference
+                        const grossSpread = pair.execDifference ?? pair.difference
+                        const netSpread = pair.execNetDifference ?? pair.netDifference ?? null
+                        const displayedSpread = netSpread ?? grossSpread
                         const spreadNum = parseFloat(displayedSpread)
                         const hasOpp = (pair.hasExecutableOpportunity ?? pair.hasOpportunity)
-                        const warn = Math.abs(spreadNum) >= threshold * 0.5
+                        const warn = spreadNum >= threshold * 0.5
+                        const feeLabel = (f) => (f === null || f === undefined ? '?' : `${Number((f / 10000).toFixed(4))}%`)
                         return (
-                          <td className={`spread-cell ${hasOpp ? 'spread-positive' : warn ? 'spread-warn' : ''}`}>
-                            {spreadNum > 0 ? '+' : ''}{displayedSpread}%
+                          <td className={`spread-cell ${hasOpp ? 'spread-positive' : warn ? 'spread-warn' : ''}`} style={{ whiteSpace: 'nowrap' }}>
+                            <div>{spreadNum > 0 ? '+' : ''}{displayedSpread}%</div>
+                            {netSpread !== null && (
+                              <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>
+                                gross {grossSpread}% · fees {feeLabel(pair.buyFee)} + {feeLabel(pair.sellFee)}
+                              </div>
+                            )}
                           </td>
                         )
                       })()}
@@ -712,7 +724,7 @@ function ScreenerPanel() {
                       </td>
                       <td className="text-center">
                         <span style={{ fontSize: '11px', color: '#64748b', background: 'rgba(100,116,139,0.1)', padding: '2px 8px', borderRadius: '4px' }}>
-                          {pair.dexCount || 2} DEXs
+                          {pair.dexCount || 2} venues
                         </span>
                       </td>
                       <td className="action-cell">
