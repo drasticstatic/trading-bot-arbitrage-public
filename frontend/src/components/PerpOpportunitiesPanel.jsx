@@ -230,7 +230,7 @@ export default function PerpOpportunitiesPanel() {
           ) : (
             <div className="grid grid-cols-3 gap-2">
               {perpPairs.slice(0, 12).map(pair => (
-                <Tooltip key={pair.name} text={`${pair.name}: ${pair.fundingAPY?.toFixed(1) || 0}% APY | Spread: ${pair.spreadPct?.toFixed(3) || 0}%`}>
+                <Tooltip key={pair.name} text={`${pair.name}: ${Number(pair.fundingAPY ?? 0).toFixed(1) || 0}% APY | Spread: ${Number(pair.spreadPct ?? 0).toFixed(3) || 0}%`}>
                   <div style={{
                     background: `linear-gradient(135deg, ${getFundingColor(pair.fundingAPY)}22, ${getFundingColor(pair.fundingAPY)}11)`,
                     border: `1px solid ${getFundingColor(pair.fundingAPY)}44`,
@@ -243,7 +243,7 @@ export default function PerpOpportunitiesPanel() {
                       {pair.name?.split('/')[0] || pair.name}
                     </div>
                     <div style={{ fontSize: '14px', fontWeight: 700, color: getFundingColor(pair.fundingAPY) }}>
-                      {pair.fundingAPY?.toFixed(0) || 0}%
+                      {Number(pair.fundingAPY ?? 0).toFixed(0) || 0}%
                     </div>
                     <div style={{ fontSize: '9px', color: '#64748b' }}>APY</div>
                   </div>
@@ -289,7 +289,7 @@ export default function PerpOpportunitiesPanel() {
                     background: `${getFundingColor(bestOpportunity.fundingAPY)}22`,
                     borderRadius: '6px'
                   }}>
-                    {bestOpportunity.fundingAPY?.toFixed(1)}% APY
+                    {Number(bestOpportunity.fundingAPY ?? 0).toFixed(1)}% APY
                   </span>
                 </div>
               </div>
@@ -328,7 +328,7 @@ export default function PerpOpportunitiesPanel() {
                 }}>
                   <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '2px' }}>DAILY</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#10b981' }}>
-                    ${income?.daily?.toFixed(2) || '0.00'}
+                    ${Number(income?.daily ?? 0).toFixed(2) || '0.00'}
                   </div>
                 </div>
                 <div style={{
@@ -340,7 +340,7 @@ export default function PerpOpportunitiesPanel() {
                 }}>
                   <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '2px' }}>MONTHLY</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#06b6d4' }}>
-                    ${income?.monthly?.toFixed(2) || '0.00'}
+                    ${Number(income?.monthly ?? 0).toFixed(2) || '0.00'}
                   </div>
                 </div>
                 <div style={{
@@ -352,7 +352,7 @@ export default function PerpOpportunitiesPanel() {
                 }}>
                   <div style={{ fontSize: '9px', color: '#64748b', marginBottom: '2px' }}>YEARLY</div>
                   <div style={{ fontSize: '14px', fontWeight: 700, color: '#8b5cf6' }}>
-                    ${income?.yearly?.toFixed(2) || '0.00'}
+                    ${Number(income?.yearly ?? 0).toFixed(2) || '0.00'}
                   </div>
                 </div>
               </div>
@@ -413,13 +413,13 @@ export default function PerpOpportunitiesPanel() {
 	              ) : perpPairs.slice(0, 8).map(pair => (
                 <tr key={pair.name} style={{ borderBottom: '1px solid rgba(100, 116, 139, 0.1)' }}>
                   <td style={{ padding: '8px', color: '#e2e8f0', fontWeight: 600 }}>{pair.name}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#94a3b8' }}>${pair.spotPrice?.toFixed(4) || '-'}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: '#94a3b8' }}>${pair.perpPrice?.toFixed(4) || '-'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: '#94a3b8' }}>${Number(pair.spotPrice ?? 0).toFixed(4) || '-'}</td>
+                  <td style={{ padding: '8px', textAlign: 'right', color: '#94a3b8' }}>${Number(pair.perpPrice ?? 0).toFixed(4) || '-'}</td>
                   <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: getSpreadColor(pair.spreadPct) }}>
-                    {pair.spreadPct > 0 ? '+' : ''}{pair.spreadPct?.toFixed(3) || 0}%
+                    {pair.spreadPct > 0 ? '+' : ''}{Number(pair.spreadPct ?? 0).toFixed(3) || 0}%
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700, color: getFundingColor(pair.fundingAPY) }}>
-                    {pair.fundingAPY?.toFixed(1) || 0}%
+                    {Number(pair.fundingAPY ?? 0).toFixed(1) || 0}%
                   </td>
                   <td style={{ padding: '8px', textAlign: 'center' }}>
                     <span style={{

@@ -3,6 +3,8 @@ import { useDispatch, useSelector } from 'react-redux'
 import { connectWebSocket } from './store/websocket'
 import HeroSection from './components/HeroSection'
 import ScreenerPanel from './components/ScreenerPanel'
+import EdgeStudyPanel from './components/EdgeStudyPanel'
+import PanelBoundary from './components/PanelBoundary'
 import PerpOpportunitiesPanel from './components/PerpOpportunitiesPanel'
 import LogPanel from './components/LogPanel'
 import TradeExecutionOverlay from './components/TradeExecutionOverlay'
@@ -78,11 +80,14 @@ function App() {
         {/* Hero Section - Wallet integrated, centered */}
         <HeroSection />
 
+        {/* Monitor-only edge study — the question that gates funding */}
+        <PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary>
+
         {/* Screener Table */}
-        <ScreenerPanel />
+        <PanelBoundary name="Screener"><ScreenerPanel /></PanelBoundary>
 
         {/* Perp Opportunities Panel */}
-        <PerpOpportunitiesPanel />
+        <PanelBoundary name="Perp opportunities"><PerpOpportunitiesPanel /></PanelBoundary>
 
         {/* Trade Execution Terminal + Activity - Side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
