@@ -44,7 +44,7 @@ function Triangles({ tri }) {
     <div>
       <div className="table-wrap" style={{ maxHeight: 330 }}>
         <table className="table table--tight">
-          <thead><tr><th>Cycle · best venue per leg</th><th className="t-right">After fees</th><th className="t-right">Gross · fees</th><th>Last hour</th></tr></thead>
+          <thead><tr><th>Cycle · best venue per leg</th><th className="t-right">After fees</th><th>Last hour</th></tr></thead>
           <tbody>
             {rows.map(r => (
               <tr key={r.tri} className={r.netPct > 0 ? 'tr-opp' : ''}>
@@ -52,8 +52,7 @@ function Triangles({ tri }) {
                   <span className="tri-cycle">{r.cycle.split('→').map((t, i, a) => <React.Fragment key={i}><span className="pair">{t}</span>{i < a.length - 1 ? <span className="arrow">→</span> : null}</React.Fragment>)}</span>
                   <span className="td-sub tri-legs">{r.legs.map((l, i) => <span key={i} className="venue" style={{ '--c': dexVar(l.venue), '--c-text': dexTextVar(l.venue) }}><i />{l.venue}</span>)}</span>
                 </td>
-                <td className={`t-right num ${r.netPct > 0 ? 'good' : 'muted'}`}>{pct(r.netPct)}</td>
-                <td className="t-right num muted">{pct(r.grossPct)} · {Number(r.feesPct).toFixed(2)}%</td>
+                <td className="t-right num"><span className={r.netPct > 0 ? 'good' : 'muted'}>{pct(r.netPct)}</span><span className="td-sub">{pct(r.grossPct)} gross · {Number(r.feesPct).toFixed(2)}% fees</span></td>
                 <td><Spark points={tri?.series?.[r.tri]} /></td>
               </tr>
             ))}

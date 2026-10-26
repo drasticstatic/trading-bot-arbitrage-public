@@ -9,7 +9,7 @@ export default function Explain({ title = 'How to read this', children }) {
   return (
     <details className="explain">
       <summary>{title}</summary>
-      {children}
+      <div className="explain-body">{children}</div>
     </details>
   )
 }

@@ -225,7 +225,7 @@ kbd { border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; color
 .h3 { font-size: 13px; font-weight: 600; color: var(--text-2); margin: 0 0 8px; }
 .meta { font-size: 12px; color: var(--muted); }
 .lede { font-size: 13px; color: var(--text-2); max-width: 72ch; margin: 0 0 12px; line-height: 1.55; }
-.empty { color: var(--muted); font-size: 12.5px; line-height: 1.55; padding: 10px 0; max-width: 52ch; }
+.empty { color: var(--muted); font-size: 12.5px; line-height: 1.55; padding: 10px 0; max-width: 68ch; }
 .rule { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
 
 .notice { border: 1px solid var(--line); border-left: 3px solid var(--indigo); background: var(--panel-2); border-radius: var(--r-sm); padding: 9px 12px; font-size: 12.5px; margin-bottom: 10px; line-height: 1.5; }
@@ -235,7 +235,11 @@ kbd { border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; color
 .notice--quiet { border-left-color: var(--line-2); color: var(--text-2); }
 .notice-t { font-weight: 600; margin-bottom: 1px; }
 
-.explain { margin: 12px 0 0; font-size: 12.5px; color: var(--text-2); }
+.explain { margin: 12px 0 0; font-size: 12.5px; color: var(--text-2); container-type: inline-size; }
+/* The lesson flows into columns when the panel is wide, so desktop reads across instead of scrolling down a 76ch strip */
+.explain-body { max-width: 76ch; }
+@container (min-width: 820px) { .explain-body { max-width: none; columns: 2; column-gap: 44px; } .explain-body p, .explain-body ul { break-inside: avoid; max-width: none; } }
+@container (min-width: 1300px) { .explain-body { columns: 3; } }
 .explain > summary { cursor: pointer; color: var(--blue); list-style: none; display: inline-flex; align-items: center; gap: 6px; user-select: none; font-weight: 600; }
 .explain > summary::-webkit-details-marker { display: none; }
 .explain > summary::before { content: '›'; display: inline-block; transition: transform 120ms; font-size: 15px; line-height: 1; }
@@ -454,7 +458,7 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .edge-cell-tape { grid-row: 1 / span 2; }
 @media (max-width: 1024px) { .edge-grid { grid-template-columns: 1fr; } .edge-cell-tape { grid-row: auto; } }
 .edge-h3 { font-size: 12px; font-weight: 700; color: var(--text-2); margin: 0 0 10px; }
-.edge-empty { font-size: 12.5px; color: var(--muted); line-height: 1.5; padding: 10px 0; max-width: 46ch; }
+.edge-empty { font-size: 12.5px; color: var(--muted); line-height: 1.5; padding: 10px 0; max-width: 62ch; }
 .edge-tape { position: relative; }
 .edge-tape-row { display: flex; align-items: stretch; height: 44px; border-top: 1px solid var(--line); }
 .edge-tape-row:first-child { border-top: none; }
@@ -498,6 +502,7 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .edge-venue-pt:hover .edge-venue-dot { fill-opacity: 0.8; }
 .edge-venue-label { font-size: 10px; }
 .edge-rule { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 14px; font-size: 13px; line-height: 1.55; color: var(--text-2); max-width: 78ch; }
+@media (min-width: 1100px) { .edge-rule { max-width: none; columns: 2; column-gap: 44px; } }
 .edge-rule p { margin: 0 0 6px; }
 .edge-rule-reading { color: var(--text); }
 .tb-study { font-size: 12px; color: var(--text-2); min-width: 150px; }
@@ -552,7 +557,7 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .hist-toggle { margin-top: 6px; }
 
 /* ---- The chase: triangles, lifetimes, the wire ---- */
-.readings--three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); }
+.readings--three { grid-template-columns: repeat(auto-fit, minmax(min(100%, 470px), 1fr)); }
 .tri-cycle .pair { white-space: nowrap; }
 .table--tight td { padding: 7px 8px; }
 .tri-cycle { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; }
