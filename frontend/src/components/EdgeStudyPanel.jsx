@@ -50,18 +50,18 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 // ---------- measurement ----------
 
 function useWidth() {
-  const ref = useRef(null)
+  const [node, setNode] = useState(null)
   const [width, setWidth] = useState(0)
   useEffect(() => {
-    if (!ref.current) return
+    if (!node || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(entries => {
       for (const e of entries) setWidth(e.contentRect.width)
     })
-    ro.observe(ref.current)
-    setWidth(ref.current.getBoundingClientRect().width)
+    ro.observe(node)
+    setWidth(node.getBoundingClientRect().width)
     return () => ro.disconnect()
-  }, [])
-  return [ref, width]
+  }, [node])
+  return [setNode, width]
 }
 
 // ---------- the finding ----------

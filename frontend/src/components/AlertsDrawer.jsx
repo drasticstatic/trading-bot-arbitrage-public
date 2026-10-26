@@ -59,6 +59,8 @@ const when = (ts) => { const d = new Date(ts); return Number.isNaN(d.getTime()) 
 
 export default function AlertsDrawer({ open, onClose, alerts, markSeen }) {
   const demo = isStaticHost()
+  const history = useSelector(s => s.bot.readings?.alerts) || []
+  const [showHistory, setShowHistory] = useState(demo)
   const { perm, ask } = useDesktopNotify(alerts)
   const [status, setStatus] = useState(null)
   const base = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/').replace(/\/?$/, '/')
@@ -108,7 +110,19 @@ export default function AlertsDrawer({ open, onClose, alerts, markSeen }) {
               <span className="alert-when">{when(a.ts)}</span>
             </div>
           ))}
-          {demo ? <p className="empty">The public demo has no live stream, so this list fills only on a machine running the bot. The journal keeps every day; the phone gets the ones that matter.</p> : null}
+          {demo && !history.length ? <p className="empty">The public demo has no live stream, so this list fills only on a machine running the bot. The journal keeps every day; the phone gets the ones that matter.</p> : null}
+          <div className="row row--between hist-toggle">
+            <span className="meta">History · the last 7 days from the journal{history.length ? ` · ${history.length}` : ''}</span>
+            {history.length ? <button type="button" className="btn btn--sm btn--quiet" onClick={() => setShowHistory(v => !v)}>{showHistory ? 'Hide' : 'Show'}</button> : null}
+          </div>
+          {showHistory ? history.slice(0, 300).map((a, i) => (
+            <div key={`h-${a.ts}-${i}`} className={`alert alert--${a.tone}`}>
+              <i className={`ph-duotone ${a.tone === 'urgent' ? 'ph-warning-octagon' : a.tone === 'high' ? 'ph-warning' : a.tone === 'good' ? 'ph-check-circle' : 'ph-power'}`} aria-hidden="true" />
+              <div><div className="alert-t">{a.title}</div><div className="alert-m">{a.text}</div></div>
+              <span className="alert-when">{new Date(a.ts).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</span>
+            </div>
+          )) : null}
+          {showHistory && !history.length ? <p className="empty">Nothing in the journal has needed attention yet.</p> : null}
         </div>
       </aside>
     </>

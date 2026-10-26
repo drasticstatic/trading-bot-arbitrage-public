@@ -220,7 +220,7 @@ export default function JournalView() {
         <div className="panel-h">
           <div className="row">
             <h2 className="h2">Journal</h2>
-            <span className="meta">what the terminal showed, kept on disk and read back by day</span>
+            <span className="meta">the activity monitor and the trade terminal of the first build, now kept on disk by day and read back</span>
           </div>
           <div className="row">
             <select className="input" value={date} onChange={e => setDate(e.target.value)} aria-label="Day" disabled={unavailable}>

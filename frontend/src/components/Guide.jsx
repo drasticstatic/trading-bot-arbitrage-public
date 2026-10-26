@@ -46,6 +46,8 @@ export default function Guide() {
           </div>
           <h3 className="h3" style={{ marginTop: 16 }}>Where the data goes</h3>
           <p>The journal under <code>logs/journal/</code> is one line per event per day, with the trading mode stamped and RPC keys scrubbed. The Journal section reads any day back. At 23:55 the report writes the day's summary and a public snapshot; at 23:58 a commit pushes both, so the repo is the memory and Fortuna's terminal can show this lane without asking.</p>
+          <h3 className="h3">Why a JSON file is public</h3>
+          <p>This page has no server when it is served from GitHub Pages, so it renders the study from <code>edge/latest.json</code>, the snapshot the nightly report writes. The same file is the handshake with the rest of the fleet: Fortuna's perps terminal can read the study day, the best route, the cleared counts, the alert history and the census from it instead of someone retyping a lane card. One file, two readers, no secrets: aggregates and public pool prices only.</p>
           <h3 className="h3">What keeps it safe</h3>
           <p>In monitor mode nothing can send a transaction, and this page never could: every trade is a step the operator confirms. The public copy is built from an allowlist (the front end, the snapshot, the examples), never from logs, config or keys. Balances stay on the private machine; addresses are never shown.</p>
         </div>
