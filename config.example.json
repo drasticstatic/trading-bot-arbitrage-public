@@ -10,7 +10,7 @@
     "GAS_PRICE": 0.00000001
   },
   "tradingMode": "monitor",
-  "livePairs": ["ARB/WETH", "WETH/USDC", "PENDLE/WETH", "GMX/WETH", "RDNT/WETH", "LINK/WETH", "WBTC/WETH"],
+  "livePairs": ["WETH/USDC", "ARB/WETH", "ARB/USDC"],
   "liveDexes": ["Uniswap", "PancakeSwap", "Camelot"],
   "livePollingInterval": 15000,
   "discoverFeeTiers": true,
@@ -26,6 +26,15 @@
     "studyDays": 7,
     "studyStartedAt": null,
     "infraCostUsdPerDay": 0
+  },
+  "chase": {
+    "enabled": true,
+    "floorPct": 0.05,
+    "cooldownMs": 600000,
+    "maxPerHour": 12,
+    "maxSteps": 240,
+    "maxMs": 60000,
+    "stepMs": 250
   },
   "PAIRS": [
     {
