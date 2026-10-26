@@ -28,6 +28,9 @@
   --bad: #F87171; --bad-soft: rgba(248, 113, 113, 0.14);
   --dex-uniswap: #4A8AF4; --dex-pancakeswap: #DE4D9B; --dex-sushiswap: #E07020; --dex-camelot: #8A62F2; --dex-curve: #A8880A; --dex-balancer: #2FA58A; --dex-other: #6B7A90;
   --dex-uniswap-text: #60A5FA; --dex-pancakeswap-text: #F472B6; --dex-sushiswap-text: #FB923C; --dex-camelot-text: #A78BFA; --dex-curve-text: #FBBF24; --dex-balancer-text: #5EEAD4; --dex-other-text: #94A3B8;
+  /* the costume's houses (public copy): the same validated hues, dealt in a fixed order that says nothing about the venue */
+  --dex-h0: var(--dex-camelot); --dex-h1: var(--dex-uniswap); --dex-h2: var(--dex-sushiswap); --dex-h3: var(--dex-balancer); --dex-h4: var(--dex-pancakeswap); --dex-h5: var(--dex-curve);
+  --dex-h0-text: var(--dex-camelot-text); --dex-h1-text: var(--dex-uniswap-text); --dex-h2-text: var(--dex-sushiswap-text); --dex-h3-text: var(--dex-balancer-text); --dex-h4-text: var(--dex-pancakeswap-text); --dex-h5-text: var(--dex-curve-text);
   --glow-a: rgba(129, 140, 248, 0.18); --glow-b: rgba(103, 232, 249, 0.10); --glow-c: rgba(74, 222, 128, 0.08);
   --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -536,6 +539,10 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .depth-dot { fill: var(--panel-solid); stroke: var(--indigo); stroke-width: 2; }
 .depth-dot.pos { fill: var(--good); stroke: var(--panel-solid); }
 .liq-row { display: grid; grid-template-columns: 92px 1fr 70px; gap: 8px; align-items: center; margin: 5px 0; font-size: 12px; }
+/* in costume (public copy) the stage names are long: give the label column room */
+:root[data-costume] .heat-row, :root[data-costume] .heat-axis { grid-template-columns: 150px repeat(24, minmax(0, 1fr)); }
+:root[data-costume] .liq-row { grid-template-columns: 150px 1fr 70px; }
+:root[data-costume] .edge-row-label { width: 154px; flex-basis: 154px; }
 .liq-row .lbl { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .liq-bar { display: flex; height: 14px; border-radius: 4px; overflow: hidden; background: var(--panel-2); gap: 2px; }
 .liq-bar i { display: block; height: 100%; background: var(--c); min-width: 2px; }

@@ -17,8 +17,10 @@ The bot already runs on a Mac, polling Arbitrum every few seconds. That machine 
 
 ```sh
 # the whole mechanism, by hand
-curl -H "Title: ARB · lock screen test" -H "Priority: high" -d "WBTC/WETH cleared gas and fees" https://ntfy.sh/<topic>
+curl -H "Title: ARB · lock screen test" -H "Priority: high" -d "focused-ubiquitous-unicorn cleared gas and fees" https://ntfy.sh/<topic>
 ```
+
+The public mirror wears a costume: every pair is a stage name such as `focused-ubiquitous-unicorn`, every venue a house and a ward such as `Velvet Harbor`, and the numbers are the real ones. The private topic, on the phone of the person running the bot, says the real names.
 
 ## What gets pushed, and what does not
 

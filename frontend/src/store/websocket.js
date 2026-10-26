@@ -20,6 +20,7 @@ import {
   addTrade,
   updateSettings,
   addLog, addCandidate, setReadings } from './botSlice'
+import { registerHouses } from '../lib/dex'
 
 let ws = null
 let reconnectTimeout = null
@@ -45,6 +46,7 @@ export async function loadEdgeSnapshot(dispatch) {
     const snap = await res.json()
     if (snap && snap.edge) {
       snapshotLoaded = true
+      if (snap.costume && Array.isArray(snap.costume.houses)) { registerHouses(snap.costume.houses); try { document.documentElement.dataset.costume = '1' } catch { /* no DOM */ } } // the masquerade's venue colors and label widths
       dispatch(setEdgeSnapshot(snap))
       dispatch(setReadings({ hours: snap.hours || null, scatter: snap.scatter || null, alerts: snap.alerts || null, census: snap.census || null }))
     }
@@ -53,8 +55,10 @@ export async function loadEdgeSnapshot(dispatch) {
   }
 }
 
+/** The public copy: GitHub Pages, or any host with ?public in the URL (preview the costumed copy on the bot's machine). */
 export function isStaticHost() {
-  return /github\.io$|githubusercontent\.com$/.test(window.location.hostname)
+  if (/github\.io$|githubusercontent\.com$/.test(window.location.hostname)) return true
+  try { return new URLSearchParams(window.location.search).has('public') } catch { return false }
 }
 
 function baseUrl() {
@@ -112,7 +116,7 @@ export async function fetchJournalDay(dispatch, { date, stream = 'activity', lim
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   loadLineage(dispatch) // the version switcher reads frontend/public/lineage/lineage.json on every host
-  if (isStaticHost()) loadEdgeSnapshot(dispatch)
+  if (isStaticHost()) { loadEdgeSnapshot(dispatch); return } // no bot behind the public copy: the snapshot is the data
 
   // Support both Vite (`import.meta.env.VITE_WS_URL`) and legacy CRA-style (`process.env.REACT_APP_WS_URL`).
   const explicitUrl =

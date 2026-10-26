@@ -10,7 +10,7 @@ const fmtHours = (h) => (!Number.isFinite(h) ? '—' : h < 1 ? `${Math.max(1, Ma
  * and block, connection, a stale warning), and the tools: alerts, versions, theme, source.
  */
 export default function TopBar({ onAlerts, alertCount, theme, onTheme }) {
-  const { connected, tradingMode, network, isTestMode, isRunning, isExecuting, screenerBlock, edge, edgeSnapshotAt } = useSelector(s => s.bot)
+  const { connected, tradingMode, network, isTestMode, isRunning, isExecuting, screenerBlock, edge, edgeSnapshotAt, costume } = useSelector(s => s.bot)
   const demo = isStaticHost()
 
   const mode = isTestMode
@@ -45,6 +45,7 @@ export default function TopBar({ onAlerts, alertCount, theme, onTheme }) {
               ? <span className="chip ok live"><i className="dot" />live</span>
               : <span className="chip bad"><i className="dot" />offline</span>}
           {stale ? <span className="chip warn" title="The bot has not reported a poll for a while">no poll for {fmtHours((Date.now() - edge.lastTickAt) / 3600000)}</span> : null}
+          {demo && costume?.on ? <a className="chip info" href="#how" title={costume.note || 'Pairs and venues wear stage names on the public copy; the numbers are the real study.'}><i className="ph-duotone ph-mask-happy" aria-hidden="true" />in costume</a> : null}
         </div>
         <span className="sp" />
         <div className="top-tools">

@@ -120,7 +120,8 @@ function Finding({ edge }) {
 function SpreadTape({ edge, threshold }) {
   const [ref, width] = useWidth()
   const [hover, setHover] = useState(null) // { x, t }
-  const labelW = 96
+  const longLabels = useSelector(s => !!s.bot.costume?.on) // stage names on the public copy are long
+  const labelW = longLabels ? 150 : 96
   const rowH = 44
   const padR = 8
   // pairs that stopped reporting (a pool set that discovery now skips) drop off the tape after 20 min
@@ -355,7 +356,8 @@ function DecisionRule({ edge }) {
  */
 function VenueMap({ venues }) {
   const [ref, width] = useWidth()
-  const labelW = 96
+  const longLabels = useSelector(s => !!s.bot.costume?.on) // stage names on the public copy are long
+  const labelW = longLabels ? 150 : 96
   const padR = 12
   const rowH = 54
   const plotW = Math.max(0, width - labelW - padR)
@@ -375,6 +377,7 @@ function VenueMap({ venues }) {
         const sym = String(row.symbol || '')
         // symbol is token1/token0; reserves.token0 is in token0 units
         const [t1, t0] = sym.split('/')
+        if (v.wethSide) return Math.max(0.01, r[v.wethSide])
         if (t0 === 'WETH') return Math.max(0.01, r.token0)
         if (t1 === 'WETH') return Math.max(0.01, r.token1)
         return Math.max(0.01, r.token1) // stable pairs: token1 is the quote side
@@ -386,7 +389,7 @@ function VenueMap({ venues }) {
         ...v,
         bps: ((Number(v.price) - mid) / mid) * 10000,
         weth: ws[i],
-        label: `${v.dex === 'PancakeSwap' ? 'Cake' : v.dex === 'Uniswap' ? 'Uni' : v.dex}${v.fee !== null && v.fee !== undefined ? ` ${Number((v.fee / 10000).toFixed(4))}%` : ''}`
+        label: String(v.key || `${v.dex}${v.fee !== null && v.fee !== undefined ? ` ${Number((v.fee / 10000).toFixed(4))}%` : ''}`).replace(/^PancakeSwap/, 'Cake').replace(/^Uniswap/, 'Uni')
       })).sort((a, b) => a.bps - b.bps)
       out.push({ ...row, mid, pts })
     }
@@ -442,7 +445,7 @@ function VenueMap({ venues }) {
               <line x1={x(0)} x2={x(0)} y1={6} y2={30} className="edge-rule-zero" />
               {row.pts.map((p) => (
                 <g key={p.key} className="edge-venue-pt">
-                  <title>{`${p.key} · ${fmtBps(p.bps)} from mid · ${fmtReserve(p.weth)}${p.fee === null || p.fee === undefined ? ' · dynamic fee' : ''}`}</title>
+                  <title>{`${p.key} · ${fmtBps(p.bps)} from mid · ${fmtReserve(p.weth)}${(p.fee === null || p.fee === undefined) && !longLabels ? ' · dynamic fee' : ''}`}</title>
                   <circle cx={x(p.bps)} cy={18} r={r(p.weth)} className="edge-venue-dot" style={{ '--c': dexVar(p.dex || p.key) }} />
                 </g>
               ))}
@@ -488,7 +491,7 @@ export default function EdgeStudyPanel() {
   const pct = Math.max(0, Math.min(100, edge.progress?.pct || 0))
   const dayNum = Math.min(edge.progress?.targetDays || 7, Math.floor((edge.progress?.elapsedHours || 0) / 24) + 1)
   const candidate = edge.best || edge.last
-  const th = settings?.priceDifference ?? threshold
+  const th = isStaticHost() ? (threshold ?? settings?.priceDifference) : (settings?.priceDifference ?? threshold) // the snapshot's threshold on the public copy
   const stale = edge.lastTickAt && Date.now() - edge.lastTickAt > 120000
 
   return (

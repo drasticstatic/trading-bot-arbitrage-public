@@ -13,8 +13,23 @@ export const DEXES = [
   { key: 'balancer', label: 'Balancer', short: 'Bal' }
 ]
 
+/**
+ * The public copy wears the costume (helpers/costume.js): every DEX is a "house" (Velvet, Copper…)
+ * and the snapshot lists the houses in play. Each house takes a color slot of its own, so the
+ * charts stay readable without saying which house is which venue.
+ */
+let houses = new Map()
+export function registerHouses(list) {
+  houses = new Map((list || []).map((h, i) => [String(h).toLowerCase(), `h${i % 6}`]))
+}
+/** [{ key: 'h0', label: 'Copper' }, …] — the venue kinds to list when the data is in costume. */
+export function houseList() {
+  return [...houses.entries()].map(([label, key]) => ({ key, label: label[0].toUpperCase() + label.slice(1), short: label[0].toUpperCase() + label.slice(1) }))
+}
+
 export function dexKey(name) {
   const n = String(name || '').toLowerCase()
+  if (houses.size) { const first = n.split(/[\s·→]/)[0]; if (houses.has(first)) return houses.get(first) }
   for (const d of DEXES) if (n.includes(d.key) || n.includes(d.short.toLowerCase())) return d.key
   if (n.includes('uni')) return 'uniswap'
   if (n.includes('cake')) return 'pancakeswap'
