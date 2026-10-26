@@ -107,7 +107,7 @@ function GasScatter({ points, threshold }) {
 }
 
 /** Price impact vs size for the best candidate: where the curve crosses zero is the largest profitable size. */
-function DepthCurve({ candidate }) {
+export function DepthCurve({ candidate }) {
   const [ref, width] = useWidth()
   const rows = (candidate?.ladder || []).filter(r => Number.isFinite(Number(r.netEth)))
   if (rows.length < 2) return <div className="edge-empty">The depth curve draws the best candidate's net result across the five quoted sizes; the zero crossing is the largest size that still pays.</div>
@@ -143,7 +143,7 @@ function DepthCurve({ candidate }) {
 }
 
 /** One bar per pair, one segment per pool, length = WETH in the pool, color = DEX. Where is the book thick? */
-function LiquidityProfile({ venues }) {
+export function LiquidityProfile({ venues }) {
   const rows = useMemo(() => {
     const by = {}
     for (const v of venues || []) {
@@ -193,8 +193,6 @@ export default function Readings() {
       <div className="readings">
         <div className="readings-cell"><h3 className="edge-h3">When the edge shows up · candidates by hour of day (ET)</h3><HourHeatmap hours={readings?.hours} threshold={th} /></div>
         <div className="readings-cell"><h3 className="edge-h3">Gas against net · is it timing or routing?</h3><GasScatter points={readings?.scatter} threshold={th} /></div>
-        <div className="readings-cell"><h3 className="edge-h3">Depth curve · the best candidate's net by size</h3><DepthCurve candidate={candidate} /></div>
-        <div className="readings-cell"><h3 className="edge-h3">Liquidity profile · WETH in each pool, by venue</h3><LiquidityProfile venues={venues?.length ? venues : edge?.venues} /></div>
       </div>
       <Explain>
         <p>Four readings Fortuna suggested from the perps side, in chart forms a trader already knows. The <b>heatmap</b> is rows of pairs by hour of day: darker cells sampled more candidates, a gold ring means one cleared costs in that hour, a green ring means one would have fired. If the edge keeps hours, the study should weight them. The <b>scatter</b> puts every quoted round trip at its gas cost and its best net result; a cloud under zero only at high gas says timing, a cloud under zero everywhere says routing or size.</p>

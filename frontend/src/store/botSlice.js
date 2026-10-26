@@ -41,7 +41,7 @@ const initialState = {
   // Structured edge candidates as they happen (EDGE_CANDIDATE): what the alerts and the hero read
   candidates: [],
   // Readings across the candidate log and the journal: the hour heatmap, the gas scatter, the alert history, the pair census
-  readings: { hours: null, scatter: null, alerts: null, census: null, infra: null, at: null },
+  readings: { hours: null, scatter: null, alerts: null, census: null, infra: null, frontier: null, at: null },
 
   // Screener data - all pairs
   screenerPairs: [],

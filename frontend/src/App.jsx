@@ -12,6 +12,8 @@ import Guide from './components/Guide'
 import Readings from './components/Readings'
 import CensusPanel from './components/CensusPanel'
 import ChasePanel from './components/ChasePanel'
+import FrontierPanel from './components/FrontierPanel'
+import Rail from './components/Rail'
 import ScreenerView from './views/ScreenerView'
 import JournalView from './views/JournalView'
 import PerpsView from './views/PerpsView'
@@ -158,19 +160,23 @@ export default function App() {
         </div>
       </nav>
 
-      <main className="wrap view">
+      <main className="wrap view desk">
+       <div className="desk-main">
         <Hero />
         <div className="sec" id="edge">
           <PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary>
           <PanelBoundary name="Readings"><Readings /></PanelBoundary>
           <PanelBoundary name="The chase"><ChasePanel /></PanelBoundary>
           <PanelBoundary name="The wider net"><CensusPanel /></PanelBoundary>
+          <PanelBoundary name="The frontier"><FrontierPanel /></PanelBoundary>
         </div>
         <div className="sec" id="screener"><PanelBoundary name="Screener"><ScreenerView /></PanelBoundary></div>
         <div className="sec" id="journal"><PanelBoundary name="Journal"><JournalView /></PanelBoundary></div>
         <div className="sec" id="perps"><PanelBoundary name="Perps"><PerpsView /></PanelBoundary></div>
         <div className="sec" id="controls"><PanelBoundary name="Controls"><ControlsView /></PanelBoundary></div>
         <div className="sec"><PanelBoundary name="How it works"><Guide /></PanelBoundary></div>
+       </div>
+       <PanelBoundary name="Rail"><Rail /></PanelBoundary>
       </main>
 
       <footer className="footer">
