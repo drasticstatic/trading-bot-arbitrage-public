@@ -1,26 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 
-function formatTime(ts) {
-  try {
-    return new Date(ts).toLocaleTimeString()
-  } catch {
-    return ''
-  }
-}
+const fmtTime = (ts) => { try { return new Date(ts).toLocaleTimeString([], { hour12: false }) } catch { return '' } }
+const glyph = (s) => (s === 'success' ? '✓' : s === 'error' ? '✗' : '→')
+const stepCls = (s) => (s === 'success' ? 'step-ok' : s === 'error' ? 'step-err' : 'step-run')
 
-function statusGlyph(status) {
-  if (status === 'success') return '✓'
-  if (status === 'error') return '✗'
-  return '…'
-}
-
-function statusColor(status) {
-  if (status === 'success') return '#10b981'
-  if (status === 'error') return '#ef4444'
-  return '#a5b4fc'
-}
-
+/** The trade terminal while a trade is in flight: every routing step as it happens, then the result. */
 export default function TradeExecutionOverlay() {
   const { tradeStatus, tradeSteps, wallet } = useSelector(state => state.bot)
   const [dismissedTradeId, setDismissedTradeId] = useState(null)
@@ -28,9 +13,6 @@ export default function TradeExecutionOverlay() {
   const tradeId = useMemo(() => {
     const statusId = tradeStatus?.tradeId || tradeStatus?.txHash || tradeStatus?.timestamp || null
     if (statusId) return statusId
-
-    // Fallback: if steps are streaming but TRADE_STATUS didn't arrive for some reason,
-    // use the first step timestamp as an ID so the overlay still shows and can be dismissed.
     const firstStepTs = tradeSteps?.[0]?.timestamp
     return firstStepTs ? `steps:${firstStepTs}` : null
   }, [tradeStatus?.tradeId, tradeStatus?.txHash, tradeStatus?.timestamp, tradeSteps])
@@ -41,10 +23,7 @@ export default function TradeExecutionOverlay() {
     return s === 'executing' || s === 'pending' || s === 'failed' || s === 'success'
   }, [tradeStatus?.status, tradeSteps?.length])
 
-  useEffect(() => {
-    // New trade: allow overlay to show again.
-    if (tradeId) setDismissedTradeId(null)
-  }, [tradeId])
+  useEffect(() => { if (tradeId) setDismissedTradeId(null) }, [tradeId])
 
   const rpcLabel = useMemo(() => {
     if (!wallet) return '—'
@@ -54,106 +33,35 @@ export default function TradeExecutionOverlay() {
   }, [wallet])
 
   const show = isActive && (!dismissedTradeId || dismissedTradeId !== tradeId)
-
   if (!show) return null
 
+  const status = tradeStatus?.status
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 2000,
-      background: 'rgba(2, 6, 23, 0.72)',
-      backdropFilter: 'blur(6px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '16px'
-    }}>
-      <div style={{
-        width: 'min(820px, 96vw)',
-        borderRadius: '16px',
-        border: '1px solid rgba(99,102,241,0.35)',
-        background: 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(2,6,23,0.92) 100%)',
-        boxShadow: '0 16px 60px rgba(0,0,0,0.55)'
-      }}>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '14px 16px',
-          borderBottom: '1px solid rgba(99,102,241,0.18)'
-        }}>
+    <div className="overlay" role="dialog" aria-label="Trade in progress">
+      <div className="overlay-card">
+        <div className="overlay-h">
           <div>
-            <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: '14px' }}>
-              Trade execution (terminal)
+            <div style={{ fontWeight: 600 }}>
+              Trade execution{status ? <span className={`pill ${status === 'success' ? 'pill--good' : status === 'failed' ? 'pill--bad' : 'pill--warn'}`} style={{ marginLeft: 8 }}>{status}</span> : null}
             </div>
-            <div style={{ color: '#64748b', fontSize: '11px', marginTop: '2px' }}>
-              RPC: <span style={{ color: '#a5b4fc' }}>{rpcLabel}</span>
-              {tradeStatus?.txHash ? (
-                <span style={{ color: '#64748b' }}> · TX: {tradeStatus.txHash.slice(0, 10)}…{tradeStatus.txHash.slice(-6)}</span>
-              ) : null}
-            </div>
+            <div className="meta">RPC <span className="mono">{rpcLabel}</span>{tradeStatus?.txHash ? <> · tx <span className="mono">{tradeStatus.txHash.slice(0, 10)}…{tradeStatus.txHash.slice(-6)}</span></> : null}</div>
           </div>
-
-          <button
-            onClick={() => setDismissedTradeId(tradeId)}
-            style={{
-              border: '1px solid rgba(148,163,184,0.25)',
-              background: 'rgba(148,163,184,0.08)',
-              color: '#e2e8f0',
-              borderRadius: '10px',
-              padding: '8px 10px',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}
-          >
-            Hide
-          </button>
+          <button className="btn btn--sm" onClick={() => setDismissedTradeId(tradeId)}>Hide</button>
         </div>
-
-        <div style={{ padding: '14px 16px' }}>
-          <div style={{
-            fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-            fontSize: '12px',
-            lineHeight: 1.6,
-            color: '#cbd5e1',
-            background: 'rgba(0,0,0,0.28)',
-            border: '1px solid rgba(148,163,184,0.15)',
-            borderRadius: '12px',
-            padding: '12px',
-            maxHeight: '55vh',
-            overflow: 'auto'
-          }}>
-            {tradeSteps?.length ? (
-              tradeSteps.map((s, i) => (
-                <div key={i} style={{ display: 'flex', gap: '10px' }}>
-                  <span style={{ width: '70px', color: '#64748b' }}>{formatTime(s.timestamp)}</span>
-                  <span style={{ width: '14px', color: statusColor(s.status) }}>{statusGlyph(s.status)}</span>
-                  <span style={{ flex: 1 }}>
-                    {s.label}
-                    {s.details ? <span style={{ color: '#64748b' }}> · {s.details}</span> : null}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <div style={{ color: '#94a3b8' }}>
-                Waiting for trade steps…
+        <div className="overlay-b">
+          <div className="log" style={{ maxHeight: '55vh' }}>
+            {tradeSteps?.length ? tradeSteps.map((s, i) => (
+              <div key={i} className="step">
+                <span className="log-t">{fmtTime(s.timestamp)}</span>
+                <span className={stepCls(s.status)}>{glyph(s.status)}</span>
+                <span>{s.label}{s.details ? <span className="dim"> · {s.details}</span> : null}</span>
               </div>
-            )}
-
-            {tradeStatus?.status === 'failed' && tradeStatus?.error ? (
-              <div style={{ marginTop: '10px', color: '#f87171' }}>
-                Error: {tradeStatus.error}
-              </div>
-            ) : null}
+            )) : <div className="muted">Waiting for trade steps…</div>}
+            {status === 'failed' && tradeStatus?.error ? <div className="bad" style={{ marginTop: 8 }}>Error: {tradeStatus.error}</div> : null}
           </div>
-
-          <div style={{ marginTop: '10px', color: '#64748b', fontSize: '11px' }}>
-            Note: this displays the execution path and RPC label only. It never shows secrets from your <code>.env</code>.
-          </div>
+          <div className="meta" style={{ marginTop: 8 }}>Shows the execution path and the RPC label only. Nothing here reads or shows secrets.</div>
         </div>
       </div>
     </div>
   )
 }
-

@@ -15,7 +15,29 @@ const initialState = {
   isRunning: false,
   isExecuting: false,
   isTestMode: false,
+  // "monitor" | "manual" | "auto" from config.json, and which chain the bot is pointed at
+  tradingMode: 'monitor',
+  network: null,
   wallet: null,
+
+  // The journal: what the dashboard showed, read back from logs/journal via /api/journal
+  journal: {
+    days: [],
+    months: [],
+    date: null,
+    stream: 'activity',
+    entries: [],
+    summary: null,
+    total: 0,
+    unfiltered: 0,
+    file: null,
+    loading: false,
+    error: null,
+    available: null // null until the first request answers; false on the public demo
+  },
+
+  // Version lineage of the public demo (frontend/public/lineage/lineage.json), static hosts only
+  lineage: null,
 
   // Screener data - all pairs
   screenerPairs: [],
@@ -76,10 +98,12 @@ const botSlice = createSlice({
       state.connected = action.payload
     },
     setInitialState: (state, action) => {
-      const { isRunning, isExecuting, isTestMode, settings, recentLogs, wallet, edge } = action.payload
+      const { isRunning, isExecuting, isTestMode, settings, recentLogs, wallet, edge, tradingMode, network } = action.payload
       state.isRunning = isRunning
       state.isExecuting = isExecuting
       if (isTestMode !== undefined) state.isTestMode = isTestMode
+      if (tradingMode) state.tradingMode = tradingMode
+      if (network) state.network = network
       if (settings) state.settings = settings
       if (recentLogs) state.logs = recentLogs
       if (wallet !== undefined) state.wallet = wallet
@@ -104,6 +128,35 @@ const botSlice = createSlice({
       state.fork = action.payload.fork ?? null
       state.perpStatus = action.payload.perpStatus ?? null
       if (Array.isArray(action.payload.venues)) state.venues = action.payload.venues
+    },
+    setJournalDays: (state, action) => {
+      state.journal.days = action.payload?.days || []
+      state.journal.months = action.payload?.months || []
+      state.journal.available = true
+    },
+    setJournalLoading: (state, action) => {
+      state.journal.loading = !!action.payload
+    },
+    setJournalDay: (state, action) => {
+      const { date, stream, entries, summary, file, total, unfiltered } = action.payload || {}
+      state.journal.date = date || state.journal.date
+      state.journal.stream = stream || state.journal.stream
+      state.journal.entries = Array.isArray(entries) ? entries : []
+      state.journal.summary = summary || null
+      state.journal.file = file || null
+      state.journal.total = total || 0
+      state.journal.unfiltered = unfiltered || 0
+      state.journal.loading = false
+      state.journal.error = null
+      state.journal.available = true
+    },
+    setJournalError: (state, action) => {
+      state.journal.loading = false
+      state.journal.error = action.payload || 'journal unavailable'
+      if (action.payload === 'unavailable') state.journal.available = false
+    },
+    setLineage: (state, action) => {
+      state.lineage = action.payload || null
     },
     setEdgeSnapshot: (state, action) => {
       const { edge, venues, generatedAt, threshold } = action.payload || {}
@@ -182,6 +235,11 @@ export const {
   setEdge,
   updateScreener,
   setEdgeSnapshot,
+  setJournalDays,
+  setJournalLoading,
+  setJournalDay,
+  setJournalError,
+  setLineage,
   setSelectedPair,
   setAnalysisResult,
   setOpportunity,

@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 
-function Tooltip({ text, children, offset = 10, maxWidth = 280 }) {
+/** Tooltip — hover/focus text, portalled to <body> so tables and overflow containers cannot clip it. */
+function Tooltip({ text, children, offset = 8, maxWidth = 300 }) {
   const [isVisible, setIsVisible] = useState(false)
   const [pos, setPos] = useState({ x: 0, y: 0 })
   const wrapperRef = useRef(null)
@@ -12,78 +13,31 @@ function Tooltip({ text, children, offset = 10, maxWidth = 280 }) {
     setPos({ x: rect.left + rect.width / 2, y: rect.bottom + offset })
   }, [offset])
 
-  const handleEnter = () => {
-    if (!text) return
-    updatePos()
-    setIsVisible(true)
-  }
-
-  const handleLeave = () => {
-    setIsVisible(false)
-  }
+  const show = () => { if (!text) return; updatePos(); setIsVisible(true) }
+  const hide = () => setIsVisible(false)
 
   useEffect(() => {
     if (!isVisible) return
-
-    const handleMove = () => updatePos()
-
-    // capture=true to catch scrolls on nested containers
-    window.addEventListener('scroll', handleMove, true)
-    window.addEventListener('resize', handleMove)
-
+    const move = () => updatePos()
+    window.addEventListener('scroll', move, true)
+    window.addEventListener('resize', move)
     return () => {
-      window.removeEventListener('scroll', handleMove, true)
-      window.removeEventListener('resize', handleMove)
+      window.removeEventListener('scroll', move, true)
+      window.removeEventListener('resize', move)
     }
   }, [isVisible, updatePos])
 
-  const tooltipNode = (
-    <div
-      style={{
-        position: 'fixed',
-        top: `${pos.y}px`,
-        left: `${pos.x}px`,
-        transform: 'translateX(-50%)',
-        background: 'rgba(15, 23, 42, 0.95)',
-        color: '#e2e8f0',
-        padding: '8px 12px',
-        borderRadius: '8px',
-        fontSize: '12px',
-        zIndex: 9999,
-        border: '1px solid rgba(99, 102, 241, 0.3)',
-        boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
-        pointerEvents: 'none',
-        maxWidth: `${maxWidth}px`,
-        whiteSpace: 'normal',
-        textAlign: 'center'
-      }}
-    >
+  const node = (
+    <div className="tip" role="tooltip" style={{ top: `${pos.y}px`, left: `${pos.x}px`, maxWidth: `${maxWidth}px` }}>
       {text}
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '-12px',
-          transform: 'translateX(-50%)',
-          border: '6px solid transparent',
-          borderBottomColor: 'rgba(15, 23, 42, 0.95)'
-        }}
-      />
     </div>
   )
 
   return (
-    <div
-      ref={wrapperRef}
-      onMouseEnter={handleEnter}
-      onMouseLeave={handleLeave}
-      onFocus={handleEnter}
-      onBlur={handleLeave}
-      style={{ display: 'inline-block' }}
-    >
+    <span ref={wrapperRef} onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide} style={{ display: 'inline-block' }}>
       {children}
-      {isVisible && typeof document !== 'undefined' ? createPortal(tooltipNode, document.body) : null}
-    </div>
+      {isVisible && typeof document !== 'undefined' ? createPortal(node, document.body) : null}
+    </span>
   )
 }
 

@@ -1,0 +1,32 @@
+{
+  "_about": "Version lineage for the public demo: every copy that is not live greets visitors once and links to the newer and earlier versions. Same idea as my-template/walkthroughs/VERSION-LINEAGE.md. Oldest first. Paths are relative to the demo root.",
+  "stops": [
+    {
+      "id": "v1-dappu",
+      "kind": "earlier",
+      "open": true,
+      "label": "The DApp University build",
+      "note": "The dashboard as Christopher first built it on the DApp University framework, restored to the tree on 25 Oct 2026. One pool per DEX, prices every poll, trade terminal and activity monitor.",
+      "when": "2026-04 → 2026-10-25",
+      "url": "lineage/v1-dappu/"
+    },
+    {
+      "id": "v2-edge",
+      "kind": "earlier",
+      "open": true,
+      "label": "The first edge-study build",
+      "note": "Every fee tier priced as its own venue in one block, routes ranked after pool fees, the venue map, and a public snapshot of the live study. Built with Claude Fable on 25 Oct 2026.",
+      "when": "2026-10-25",
+      "url": "lineage/v2-edge/"
+    },
+    {
+      "id": "live",
+      "kind": "live",
+      "open": true,
+      "label": "The terminal",
+      "note": "The current demo: one operator terminal for the edge study, the screener, the journal and the controls.",
+      "when": "2026-10-26 →",
+      "url": "./"
+    }
+  ]
+}

@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
+import Explain from './Explain'
+import { isStaticHost } from '../store/websocket'
 
 /**
  * EdgeStudyPanel — the monitor-only edge study, read as a finding.
@@ -465,8 +467,22 @@ function VenueMap({ venues }) {
 // ---------- panel ----------
 
 export default function EdgeStudyPanel() {
-  const { edge, threshold, settings, venues, edgeSnapshotAt } = useSelector(state => state.bot)
-  if (!edge || !edge.enabled) return null
+  const { edge, threshold, settings, venues, edgeSnapshotAt, network, connected } = useSelector(state => state.bot)
+  if (!edge || !edge.enabled) {
+    return (
+      <section className="panel">
+        <div className="panel-h"><h2 className="h2">Edge study</h2></div>
+        <div className="notice notice--quiet">
+          <div className="notice-t">{isStaticHost() ? 'No snapshot published yet' : !connected ? 'Waiting for the bot' : 'The study is not running on this bot'}</div>
+          {isStaticHost()
+            ? 'The nightly report publishes the study here once the first day is in.'
+            : network === 'hardhat'
+              ? 'The study measures live Arbitrum only. Start the monitor with EDGE_MONITOR=1 (sh scripts/edge-monitor-service.sh install) to run it.'
+              : 'Once the bot connects, the first poll from live Arbitrum starts the tape.'}
+        </div>
+      </section>
+    )
+  }
 
   const pct = Math.max(0, Math.min(100, edge.progress?.pct || 0))
   const dayNum = Math.min(edge.progress?.targetDays || 7, Math.floor((edge.progress?.elapsedHours || 0) / 24) + 1)
@@ -475,10 +491,10 @@ export default function EdgeStudyPanel() {
   const stale = edge.lastTickAt && Date.now() - edge.lastTickAt > 120000
 
   return (
-    <section className="screener-card edge-card" aria-label="Monitor-only edge study">
-      <header className="edge-head">
+    <section className="panel edge-card" aria-label="Monitor-only edge study">
+      <header className="panel-h">
         <div>
-          <h2 className="edge-title">Edge study</h2>
+          <h2 className="h2">Edge study</h2>
           <div className="edge-sub">
             {edgeSnapshotAt ? `Snapshot from ${new Date(edgeSnapshotAt).toLocaleString()} · ` : ''}Live Arbitrum, monitor only · {edge.polls} polls{edge.lastBlock ? ` · block ${edge.lastBlock}` : ''}
             {edge.gasPriceGwei ? ` · gas ${Number(edge.gasPriceGwei).toFixed(3)} gwei` : ''}
@@ -486,9 +502,9 @@ export default function EdgeStudyPanel() {
             {stale ? <span className="edge-stale"> · no poll for {fmtHours((Date.now() - edge.lastTickAt) / 3600000)}</span> : null}
           </div>
         </div>
-        <div className="edge-progress" title={`${pct.toFixed(1)}% of the ${edge.progress?.targetDays}-day study`}>
-          <span>day {dayNum} of {edge.progress?.targetDays}</span>
-          <div className="edge-progress-track"><div className="edge-progress-fill" style={{ width: `${pct}%` }} /></div>
+        <div className="tb-study" title={`${pct.toFixed(1)}% of the ${edge.progress?.targetDays}-day study`}>
+          <span>day {dayNum} of {edge.progress?.targetDays} · decision when the week is in</span>
+          <div className="tb-progress"><i style={{ width: `${pct}%` }} /></div>
         </div>
       </header>
 
@@ -519,6 +535,13 @@ export default function EdgeStudyPanel() {
       </div>
 
       <DecisionRule edge={edge} />
+
+      <Explain>
+        <p>The study answers one question before any wallet is funded: <b>is there an edge worth gas on these pairs, on these venues?</b> Every poll prices every live pool for every pair in one block. The best route per pair is the cheapest pool to buy on and the richest to sell on, scored <b>after both pool fees</b>.</p>
+        <p>Any route with a positive after-fee spread is a <b>candidate</b> and gets a quoted round trip at five sizes through the real quoter contracts, netted against the flash-loan fee and gas. A candidate that still nets positive has <b>cleared</b>; one that also clears the threshold <b>would have fired</b>.</p>
+        <p>The <b>tape</b> is the last hour of after-fee spreads, one row per pair, with zero solid and the threshold dashed. The <b>ladder</b> shows how the best candidate's net result changes with size, which is where gas stops being the binding cost. The <b>distribution</b> is today's samples by bucket. The <b>venue map</b> is every pool the study prices, placed by how far it sits from the pair's mid; the tape's spread is the distance between two of these dots minus their two fees.</p>
+        <p>The verdict rule is written in <code>GO_NOGO.md</code>: funding becomes a sizing decision, not a bet, when would-fire candidates over a full week net more than gas and infrastructure.</p>
+      </Explain>
     </section>
   )
 }

@@ -1,61 +1,97 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { connectWebSocket } from './store/websocket'
-import HeroSection from './components/HeroSection'
-import ScreenerPanel from './components/ScreenerPanel'
-import EdgeStudyPanel from './components/EdgeStudyPanel'
+import { connectWebSocket, isStaticHost } from './store/websocket'
+import TopBar from './components/TopBar'
 import PanelBoundary from './components/PanelBoundary'
-import PerpOpportunitiesPanel from './components/PerpOpportunitiesPanel'
-import LogPanel from './components/LogPanel'
 import TradeExecutionOverlay from './components/TradeExecutionOverlay'
-import TradeExecutionCard from './components/TradeExecutionCard'
 import GHPagesBanner from './components/GHPagesBanner'
+import EdgeStudyPanel from './components/EdgeStudyPanel'
+import ScreenerView from './views/ScreenerView'
+import JournalView from './views/JournalView'
+import PerpsView from './views/PerpsView'
+import ControlsView from './views/ControlsView'
 
-// Simple confetti component
+/**
+ * App — the terminal shell. One sticky vitals bar, five views behind tabs (the URL hash remembers
+ * which), a footer that knows the demo's own history. Keys 1–5 switch views.
+ */
+const TABS = [
+  { id: 'edge', label: 'Edge', key: '1' },
+  { id: 'screener', label: 'Screener', key: '2' },
+  { id: 'journal', label: 'Journal', key: '3' },
+  { id: 'perps', label: 'Perps', key: '4' },
+  { id: 'controls', label: 'Controls', key: '5' }
+]
+const readTab = () => {
+  const h = (window.location.hash || '').replace('#', '')
+  return TABS.some(t => t.id === h) ? h : 'edge'
+}
+
+function useTheme() {
+  const [theme, setTheme] = useState(() => {
+    try { return localStorage.getItem('ft-theme') || 'auto' } catch { return 'auto' }
+  })
+  useEffect(() => {
+    const root = document.documentElement
+    if (theme === 'auto') delete root.dataset.theme
+    else root.dataset.theme = theme
+    try { localStorage.setItem('ft-theme', theme) } catch { /* ignore */ }
+  }, [theme])
+  const cycle = useCallback(() => setTheme(t => (t === 'auto' ? 'light' : t === 'light' ? 'dark' : 'auto')), [])
+  return [theme, cycle]
+}
+
+// A real profitable trade earns a moment; nothing else on the page moves on its own.
 function Confetti({ show }) {
   if (!show) return null
-  const colors = ['#10b981', '#6366f1', '#f59e0b', '#ec4899', '#8b5cf6']
+  const colors = ['#35C47A', '#7FB2FF', '#E6A93C', '#E6EBF2']
   return (
-    <div className="confetti-container" style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999, overflow: 'hidden' }}>
-      {[...Array(100)].map((_, i) => (
-        <div key={i} className="confetti-piece" style={{
-          position: 'absolute',
-          width: `${Math.random() * 10 + 5}px`,
-          height: `${Math.random() * 10 + 5}px`,
-          background: colors[Math.floor(Math.random() * colors.length)],
-          left: `${Math.random() * 100}%`,
-          top: '-20px',
-          borderRadius: Math.random() > 0.5 ? '50%' : '0',
-          animation: `confetti-fall ${Math.random() * 2 + 2}s linear forwards`,
-          animationDelay: `${Math.random() * 0.5}s`,
-          transform: `rotate(${Math.random() * 360}deg)`
-        }} />
+    <div className="confetti" aria-hidden="true">
+      {[...Array(80)].map((_, i) => (
+        <i key={i} style={{ left: `${Math.random() * 100}%`, background: colors[i % colors.length], animationDelay: `${Math.random() * 0.6}s`, animationDuration: `${2 + Math.random() * 1.5}s` }} />
       ))}
-      <style>{`
-        @keyframes confetti-fall {
-          0% { top: -20px; opacity: 1; transform: rotate(0deg) translateX(0); }
-          100% { top: 110vh; opacity: 0; transform: rotate(720deg) translateX(${Math.random() > 0.5 ? '' : '-'}100px); }
-        }
-      `}</style>
     </div>
   )
 }
 
-function App() {
+export default function App() {
   const dispatch = useDispatch()
-  const { connected, trades } = useSelector(state => state.bot)
+  const { connected, trades, screenerPairs, logs, lineage, edge, journal } = useSelector(state => state.bot)
+  const [tab, setTab] = useState(readTab)
+  const [theme, cycleTheme] = useTheme()
   const [showConfetti, setShowConfetti] = useState(false)
   const [lastTradeCount, setLastTradeCount] = useState(0)
+  const demo = isStaticHost()
+
+  useEffect(() => { connectWebSocket(dispatch) }, [dispatch])
 
   useEffect(() => {
-    connectWebSocket(dispatch)
-  }, [dispatch])
+    const onHash = () => setTab(readTab())
+    window.addEventListener('hashchange', onHash)
+    return () => window.removeEventListener('hashchange', onHash)
+  }, [])
 
-  // Show confetti when a new successful trade is added
+  const go = useCallback((id) => {
+    if (window.location.hash !== `#${id}`) window.location.hash = id
+    setTab(id)
+  }, [])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.metaKey || e.ctrlKey || e.altKey) return
+      const tag = (e.target?.tagName || '').toLowerCase()
+      if (tag === 'input' || tag === 'textarea' || tag === 'select' || e.target?.isContentEditable) return
+      const t = TABS.find(x => x.key === e.key)
+      if (t) go(t.id)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [go])
+
   useEffect(() => {
     if (trades.length > lastTradeCount) {
-      const latestTrade = trades[trades.length - 1]
-      if (latestTrade?.status === 'success' && parseFloat(latestTrade?.profit || 0) > 0) {
+      const latest = trades[trades.length - 1]
+      if (latest?.status === 'success' && parseFloat(latest?.profit || 0) > 0) {
         setShowConfetti(true)
         setTimeout(() => setShowConfetti(false), 4000)
       }
@@ -63,71 +99,71 @@ function App() {
     setLastTradeCount(trades.length)
   }, [trades, lastTradeCount])
 
+  const oppCount = (screenerPairs || []).filter(p => (p.dexCount || 0) >= 2 && (p.hasExecutableOpportunity ?? p.hasOpportunity)).length
+  const counts = {
+    edge: edge?.enabled ? (edge.cleared || 0) : null,
+    screener: oppCount || null,
+    journal: journal?.unfiltered || (logs?.length || null),
+    perps: (screenerPairs || []).filter(p => p.perp?.price).length || null,
+    controls: null
+  }
+
+  const base = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/').replace(/\/?$/, '/')
+
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="shell">
       <GHPagesBanner />
       <Confetti show={showConfetti} />
       <TradeExecutionOverlay />
+      <TopBar />
 
-      {/* Main Content with consistent left/right margins */}
-      <main className="flex-1 w-full mx-auto py-6" style={{ paddingLeft: '3rem', paddingRight: '3rem', maxWidth: '1600px' }}>
-        {!connected && (
-          <div className="glass rounded-xl p-4 mb-6 text-center" style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
-            <span className="text-red-400">⚠️ Disconnected - Attempting to reconnect...</span>
-          </div>
-        )}
+      {!connected && !demo ? (
+        <div className="disconnect"><div className="wrap">Not connected to the bot. Reconnecting… the bot keeps running without this page.</div></div>
+      ) : null}
 
-        {/* Hero Section - Wallet integrated, centered */}
-        <HeroSection />
-
-        {/* Monitor-only edge study — the question that gates funding */}
-        <PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary>
-
-        {/* Screener Table */}
-        <PanelBoundary name="Screener"><ScreenerPanel /></PanelBoundary>
-
-        {/* Perp Opportunities Panel */}
-        <PanelBoundary name="Perp opportunities"><PerpOpportunitiesPanel /></PanelBoundary>
-
-        {/* Trade Execution Terminal + Activity - Side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-          <div className="lg:col-span-2">
-            <TradeExecutionCard />
-          </div>
-          <div>
-            <LogPanel />
+      <nav className="tabs" aria-label="Views">
+        <div className="wrap tabs-in" role="tablist">
+          {TABS.map(t => (
+            <button key={t.id} role="tab" aria-selected={tab === t.id} className="tab" onClick={() => go(t.id)} title={`Press ${t.key}`}>
+              {t.label}
+              {counts[t.id] ? <span className="count">{counts[t.id]}</span> : null}
+              <kbd>{t.key}</kbd>
+            </button>
+          ))}
+          <span className="tabs-spacer" />
+          <div className="tabs-tools">
+            <button className="btn btn--quiet btn--sm" onClick={cycleTheme} title="Cycle the theme: follow the system, light, dark">
+              {theme === 'auto' ? 'Theme · system' : theme === 'light' ? 'Theme · light' : 'Theme · dark'}
+            </button>
           </div>
         </div>
+      </nav>
+
+      <main className="wrap view">
+        {tab === 'edge' ? <PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary> : null}
+        {tab === 'screener' ? <PanelBoundary name="Screener"><ScreenerView /></PanelBoundary> : null}
+        {tab === 'journal' ? <PanelBoundary name="Journal"><JournalView /></PanelBoundary> : null}
+        {tab === 'perps' ? <PanelBoundary name="Perps"><PerpsView /></PanelBoundary> : null}
+        {tab === 'controls' ? <PanelBoundary name="Controls"><ControlsView /></PanelBoundary> : null}
       </main>
 
-      {/* Footer Banner - Centered horizontally, 3 rows */}
-      <footer className="w-full mt-auto" style={{
-        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%)',
-        borderTop: '1px solid rgba(99, 102, 241, 0.15)',
-        backdropFilter: 'blur(10px)'
-      }}>
-        <div className="flex flex-col items-center justify-center py-5" style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {/* Row 1: Main Title */}
-	          <div style={{ marginBottom: '8px', textAlign: 'center', width: '100%' }}>
-            <span style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontSize: '15px', fontWeight: '700' }}>
-              ⚡ DAPP University Arbitrage Trading Bot v3.0.1
-            </span>
-          </div>
-          {/* Row 2: Founded by */}
-          <div style={{ color: '#94a3b8', fontSize: '12px', marginBottom: '10px', textAlign: 'center' }}>
-            Founded by <span style={{ color: '#8b5cf6', fontWeight: '600' }}>@drasticstatic</span>  •  Augmented via <span style={{ color: '#a5b4fc' }}>Claude Opus 4.5</span> and <span style={{ color: '#10b981' }}>GPT 5.2</span>
-          </div>
-          {/* Row 3: Built with + Button Links */}
-		          <div className="flex items-center justify-center gap-5" style={{ fontSize: '12px', textAlign: 'center', width: '100%' }}>
-            <span style={{ color: '#64748b' }}>Built with 💜</span>
-            <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#a5b4fc', textDecoration: 'none', background: 'rgba(165,180,252,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(165,180,252,0.3)', fontWeight: '600' }}>About the builder</a>
-            <a href="https://github.com/drasticstatic" target="_blank" rel="noopener noreferrer" className="transition-all hover:scale-105" style={{ color: '#9ca3af', textDecoration: 'none', background: 'rgba(156,163,175,0.15)', padding: '6px 14px', borderRadius: '8px', border: '1px solid rgba(156,163,175,0.3)', fontWeight: '600' }}>GitHub</a>
-          </div>
+      <footer className="footer">
+        <div className="wrap footer-in">
+          <span>
+            FortunaTrades ARB · the DEX lane of the fleet · built on the DApp University arbitrage framework by <a href="https://drasticstatic.github.io/resume/index.html" target="_blank" rel="noopener noreferrer">drasticstatic</a>, extended with Claude
+          </span>
+          <span className="row">
+            <a href="https://github.com/drasticstatic/trading-bot-arbitrage-public" target="_blank" rel="noopener noreferrer">Source</a>
+            {lineage?.length ? (
+              <span className="footer-versions" title="Every version of this demo stays up; the earlier ones greet you with a note and link forward">
+                {lineage.filter(s => s.open).map(s => (
+                  <a key={s.id} href={s.kind === 'live' ? base : `${base}${s.url}`} className={s.kind === 'live' ? 'is-live' : ''} title={s.note}>{s.label}{s.when ? ` · ${s.when}` : ''}</a>
+                ))}
+              </span>
+            ) : null}
+          </span>
         </div>
       </footer>
     </div>
   )
 }
-
-export default App
-
