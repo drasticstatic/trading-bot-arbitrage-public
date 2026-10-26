@@ -36,7 +36,7 @@ export default function GHPagesBanner() {
         <p className="dlg-kicker">Public demo · v2, the edge terminal</p>
         <h3 className="dlg-title">FortunaTrades ARB, served from GitHub Pages</h3>
         <div className="dlg-text">
-          <p style={{ marginTop: 0 }}>This is the real front end with a frozen feed. The edge study comes from the nightly snapshot the private bot publishes, so the numbers are real readings from live Arbitrum.</p>
+          <p style={{ marginTop: 0 }}>This is the real front end with a frozen feed. The edge study comes from the nightly snapshot the private bot publishes, so the numbers are real readings from live Arbitrum. The names are not: pairs and venues wear stage names here (a pair is a <code>focused-ubiquitous-unicorn</code>, a pool a <code>Velvet Harbor</code>), and prices and depths are scaled per pair, so the shape of the study is honest while the bot's own watch list stays private. How it works explains the costume.</p>
           <p>The screener, the journal and the controls need the bot running on a local machine. Here they explain themselves instead of acting, and nothing on this page can send a transaction.</p>
           <p style={{ marginBottom: 0 }}>New here? Start with <b>How it works</b> at the bottom (key 7). The versions button in the top bar steps back to the original build.</p>
         </div>

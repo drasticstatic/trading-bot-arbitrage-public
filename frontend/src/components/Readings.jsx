@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useSelector } from 'react-redux'
 import Explain from './Explain'
 import { dexVar, dexTextVar } from '../lib/dex'
+import { isStaticHost } from '../store/websocket'
 
 /* Readings — Fortuna's chart ideas for the ARB terminal (Oct 26): the opportunity heatmap, the
  * gas-vs-net scatter, the depth curve and the liquidity profile. Hand-rolled SVG, the fleet
@@ -149,9 +150,9 @@ function LiquidityProfile({ venues }) {
       const sym = v.symbol || v.pair
       const [t1, t0] = String(sym).split('/') // symbol is token1/token0; reserves.token0 is in token0 units
       const r = v.reserves || {}
-      const weth = t0 === 'WETH' ? Number(r.token0) : t1 === 'WETH' ? Number(r.token1) : Number(r.token1)
+      const weth = v.wethSide ? Number(r[v.wethSide]) : t0 === 'WETH' ? Number(r.token0) : t1 === 'WETH' ? Number(r.token1) : Number(r.token1)
       if (!Number.isFinite(weth)) continue
-      const row = by[sym] || (by[sym] = { symbol: sym, pools: [], total: 0 })
+      const row = by[sym] || (by[sym] = { symbol: sym, pools: [], total: 0, unit: v.wethSide ? 'WETH' : String(sym).includes('/') ? (String(sym).includes('WETH') ? 'WETH' : String(sym).split('/')[0]) : 'units' })
       row.pools.push({ key: v.key, dex: v.dex, weth })
       row.total += weth
     }
@@ -159,26 +160,26 @@ function LiquidityProfile({ venues }) {
   }, [venues])
   if (!rows.length) return <div className="edge-empty">The liquidity profile shows, per pair, how much WETH sits in each pool the bot prices, stacked by venue. Thick books take size; thin ones move.</div>
   const max = Math.max(1, ...rows.map(r => r.total))
-  const stable = (r) => !r.symbol.includes('WETH')
+  const kinds = [...new Set(rows.flatMap(r => r.pools.map(p => p.dex || String(p.key).split(' ')[0])))]
   return (
     <div>
       {rows.map(r => (
         <div key={r.symbol} className="liq-row">
           <span className="lbl" title={`${r.pools.length} pools`}>{r.symbol}</span>
           <div className="liq-bar" style={{ width: `${Math.max(8, (r.total / max) * 100)}%` }}>
-            {r.pools.map(p => <i key={p.key} style={{ '--c': dexVar(p.dex || p.key), flex: `${p.weth} 0 0` }} title={`${p.key} · ${p.weth >= 100 ? p.weth.toFixed(0) : p.weth.toFixed(2)} ${stable(r) ? r.symbol.split('/')[0] : 'WETH'}`} />)}
+            {r.pools.map(p => <i key={p.key} style={{ '--c': dexVar(p.dex || p.key), flex: `${p.weth} 0 0` }} title={`${p.key} · ${p.weth >= 100 ? p.weth.toFixed(0) : p.weth.toFixed(2)} ${r.unit}`} />)}
           </div>
-          <span className="v">{r.total >= 1000 ? `${(r.total / 1000).toFixed(1)}k` : r.total >= 100 ? r.total.toFixed(0) : r.total.toFixed(1)} {stable(r) ? r.symbol.split('/')[0] : 'WETH'}</span>
+          <span className="v">{r.total >= 1000 ? `${(r.total / 1000).toFixed(1)}k` : r.total >= 100 ? r.total.toFixed(0) : r.total.toFixed(1)} {r.unit}</span>
         </div>
       ))}
-      <div className="chart-foot">one segment per pool, colored by venue: <span className="venue" style={{ '--c': dexVar('Uniswap'), '--c-text': dexTextVar('Uniswap') }}><i />Uniswap</span> <span className="venue" style={{ '--c': dexVar('PancakeSwap'), '--c-text': dexTextVar('PancakeSwap') }}><i />PancakeSwap</span> <span className="venue" style={{ '--c': dexVar('Camelot'), '--c-text': dexTextVar('Camelot') }}><i />Camelot</span> <span className="venue" style={{ '--c': dexVar('SushiSwap'), '--c-text': dexTextVar('SushiSwap') }}><i />SushiSwap</span> · hover a segment for the pool</div>
+      <div className="chart-foot">one segment per pool, colored by venue: {kinds.map(k => <span key={k} className="venue" style={{ '--c': dexVar(k), '--c-text': dexTextVar(k) }}><i />{k}</span>)} · hover a segment for the pool</div>
     </div>
   )
 }
 
 export default function Readings() {
   const { edge, venues, readings, threshold, settings } = useSelector(s => s.bot)
-  const th = Number(settings?.priceDifference ?? threshold ?? 0.3)
+  const th = Number((isStaticHost() ? (threshold ?? settings?.priceDifference) : (settings?.priceDifference ?? threshold)) ?? 0.3) // the snapshot's threshold on the public copy
   if (!edge?.enabled && !readings?.hours) return null
   const candidate = edge?.best || edge?.last
   return (

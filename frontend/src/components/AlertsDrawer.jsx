@@ -94,7 +94,7 @@ export default function AlertsDrawer({ open, onClose, alerts, markSeen }) {
             </div>
             <p>The bot pushes what matters to <a href="https://ntfy.sh/app" target="_blank" rel="noopener noreferrer">ntfy</a> (free app, no account): a route that would have fired, one that cleared gas and fees, an error, a stop, a trade, the nightly report. Subscribe to the public mirror:</p>
             <div className="topic">{PUBLIC_TOPIC}</div>
-            <p>{status ? <>On this machine: private topic {status.private ? 'configured' : 'not configured'} · public mirror {status.public ? 'on' : 'off'}.</> : demo ? 'The private topic stays on the machine that runs the bot; the public mirror carries the same alerts.' : ''}</p>
+            <p>{status ? <>On this machine: private topic {status.private ? 'configured' : 'not configured'} · public mirror {status.public ? 'on' : 'off'}. The mirror wears the costume: stage names for pairs and venues, the numbers as they are.</> : demo ? 'The private topic stays on the machine that runs the bot; the public mirror carries the same alerts in costume: stage names for pairs and venues, the numbers as they are.' : ''}</p>
           </div>
           <div className="row row--between">
             <span className="meta">{alerts.length ? `${alerts.length} in this session` : 'Nothing has needed attention in this session.'}</span>

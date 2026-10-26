@@ -59,6 +59,7 @@ const initialState = {
   venues: [],
   // Set when the edge state came from a published snapshot (GitHub Pages) rather than the live socket
   edgeSnapshotAt: null,
+  costume: null, // the public snapshot's masquerade (stage names for pairs and venues), null on the real thing
 
   // Selected pair for trading
   selectedPair: null,
@@ -175,6 +176,7 @@ const botSlice = createSlice({
       if (edge) state.edge = edge
       if (Array.isArray(venues)) state.venues = venues
       if (Number.isFinite(Number(threshold))) state.threshold = Number(threshold)
+      state.costume = (action.payload && action.payload.costume) || null
       state.edgeSnapshotAt = generatedAt || Date.now()
     },
     setSelectedPair: (state, action) => {

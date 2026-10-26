@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { useSelector } from 'react-redux'
 import { isStaticHost } from '../store/websocket'
-import { DEXES, dexKey } from '../lib/dex'
+import { DEXES, dexKey, houseList } from '../lib/dex'
 
 const fmtSigned = (v, d = 3) => { const n = Number(v); return Number.isFinite(n) ? `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n).toFixed(d)}%` : '—' }
 const fmtUsd = (v) => { const n = Number(v); return Number.isFinite(n) ? `$${n.toLocaleString(undefined, { maximumFractionDigits: n >= 100 ? 0 : 2 })}` : '—' }
@@ -25,9 +25,10 @@ function Ring({ pct, label }) {
  * the performance card), revamped: the takeaway sentence, the vitals, the venues in their colors.
  */
 export default function Hero() {
-  const { screenerPairs, edge, threshold, settings, trades, wallet, network, isTestMode, connected, edgeSnapshotAt, venues, candidates } = useSelector(s => s.bot)
-  const th = Number(settings?.priceDifference ?? threshold ?? 0.3)
+  const { screenerPairs, edge, threshold, settings, trades, wallet, network, isTestMode, connected, edgeSnapshotAt, venues, candidates, costume } = useSelector(s => s.bot)
+  const venueKinds = costume?.on ? houseList() : DEXES
   const demo = isStaticHost()
+  const th = Number((demo ? (threshold ?? settings?.priceDifference) : (settings?.priceDifference ?? threshold)) ?? 0.3) // the snapshot's threshold on the public copy; the bot's settings on the real one
 
   const best = useMemo(() => {
     let b = null
@@ -137,9 +138,9 @@ export default function Hero() {
         </div>
         <div className="netcard netcard--perf">
           <div className="netcard-h"><i className="ph-duotone ph-stack" aria-hidden="true" />Venues {venueList.length ? <span className="pill pill--signal">{plural(venueList.length, 'pool', 'pools')}</span> : null}</div>
-          <div className="netcard-sub"><span>every fee tier is its own venue, priced in the same block</span></div>
+          <div className="netcard-sub"><span>every fee tier is its own venue, priced in the same block</span>{costume?.on ? <span>venues wear stage names here</span> : null}</div>
           <div className="dexrow">
-            {DEXES.map(d => (
+            {venueKinds.map(d => (
               <span key={d.key} className={`dexchip ${poolsByDex[d.key] ? '' : 'is-quiet'}`} style={{ '--c': `var(--dex-${d.key})`, '--c-text': `var(--dex-${d.key}-text)` }} title={poolsByDex[d.key] ? `${poolsByDex[d.key]} live pools on ${d.label}` : `${d.label}: no live pool for the current pairs`}>
                 <i />{d.label}{poolsByDex[d.key] ? <span className="n">{poolsByDex[d.key]}</span> : null}
               </span>

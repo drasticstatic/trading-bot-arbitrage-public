@@ -1,7 +1,7 @@
 import React from 'react'
 import { useSelector } from 'react-redux'
 import { isStaticHost } from '../store/websocket'
-import { DEXES } from '../lib/dex'
+import { DEXES, houseList } from '../lib/dex'
 
 /**
  * Guide — "How it works": the section Christopher teaches from. One pass from a poll to a decision,
@@ -9,7 +9,11 @@ import { DEXES } from '../lib/dex'
  */
 export default function Guide() {
   const lineage = useSelector(s => s.bot.lineage)
+  const costume = useSelector(s => s.bot.costume)
+  const bestSymbol = useSelector(s => s.bot.edge?.best?.symbol)
   const demo = isStaticHost()
+  const example = costume?.on && bestSymbol ? bestSymbol : 'focused-ubiquitous-unicorn' // on the public copy, a name the reader has just seen
+  const venueKinds = costume?.on ? houseList() : DEXES
   const base = ((typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/').replace(/\/?$/, '/')
   const stops = (lineage || []).filter(s => s.open)
 
@@ -37,7 +41,8 @@ export default function Guide() {
         <div>
           <h3 className="h3">What the colors mean</h3>
           <div className="swatches">
-            {DEXES.map(d => <div key={d.key}><i style={{ '--c': `var(--dex-${d.key})` }} />{d.label}</div>)}
+            {venueKinds.map(d => <div key={d.key}><i style={{ '--c': `var(--dex-${d.key})` }} />{d.label}</div>)}
+            {costume?.on ? <div><i style={{ '--c': 'var(--text-2)' }} />each house above is one venue, in costume</div> : null}
             <div><i style={{ '--c': 'var(--good)' }} />cleared, fired, success</div>
             <div><i style={{ '--c': 'var(--warn)' }} />cleared but under threshold, warning</div>
             <div><i style={{ '--c': 'var(--bad)' }} />loss, error, stopped</div>
@@ -48,6 +53,8 @@ export default function Guide() {
           <p>The journal under <code>logs/journal/</code> is one line per event per day, with the trading mode stamped and RPC keys scrubbed. The Journal section reads any day back. At 23:55 the report writes the day's summary and a public snapshot; at 23:58 a commit pushes both, so the repo is the memory and Fortuna's terminal can show this lane without asking.</p>
           <h3 className="h3">Why a JSON file is public</h3>
           <p>This page has no server when it is served from GitHub Pages, so it renders the study from <code>edge/latest.json</code>, the snapshot the nightly report writes. The same file is the handshake with the rest of the fleet: Fortuna's perps terminal can read the study day, the best route, the cleared counts, the alert history and the census from it instead of someone retyping a lane card. One file, two readers, no secrets: aggregates and public pool prices only.</p>
+          <h3 className="h3"><i className="ph-duotone ph-mask-happy" aria-hidden="true" /> Why the names are funny</h3>
+          <p>On the public copy the data wears a costume. A pair like <code>{example}</code> is a real pair the bot watches; a venue like <code>Velvet Harbor</code> is a real pool, its house standing for a DEX and its ward for a fee tier, so two venues in the same ward share a tier without saying which. Prices, reserves and liquidity are scaled by a secret factor per pair, the same factor for every pool of that pair, so spreads, depth ratios and rankings are exactly the real ones while no pool can be matched against a public listing. Counts, spreads, gas, hours and outcomes are untouched. The names come from a salted hash, so a character keeps its name night after night and nobody can work back to the pair. The phone feed's public mirror wears the same costume. On the machine that runs the bot, this same page shows the real names{demo ? '' : ', as it does now'}.</p>
           <h3 className="h3">What keeps it safe</h3>
           <p>In monitor mode nothing can send a transaction, and this page never could: every trade is a step the operator confirms. The public copy is built from an allowlist (the front end, the snapshot, the examples), never from logs, config or keys. Balances stay on the private machine; addresses are never shown.</p>
         </div>

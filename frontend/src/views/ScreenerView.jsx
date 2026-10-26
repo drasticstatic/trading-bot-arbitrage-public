@@ -33,7 +33,7 @@ export default function ScreenerView() {
   const demo = isStaticHost()
   const onFork = network === 'hardhat'
   const monitorOnly = tradingMode === 'monitor'
-  const th = Number(settings?.priceDifference ?? threshold ?? 0.3)
+  const th = Number((isStaticHost() ? (threshold ?? settings?.priceDifference) : (settings?.priceDifference ?? threshold)) ?? 0.3) // the snapshot's threshold on the public copy
 
   useEffect(() => {
     const name = analysisResult?.pairName
