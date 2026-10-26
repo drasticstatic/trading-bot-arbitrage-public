@@ -5,6 +5,11 @@ import {
   setWalletInfo,
   setEdge,
   setEdgeSnapshot,
+  setJournalDays,
+  setJournalLoading,
+  setJournalDay,
+  setJournalError,
+  setLineage,
   updateScreener,
   setSelectedPair,
   setAnalysisResult,
@@ -26,9 +31,8 @@ let snapshotLoaded = false
 // study instead of an empty shell. Aggregates and public pool prices only.
 export async function loadEdgeSnapshot(dispatch) {
   if (snapshotLoaded) return
-  const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/'
   try {
-    const res = await fetch(`${base.replace(/\/?$/, '/')}edge/latest.json`, { cache: 'no-store' })
+    const res = await fetch(`${baseUrl()}edge/latest.json`, { cache: 'no-store' })
     if (!res.ok) return
     const snap = await res.json()
     if (snap && snap.edge) {
@@ -40,10 +44,68 @@ export async function loadEdgeSnapshot(dispatch) {
   }
 }
 
+export function isStaticHost() {
+  return /github\.io$|githubusercontent\.com$/.test(window.location.hostname)
+}
+
+function baseUrl() {
+  const base = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.BASE_URL) || '/'
+  return base.replace(/\/?$/, '/')
+}
+
+// The public demo lists its own earlier versions (frontend/public/lineage/lineage.json).
+export async function loadLineage(dispatch) {
+  try {
+    const res = await fetch(`${baseUrl()}lineage/lineage.json`, { cache: 'no-store' })
+    if (!res.ok) return
+    const data = await res.json()
+    if (data && Array.isArray(data.stops)) dispatch(setLineage(data.stops))
+  } catch {
+    // no lineage published
+  }
+}
+
+// REST (same origin; the Vite dev server proxies /api to :5050). None of this exists on the public demo.
+async function apiGet(path) {
+  const res = await fetch(path, { cache: 'no-store' })
+  if (!res.ok) {
+    let msg = `${res.status}`
+    try { msg = (await res.json()).error || msg } catch { /* ignore */ }
+    throw new Error(msg)
+  }
+  return res.json()
+}
+
+export async function fetchJournalDays(dispatch) {
+  if (isStaticHost()) { dispatch(setJournalError('unavailable')); return }
+  try {
+    dispatch(setJournalDays(await apiGet('/api/journal/days')))
+  } catch (e) {
+    dispatch(setJournalError(e.message === 'Failed to fetch' ? 'unavailable' : e.message))
+  }
+}
+
+export async function fetchJournalDay(dispatch, { date, stream = 'activity', limit = 1000, q = '', level = '' } = {}) {
+  if (isStaticHost()) { dispatch(setJournalError('unavailable')); return }
+  dispatch(setJournalLoading(true))
+  const qs = new URLSearchParams({ limit: String(limit), summary: '1' })
+  if (date) qs.set('date', date)
+  if (q) qs.set('q', q)
+  if (level) qs.set('level', level)
+  try {
+    const out = await apiGet(`/api/journal/${stream}?${qs.toString()}`)
+    dispatch(setJournalDay(out))
+  } catch (e) {
+    dispatch(setJournalError(e.message === 'Failed to fetch' ? 'unavailable' : e.message))
+  }
+}
+
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  const isStaticHost = /github\.io$|githubusercontent\.com$/.test(window.location.hostname)
-  if (isStaticHost) loadEdgeSnapshot(dispatch)
+  if (isStaticHost()) {
+    loadEdgeSnapshot(dispatch)
+    loadLineage(dispatch)
+  }
 
   // Support both Vite (`import.meta.env.VITE_WS_URL`) and legacy CRA-style (`process.env.REACT_APP_WS_URL`).
   const explicitUrl =

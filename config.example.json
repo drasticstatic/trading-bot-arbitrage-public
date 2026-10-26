@@ -10,7 +10,7 @@
     "GAS_PRICE": 0.00000001
   },
   "tradingMode": "monitor",
-  "livePairs": ["ARB/WETH", "WETH/USDC", "PENDLE/WETH", "GMX/WETH", "RDNT/WETH", "LINK/WETH"],
+  "livePairs": ["ARB/WETH", "WETH/USDC", "PENDLE/WETH", "GMX/WETH", "RDNT/WETH", "LINK/WETH", "WBTC/WETH"],
   "liveDexes": ["Uniswap", "PancakeSwap", "Camelot"],
   "livePollingInterval": 15000,
   "discoverFeeTiers": true,
