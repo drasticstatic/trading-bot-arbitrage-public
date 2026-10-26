@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lock-screen alerts from the DEX arbitrage lane</title>
+<meta name="description" content="How FortunaTrades ARB reaches a phone lock screen through ntfy, what it pushes and what it never does, and how to follow its alerts.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/duotone/style.css">
+<style>
+  :root { --bg: #070a14; --bg-2: #0b1020; --panel: rgba(255,255,255,.035); --line: rgba(255,255,255,.08); --text: #d7dce8; --muted: #8b93a7; --indigo: #818cf8; --purple: #a78bfa; --cyan: #67e8f9; --gold: #fbbf24; --green: #4ade80; --red: #f87171; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) { --bg: #f4f6fb; --bg-2: #ffffff; --panel: rgba(255,255,255,.8); --line: rgba(15,23,42,.1); --text: #141b2d; --muted: #5b6780; --indigo: #4f46e5; --purple: #7c3aed; --cyan: #0891b2; --gold: #b45309; --green: #15803d; --red: #dc2626; } }
+  :root[data-theme="dark"] { --bg: #070a14; --bg-2: #0b1020; --panel: rgba(255,255,255,.035); --line: rgba(255,255,255,.08); --text: #d7dce8; --muted: #8b93a7; --indigo: #818cf8; --purple: #a78bfa; --cyan: #67e8f9; --gold: #fbbf24; --green: #4ade80; --red: #f87171; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; font-size: 15px; }
+  .glow { position: fixed; inset: -10vh -10vw; z-index: -1; pointer-events: none; background: radial-gradient(ellipse at 8% 0%, rgba(129,140,248,.18), transparent 42%), radial-gradient(ellipse at 92% 8%, rgba(103,232,249,.10), transparent 36%); }
+  main { max-width: 760px; margin: 0 auto; padding: 2.2rem 1rem 4rem; }
+  .crumb { font-size: .72rem; color: var(--muted); margin-bottom: 1.2rem; display: flex; gap: .6rem; flex-wrap: wrap; } .crumb a { color: var(--indigo); text-decoration: none; }
+  h1 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 .4rem; background: linear-gradient(90deg, var(--indigo), var(--purple)); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: var(--muted); font-size: .9rem; margin-bottom: 1.6rem; }
+  h2 { font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; color: var(--purple); margin: 2rem 0 .6rem; }
+  p, li { color: var(--text); } ol, ul { padding-left: 1.3rem; }
+  code { font-family: "JetBrains Mono", monospace; font-size: .82em; background: rgba(127,127,127,.12); padding: .1em .4em; border-radius: 6px; }
+  pre { background: var(--bg-2); border: 1px solid var(--line); border-radius: 12px; padding: .9rem 1rem; overflow-x: auto; font-size: .78rem; line-height: 1.5; }
+  pre code { background: none; padding: 0; }
+  .card { border: 1px solid var(--line); border-radius: 14px; background: var(--panel); padding: 1rem 1.1rem; margin: 1rem 0; }
+  .topic { font-family: "JetBrains Mono", monospace; font-size: 1.05rem; color: var(--gold); user-select: all; }
+  a { color: var(--indigo); }
+  .step { display: grid; grid-template-columns: 2rem 1fr; gap: .6rem; margin: .6rem 0; } .step b { color: var(--green); font-family: "JetBrains Mono", monospace; }
+  table { width: 100%; border-collapse: collapse; font-size: .86rem; margin: .6rem 0 1rem; } th, td { text-align: left; padding: .45rem .5rem; border-bottom: 1px solid var(--line); vertical-align: top; } th { color: var(--muted); font-weight: 600; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; }
+  .pri { font-family: "JetBrains Mono", monospace; font-size: .78rem; } .pri.urgent { color: var(--red); } .pri.high { color: var(--gold); } .pri.default { color: var(--cyan); }
+  .ph-duotone { font-size: 1.25em; vertical-align: -.2em; } .ph-duotone::before { opacity: .55 !important; }
+  footer { margin-top: 3rem; font-size: .72rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 1rem; }
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+<main>
+  <div class="crumb"><a href="./">← FortunaTrades ARB terminal</a> · <a href="PHONE-ALERTS.md">markdown source</a> · <a href="https://drasticstatic.github.io/trading-assistant-public-preview/data/progression/terminal/phone-alerts.html">the perps lane's version</a></div>
+  <h1><i class="ph-duotone ph-device-mobile"></i> Lock-screen alerts from the DEX arbitrage lane</h1>
+  <div class="sub">How FortunaTrades ARB reaches a phone, and how to follow it yourself. Public, no secrets involved. The same mechanism as Fortuna's perps terminal, so one subscription carries both lanes.</div>
+
+  <h2>The problem</h2>
+  <p>The terminal is a page. Its "enable desktop alerts" button uses the browser Notification API, which only fires while the page is open on a desktop browser. iOS shows web notifications only for a page installed to the Home Screen with a Web Push server behind it. The public copy on GitHub Pages has no server at all, so the phone never hears from it.</p>
+
+  <h2>The fix: push from the machine that knows</h2>
+  <p>The bot already runs on a Mac, polling Arbitrum every few seconds. That machine knows when something matters, so it does the pushing:</p>
+  <div class="step"><b>1</b><span><strong>The bot</strong> prices every live pool in one block, ranks routes after fees and quotes any positive route as a round trip at five sizes. Every event it shows the page goes through one <code>broadcast()</code>.</span></div>
+  <div class="step"><b>2</b><span><strong>The journal</strong> writes each event to <code>logs/journal/</code> so the page can read any day back.</span></div>
+  <div class="step"><b>3</b><span><strong>The bridge</strong> (<code>helpers/notify.js</code>) reads the same events and pushes the few that deserve a lock screen to <a href="https://ntfy.sh" target="_blank" rel="noopener">ntfy</a>, an open-source push relay. One HTTP request with a title, a priority and a body. No account, no key.</span></div>
+  <div class="step"><b>4</b><span><strong>The ntfy app</strong> (iOS, Android, or the web app) subscribed to the topic shows the message on the lock screen.</span></div>
+<pre><code># the whole mechanism, by hand
+curl -H "Title: ARB · lock screen test" -H "Priority: high" \
+     -d "WBTC/WETH cleared gas and fees" https://ntfy.sh/&lt;topic&gt;</code></pre>
+
+  <h2>What gets pushed, and what does not</h2>
+  <table>
+    <thead><tr><th>Event</th><th>Priority</th><th>Throttle</th></tr></thead>
+    <tbody>
+      <tr><td>A candidate that <strong>would have fired</strong> at the threshold</td><td class="pri urgent">urgent</td><td>one per pair per 10 min</td></tr>
+      <tr><td>A candidate that <strong>cleared gas and the flash-loan fee</strong>, under the threshold</td><td class="pri high">high</td><td>one per pair per 30 min</td></tr>
+      <tr><td>An <strong>error</strong> in the bot</td><td class="pri high">high</td><td>one per message per 10 min</td></tr>
+      <tr><td>The bot <strong>stopping</strong>; a <strong>trade</strong> result</td><td class="pri urgent">urgent</td><td>every time</td></tr>
+      <tr><td>The bot starting; test prices on or off</td><td class="pri default">default</td><td>one per minute</td></tr>
+      <tr><td>The <strong>nightly report</strong> one-liner (23:55)</td><td class="pri default">default</td><td>once a day</td></tr>
+    </tbody>
+  </table>
+  <p>Ordinary polls, price updates and the thousands of routes that are positive before fees but not after are never pushed. They live in the journal, where the terminal's Journal section and <code>node scripts/journal.js</code> read them back.</p>
+
+  <h2>Follow the lane's alerts</h2>
+  <div class="card">
+    <p style="margin:0 0 .5rem">Install ntfy from the App Store or Play Store, or open <a href="https://ntfy.sh/app" target="_blank" rel="noopener">ntfy.sh/app</a>, then subscribe to</p>
+    <div class="topic">fortunatrades-arb-live</div>
+    <p style="margin:.5rem 0 0;color:var(--muted);font-size:.85rem">Already following <code>fortuna-terminal-live</code> for the perps lane? Both show up in the same app, titled <code>ARB ·</code> and <code>Fortuna</code> so you can tell them apart.</p>
+  </div>
+  <p>Christopher's own phone subscribes to a separate private topic; the public one is a mirror of the same alerts. Topics are the only "secret" in ntfy: anyone who knows a topic name can read it <strong>and post to it</strong>, so treat a public topic as a feed and never as instructions. Nothing in this repo reads from a topic. The private topic name lives in a local file the bot never prints, logs or journals.</p>
+
+  <h2>Setting up your own private channel</h2>
+<pre><code># 1. invent a long random topic name and subscribe to it in the ntfy app
+# 2. store it where the bridge reads it (never committed, never logged);
+#    Fortuna's bridge reads the same file, so one subscription carries both lanes
+mkdir -p ~/.config/fortuna
+printf '%s' 'your-long-random-topic' &gt; ~/.config/fortuna/ntfy_topic
+chmod 600 ~/.config/fortuna/ntfy_topic
+#    or, for this bot only, NTFY_TOPIC=your-long-random-topic in .env
+# 3. test
+node scripts/notify.js --status
+node scripts/notify.js --title "lock screen test" --msg "hello from the ARB lane" --pri high --private-only</code></pre>
+  <p>The bridge stays silent when no topic is configured and the public mirror is off (<code>NTFY_PUBLIC=0</code>), so every script can call it unconditionally. Self-hosting ntfy is also an option if the public relay is not wanted; set <code>NTFY_SERVER</code> to your server. <code>NTFY_DISABLE=1</code> turns every push off.</p>
+
+  <h2>Why not Telegram, Pushover, or a PWA</h2>
+  <p>They all work. ntfy was chosen because it needs no account, no bot token and no server, which keeps this write-up honest: everything above can be reproduced from scratch in five minutes. A push relay is deliberately one-way; the bot takes no commands from it.</p>
+
+  <footer>Part of <a href="./">FortunaTrades ARB</a> · the DEX lane of the fleet · the perps lane's own write-up is <a href="https://drasticstatic.github.io/trading-assistant-public-preview/data/progression/terminal/phone-alerts.html">here</a> · built with Claude.</footer>
+</main>
+</body>
+</html>

@@ -36,8 +36,10 @@ const initialState = {
     available: null // null until the first request answers; false on the public demo
   },
 
-  // Version lineage of the public demo (frontend/public/lineage/lineage.json), static hosts only
+  // Version lineage of the public demo (frontend/public/lineage/lineage.json)
   lineage: null,
+  // Structured edge candidates as they happen (EDGE_CANDIDATE): what the alerts and the hero read
+  candidates: [],
 
   // Screener data - all pairs
   screenerPairs: [],
@@ -155,6 +157,11 @@ const botSlice = createSlice({
       state.journal.error = action.payload || 'journal unavailable'
       if (action.payload === 'unavailable') state.journal.available = false
     },
+    addCandidate: (state, action) => {
+      const c = { ...(action.payload || {}), ts: action.payload?.ts || new Date().toISOString() }
+      state.candidates.push(c)
+      if (state.candidates.length > 200) state.candidates = state.candidates.slice(-200)
+    },
     setLineage: (state, action) => {
       state.lineage = action.payload || null
     },
@@ -240,6 +247,7 @@ export const {
   setJournalDay,
   setJournalError,
   setLineage,
+  addCandidate,
   setSelectedPair,
   setAnalysisResult,
   setOpportunity,
