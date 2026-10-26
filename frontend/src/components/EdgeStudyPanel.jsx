@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
 import Explain from './Explain'
+import { dexVar } from '../lib/dex'
 import { isStaticHost } from '../store/websocket'
 
 /**
@@ -442,7 +443,7 @@ function VenueMap({ venues }) {
               {row.pts.map((p) => (
                 <g key={p.key} className="edge-venue-pt">
                   <title>{`${p.key} · ${fmtBps(p.bps)} from mid · ${fmtReserve(p.weth)}${p.fee === null || p.fee === undefined ? ' · dynamic fee' : ''}`}</title>
-                  <circle cx={x(p.bps)} cy={18} r={r(p.weth)} className="edge-venue-dot" />
+                  <circle cx={x(p.bps)} cy={18} r={r(p.weth)} className="edge-venue-dot" style={{ '--c': dexVar(p.dex || p.key) }} />
                 </g>
               ))}
               {clusters.map((c, i) => (

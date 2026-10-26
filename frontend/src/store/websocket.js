@@ -19,8 +19,7 @@ import {
   clearTradeSteps,
   addTrade,
   updateSettings,
-  addLog
-} from './botSlice'
+  addLog, addCandidate } from './botSlice'
 
 let ws = null
 let reconnectTimeout = null
@@ -102,10 +101,8 @@ export async function fetchJournalDay(dispatch, { date, stream = 'activity', lim
 
 export function connectWebSocket(dispatch) {
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-  if (isStaticHost()) {
-    loadEdgeSnapshot(dispatch)
-    loadLineage(dispatch)
-  }
+  loadLineage(dispatch) // the version switcher reads frontend/public/lineage/lineage.json on every host
+  if (isStaticHost()) loadEdgeSnapshot(dispatch)
 
   // Support both Vite (`import.meta.env.VITE_WS_URL`) and legacy CRA-style (`process.env.REACT_APP_WS_URL`).
   const explicitUrl =
@@ -170,6 +167,9 @@ export function connectWebSocket(dispatch) {
           break
         case 'EDGE_UPDATE':
           dispatch(setEdge(payload))
+          break
+        case 'EDGE_CANDIDATE':
+          dispatch(addCandidate(payload))
           break
         case 'PAIR_SELECTED':
           dispatch(setSelectedPair(payload))

@@ -5,6 +5,7 @@ import { clearTrades } from '../store/botSlice'
 import Tooltip from '../components/Tooltip'
 import Confirm from '../components/Confirm'
 import Explain from '../components/Explain'
+import { dexVar, dexTextVar } from '../lib/dex'
 
 /**
  * ScreenerView — every live pair, its best route across every live pool, and the spread after
@@ -197,7 +198,7 @@ export default function ScreenerView() {
                         <td>
                           {buy && sell ? (
                             <span className="route">
-                              <span>{buy}</span><span className="arrow">→</span><span>{sell}</span>
+                              <span className="venue" style={{ '--c': dexVar(buy), '--c-text': dexTextVar(buy) }}><i />{buy}</span><span className="arrow">→</span><span className="venue" style={{ '--c': dexVar(sell), '--c-text': dexTextVar(sell) }}><i />{sell}</span>
                               {executableRoute ? <Tooltip text="The route the bot can trade right now."><span className="pill pill--good">executable</span></Tooltip> : null}
                               {mismatch ? <Tooltip text={`Scan-only best: ${pair.buyDex} → ${pair.sellDex}. Executable: ${pair.execBuyDex} → ${pair.execSellDex}.`}><span className="pill">scan-only best differs</span></Tooltip> : null}
                             </span>
