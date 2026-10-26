@@ -19,7 +19,7 @@ import {
   clearTradeSteps,
   addTrade,
   updateSettings,
-  addLog, addCandidate } from './botSlice'
+  addLog, addCandidate, setReadings } from './botSlice'
 
 let ws = null
 let reconnectTimeout = null
@@ -28,6 +28,15 @@ let snapshotLoaded = false
 // The public mirror has no bot behind it. The daily report publishes a snapshot of the edge study
 // (frontend/public/edge/latest.json → <base>/edge/latest.json); load it so the page shows the real
 // study instead of an empty shell. Aggregates and public pool prices only.
+/** Local only: the readings the bot computes across its logs. Refreshed on connect and every five minutes. */
+let readingsTimer = null
+export async function fetchReadings(dispatch) {
+  if (isStaticHost()) return
+  const get = (p) => fetch(p).then(r => (r.ok ? r.json() : null)).catch(() => null)
+  const [hours, scatter, alerts, census] = await Promise.all([get('/api/edge/hours?days=7'), get('/api/edge/scatter?limit=1500'), get('/api/alerts/history?days=7'), get('/api/edge/census')])
+  dispatch(setReadings({ hours, scatter, alerts, census }))
+}
+
 export async function loadEdgeSnapshot(dispatch) {
   if (snapshotLoaded) return
   try {
@@ -37,6 +46,7 @@ export async function loadEdgeSnapshot(dispatch) {
     if (snap && snap.edge) {
       snapshotLoaded = true
       dispatch(setEdgeSnapshot(snap))
+      dispatch(setReadings({ hours: snap.hours || null, scatter: snap.scatter || null, alerts: snap.alerts || null, census: snap.census || null }))
     }
   } catch {
     // no snapshot published yet
@@ -125,6 +135,9 @@ export function connectWebSocket(dispatch) {
   ws.onopen = () => {
     console.log('WebSocket connected')
     dispatch(setConnected(true))
+    fetchReadings(dispatch)
+    if (readingsTimer) clearInterval(readingsTimer)
+    readingsTimer = setInterval(() => fetchReadings(dispatch), 5 * 60e3)
     if (reconnectTimeout) {
       clearTimeout(reconnectTimeout)
       reconnectTimeout = null

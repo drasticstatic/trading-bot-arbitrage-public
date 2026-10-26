@@ -40,6 +40,8 @@ const initialState = {
   lineage: null,
   // Structured edge candidates as they happen (EDGE_CANDIDATE): what the alerts and the hero read
   candidates: [],
+  // Readings across the candidate log and the journal: the hour heatmap, the gas scatter, the alert history, the pair census
+  readings: { hours: null, scatter: null, alerts: null, census: null, at: null },
 
   // Screener data - all pairs
   screenerPairs: [],
@@ -157,6 +159,9 @@ const botSlice = createSlice({
       state.journal.error = action.payload || 'journal unavailable'
       if (action.payload === 'unavailable') state.journal.available = false
     },
+    setReadings: (state, action) => {
+      state.readings = { ...state.readings, ...(action.payload || {}), at: Date.now() }
+    },
     addCandidate: (state, action) => {
       const c = { ...(action.payload || {}), ts: action.payload?.ts || new Date().toISOString() }
       state.candidates.push(c)
@@ -248,6 +253,7 @@ export const {
   setJournalError,
   setLineage,
   addCandidate,
+  setReadings,
   setSelectedPair,
   setAnalysisResult,
   setOpportunity,

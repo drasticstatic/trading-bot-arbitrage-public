@@ -25,6 +25,7 @@ function Toggle({ on, label, desc, tone, onChange, disabled }) {
 }
 
 export default function ControlsView() {
+  const [revealAddr, setRevealAddr] = useState(false)
   const dispatch = useDispatch()
   const { wallet, settings, connected, tradingMode, network, edge, isExecuting } = useSelector(s => s.bot)
   const demo = isStaticHost()
@@ -152,7 +153,7 @@ export default function ControlsView() {
                   <div className="row row--between"><span className="notice-t">{name}</span><span className="meta">{chain}{w?.rpc ? ` · rpc ${w.rpc}` : ''}{active ? ' · selected' : ''}</span></div>
                   {w ? (
                     <>
-                      <div className="mono muted" style={{ fontSize: 11.5, margin: '2px 0 6px' }} title={w.address}>{short(w.address)}{w.address ? <> · <a href={`https://arbiscan.io/address/${w.address}`} target="_blank" rel="noopener noreferrer">Arbiscan</a></> : null}</div>
+                      <div className="mono muted" style={{ fontSize: 11.5, margin: '2px 0 6px' }}>{w.address ? (revealAddr ? <>{short(w.address)} · <a href={`https://arbiscan.io/address/${w.address}`} target="_blank" rel="noopener noreferrer">Arbiscan</a> · <button type="button" className="btn btn--quiet btn--sm" onClick={() => setRevealAddr(false)}>hide</button></> : <>address hidden · <button type="button" className="btn btn--quiet btn--sm" onClick={() => setRevealAddr(true)} title="Show the trading account address on this screen only">reveal</button></>) : null}</div>
                       <div className="stats" style={{ gap: '10px 20px' }}>
                         <div className="stat"><span className="stat-v sm">{fixed(w.ethBalance, 4)}</span><span className="stat-l">ETH for gas</span></div>
                         <div className="stat"><span className="stat-v sm">{fixed(w.wethBalance, 4)}</span><span className="stat-l">WETH trading</span></div>
@@ -166,7 +167,7 @@ export default function ControlsView() {
               ))}
             </div>
           ) : null}
-          <p className="meta" style={{ marginTop: 10 }}>Profits accrue in WETH; ETH goes down with gas. The address shown is the bot's own trading account; keys never leave the machine.</p>
+          <p className="meta" style={{ marginTop: 10 }}>Profits accrue in WETH; ETH goes down with gas. The trading account's address stays hidden until you reveal it, and is never published; keys never leave the machine.</p>
         </section>
 
         <section className="panel">

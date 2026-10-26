@@ -9,6 +9,8 @@ import GHPagesBanner from './components/GHPagesBanner'
 import EdgeStudyPanel from './components/EdgeStudyPanel'
 import AlertsDrawer, { useAlerts } from './components/AlertsDrawer'
 import Guide from './components/Guide'
+import Readings from './components/Readings'
+import CensusPanel from './components/CensusPanel'
 import ScreenerView from './views/ScreenerView'
 import JournalView from './views/JournalView'
 import PerpsView from './views/PerpsView'
@@ -157,7 +159,11 @@ export default function App() {
 
       <main className="wrap view">
         <Hero />
-        <div className="sec" id="edge"><PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary></div>
+        <div className="sec" id="edge">
+          <PanelBoundary name="Edge study"><EdgeStudyPanel /></PanelBoundary>
+          <PanelBoundary name="Readings"><Readings /></PanelBoundary>
+          <PanelBoundary name="The wider net"><CensusPanel /></PanelBoundary>
+        </div>
         <div className="sec" id="screener"><PanelBoundary name="Screener"><ScreenerView /></PanelBoundary></div>
         <div className="sec" id="journal"><PanelBoundary name="Journal"><JournalView /></PanelBoundary></div>
         <div className="sec" id="perps"><PanelBoundary name="Perps"><PerpsView /></PanelBoundary></div>
