@@ -93,7 +93,7 @@ kbd { border: 1px solid var(--line-2); border-radius: 4px; padding: 0 5px; color
 .grid { display: grid; gap: 16px; }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); }
 .grid--3 { grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
-.grid--controls { grid-template-columns: repeat(auto-fit, minmax(min(100%, 480px), 1fr)); }
+.grid--controls { grid-template-columns: repeat(auto-fit, minmax(min(100%, 330px), 1fr)); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .ph-duotone { font-size: 1.3em; vertical-align: -0.2em; }
 .ph-duotone::before { opacity: 0.55 !important; }
@@ -454,8 +454,8 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .edge-stale { color: var(--warn); }
 .edge-finding { font-size: clamp(16px, 1.7vw, 22px); line-height: 1.45; font-weight: 450; color: var(--text); max-width: 64ch; margin: 4px 0 18px; text-wrap: pretty; }
 .edge-num { color: var(--cyan); font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; font-family: var(--mono); font-size: 0.92em; }
-.edge-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: auto auto; gap: 18px 28px; align-items: start; }
-.edge-cell-tape { grid-row: 1 / span 2; }
+.edge-grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); grid-template-rows: auto auto auto auto; gap: 18px 28px; align-items: start; }
+.edge-cell-tape { grid-row: 1 / span 4; }
 @media (max-width: 1024px) { .edge-grid { grid-template-columns: 1fr; } .edge-cell-tape { grid-row: auto; } }
 .edge-h3 { font-size: 12px; font-weight: 700; color: var(--text-2); margin: 0 0 10px; }
 .edge-empty { font-size: 12.5px; color: var(--muted); line-height: 1.5; padding: 10px 0; max-width: 62ch; }
@@ -583,3 +583,44 @@ dialog.dlg::backdrop { background: rgba(3, 5, 12, 0.7); backdrop-filter: blur(3p
 .wire-num { font-size: 11.5px; white-space: nowrap; }
 .wire-lag { font-size: 11px; white-space: nowrap; min-width: 86px; text-align: right; }
 @media (max-width: 560px) { .wire-row { grid-template-columns: minmax(0, 1fr) auto; } .wire-row .wire-bars { grid-column: 1 / -1; } }
+
+/* ---- The desk: a live rail beside the page on wide screens ---- */
+@media (min-width: 1360px) {
+  .desk { display: grid; grid-template-columns: minmax(0, 1fr) 296px; gap: 0 22px; align-items: start; }
+  .rail-side { position: sticky; top: 92px; max-height: calc(100vh - 104px); overflow: auto; scrollbar-width: thin; display: flex; flex-direction: column; gap: 10px; padding-bottom: 12px; }
+}
+@media (max-width: 1359.98px) { .rail-side { display: none; } }
+.rail-mod { border: 1px solid var(--line); border-radius: var(--r); background: var(--panel); padding: 10px 12px; }
+.rail-h { font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 7px; display: flex; align-items: center; gap: 8px; }
+.rail-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--line-2); } .rail-dot.on { background: var(--good); box-shadow: 0 0 0 3px var(--good-soft); }
+.rail-clock b { font-family: var(--mono); font-size: 13px; font-weight: 600; display: block; margin-bottom: 5px; }
+.rail-kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 11.5px; color: var(--muted); margin-top: 6px; } .rail-kv .num { color: var(--text); text-align: right; }
+.rail-tail { list-style: none; margin: 0; padding: 0; font-size: 11px; line-height: 1.4; color: var(--text-2); }
+.rail-tail li { display: grid; grid-template-columns: 58px 1fr; gap: 6px; padding: 2px 0; border-bottom: 1px dashed var(--line); overflow: hidden; }
+.rail-tail li:last-child { border-bottom: 0; } .rail-tail .num { color: var(--muted); font-size: 10.5px; }
+.rail-tail .lv-success { color: var(--good); } .rail-tail .lv-warn { color: var(--warn); } .rail-tail .lv-error { color: var(--bad); }
+.rail-list { list-style: none; margin: 0; padding: 0; font-size: 12px; } .rail-list li { padding: 4px 0; border-bottom: 1px dashed var(--line); } .rail-list li:last-child { border-bottom: 0; }
+.rail-list--tight li b { font-size: 11.5px; color: var(--text-2); }
+.rail-empty { font-size: 11.5px; color: var(--muted); line-height: 1.45; }
+
+/* ---- The frontier ---- */
+.frontier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 460px), 1fr)); gap: 18px 28px; }
+.fr-card { min-width: 0; }
+.fr-verdict { font-size: 12.5px; color: var(--text-2); line-height: 1.5; margin: -4px 0 10px; }
+.fr-rows { display: flex; flex-direction: column; gap: 6px; }
+.fr-row { display: grid; grid-template-columns: minmax(130px, 1.2fr) minmax(0, 2fr) auto; gap: 4px 10px; align-items: center; font-size: 12px; }
+.fr-row .fr-sub { grid-column: 2 / -1; font-size: 11px; color: var(--muted); }
+.fr-lbl { color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fr-bars { display: flex; flex-direction: column; gap: 2px; min-width: 0; position: relative; }
+.fr-bars.one { height: 10px; background: var(--panel-2); border-radius: 3px; overflow: visible; }
+.fr-bar { display: block; height: 5px; border-radius: 3px; min-width: 2px; }
+.fr-bars.one .fr-bar { height: 10px; }
+.fr-bar.a, .fr-bar.variable { background: var(--indigo); } .fr-bar.b, .fr-bar.fixed { background: var(--cyan); } .fr-bar.borrow { background: var(--warn); } .fr-bar.funding { background: var(--pink); }
+.fr-tick { position: absolute; top: -3px; width: 2px; height: 16px; background: var(--text-2); border-radius: 1px; }
+.fr-num { font-size: 11.5px; white-space: nowrap; }
+.fr-range { position: relative; height: 18px; display: block; }
+.fr-range-line { position: absolute; left: 0; right: 0; top: 8px; height: 2px; background: var(--line-2); }
+.fr-dot { position: absolute; top: 9px; transform: translate(-50%, -50%); border-radius: 50%; background: var(--indigo); opacity: 0.85; box-shadow: 0 0 0 2px var(--panel); }
+.fr-ref { position: absolute; top: 1px; width: 2px; height: 16px; background: var(--warn); transform: translateX(-50%); }
+.grid--controls .panel--wide { grid-column: 1 / -1; }
+.grid--controls .panel--wide .kv { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }

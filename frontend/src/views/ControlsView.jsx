@@ -195,7 +195,7 @@ export default function ControlsView() {
           )) : null}
         </section>
 
-        <section className="panel">
+        <section className="panel panel--wide">
           <div className="panel-h"><div className="row"><h2 className="h2">Study settings</h2><span className="meta">read-only · config.json → edgeStudy</span></div></div>
           {es ? (
             <div className="kv">

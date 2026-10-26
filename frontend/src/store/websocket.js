@@ -34,8 +34,8 @@ let readingsTimer = null
 export async function fetchReadings(dispatch) {
   if (isStaticHost()) return
   const get = (p) => fetch(p).then(r => (r.ok ? r.json() : null)).catch(() => null)
-  const [hours, scatter, alerts, census, infra] = await Promise.all([get('/api/edge/hours?days=7'), get('/api/edge/scatter?limit=1500'), get('/api/alerts/history?days=7'), get('/api/edge/census'), get('/api/edge/infra')])
-  dispatch(setReadings({ hours, scatter, alerts, census, infra }))
+  const [hours, scatter, alerts, census, infra, frontier] = await Promise.all([get('/api/edge/hours?days=7'), get('/api/edge/scatter?limit=1500'), get('/api/alerts/history?days=7'), get('/api/edge/census'), get('/api/edge/infra'), get('/api/edge/frontier')])
+  dispatch(setReadings({ hours, scatter, alerts, census, infra, frontier }))
 }
 
 export async function loadEdgeSnapshot(dispatch) {
@@ -48,7 +48,7 @@ export async function loadEdgeSnapshot(dispatch) {
       snapshotLoaded = true
       if (snap.costume && Array.isArray(snap.costume.houses)) { registerHouses(snap.costume.houses); try { document.documentElement.dataset.costume = '1' } catch { /* no DOM */ } } // the masquerade's venue colors and label widths
       dispatch(setEdgeSnapshot(snap))
-      dispatch(setReadings({ hours: snap.hours || null, scatter: snap.scatter || null, alerts: snap.alerts || null, census: snap.census || null, infra: snap.infra || null }))
+      dispatch(setReadings({ hours: snap.hours || null, scatter: snap.scatter || null, alerts: snap.alerts || null, census: snap.census || null, infra: snap.infra || null, frontier: snap.frontier || null }))
     }
   } catch {
     // no snapshot published yet

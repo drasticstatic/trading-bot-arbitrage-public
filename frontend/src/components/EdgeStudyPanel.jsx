@@ -3,6 +3,7 @@ import { useSelector } from 'react-redux'
 import Explain from './Explain'
 import { dexVar } from '../lib/dex'
 import { isStaticHost } from '../store/websocket'
+import { DepthCurve, LiquidityProfile } from './Readings'
 
 /**
  * EdgeStudyPanel — the monitor-only edge study, read as a finding.
@@ -531,6 +532,14 @@ export default function EdgeStudyPanel() {
         <div className="edge-cell">
           <h3 className="edge-h3">Today’s spread distribution</h3>
           <SpreadHistogram edge={edge} />
+        </div>
+        <div className="edge-cell">
+          <h3 className="edge-h3">Depth curve · the best candidate's net by size</h3>
+          <DepthCurve candidate={candidate} />
+        </div>
+        <div className="edge-cell">
+          <h3 className="edge-h3">Liquidity profile · WETH in each pool, by venue</h3>
+          <LiquidityProfile venues={venues?.length ? venues : edge.venues} />
         </div>
         <div className="edge-cell edge-cell-venues">
           <h3 className="edge-h3">Live venues: where each pool prices the pair</h3>
