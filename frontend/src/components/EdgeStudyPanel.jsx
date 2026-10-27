@@ -533,7 +533,7 @@ export default function EdgeStudyPanel() {
           <h3 className="edge-h3">Today’s spread distribution</h3>
           <SpreadHistogram edge={edge} />
         </div>
-        <div className="edge-cell">
+        <div className="edge-cell edge-cell-depth">
           <h3 className="edge-h3">Depth curve · the best candidate's net by size</h3>
           <DepthCurve candidate={candidate} />
         </div>
