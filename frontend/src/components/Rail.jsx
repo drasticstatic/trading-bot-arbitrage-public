@@ -24,7 +24,7 @@ export default function Rail() {
       {edge?.progress ? (
         <div className="rail-mod">
           <div className="rail-h">Study clock</div>
-          <div className="rail-clock"><b>day {day} of {edge.progress.targetDays}</b><div className="tb-progress"><i style={{ width: `${edge.progress.pct}%` }} /></div></div>
+          <div className="rail-clock"><b>observed day {day} of {edge.progress.targetDays}</b><div className="tb-progress"><i style={{ width: `${edge.progress.pct}%` }} /></div></div>
           <div className="rail-kv"><span>polls</span><span className="num">{edge.polls ?? '—'}</span><span>quoted</span><span className="num">{edge.simulated ?? '—'}</span><span>cleared</span><span className="num">{edge.cleared ?? 0}</span><span>would fire</span><span className="num">{edge.wouldFire ?? 0}</span></div>
         </div>
       ) : null}
