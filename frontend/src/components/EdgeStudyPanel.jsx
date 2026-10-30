@@ -508,7 +508,7 @@ export default function EdgeStudyPanel() {
           </div>
         </div>
         <div className="tb-study" title={`${pct.toFixed(1)}% of the ${edge.progress?.targetDays}-day study`}>
-          <span>day {dayNum} of {edge.progress?.targetDays} · decision when the week is in</span>
+          <span>observed day {dayNum} of {edge.progress?.targetDays}{Number.isFinite(edge.progress?.wallHours) && edge.progress.wallHours - (edge.progress.elapsedHours || 0) > 2 ? ` · ${((edge.progress.wallHours - edge.progress.elapsedHours) / 24).toFixed(1)} days lost to outages` : ''} · decided from observed days, not the calendar</span>
           <div className="tb-progress"><i style={{ width: `${pct}%` }} /></div>
         </div>
       </header>
