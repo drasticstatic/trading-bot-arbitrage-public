@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useSelector } from 'react-redux'
-import { isStaticHost } from '../store/websocket'
+import { isStaticHost, apiFetch } from '../store/websocket'
 
 const PUBLIC_TOPIC = 'fortunatrades-arb-live'
 const SEEN_KEY = 'ft-alerts-seen'
@@ -68,7 +68,7 @@ export default function AlertsDrawer({ open, onClose, alerts, markSeen }) {
   useEffect(() => { if (open) markSeen() }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!open || demo) return
-    fetch('/api/alerts/status').then(r => r.ok ? r.json() : null).then(setStatus).catch(() => setStatus(null))
+    apiFetch('/api/alerts/status').then(r => r.ok ? r.json() : null).then(setStatus).catch(() => setStatus(null))
   }, [open, demo])
   useEffect(() => {
     if (!open) return

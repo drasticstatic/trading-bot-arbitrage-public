@@ -156,11 +156,55 @@ function Wire({ infra }) {
   )
 }
 
+/** Persistent routes: the routes that reopen chase after chase, quoted up the ladder to 10 ETH every ten minutes. */
+function Persistent({ ps }) {
+  const ranking = ps?.ranking || []
+  if (!ranking.length) return <div className="edge-empty">Once a route has been chased a few times, the ones that keep reopening and outliving the budget rank here (chases × median lifetime, weighted by the share still open). Every ten minutes the top three are quoted at 0.5, 1, 2, 5 and 10 ETH with the same quoter as the size ladder, after gas and the flash-loan fee.</div>
+  const quoted = new Map((ps?.quoted || []).map(q => [q.key, q]))
+  const rows = ranking.slice(0, 6)
+  const venuesOf = (route) => String(route || '').split('→')
+  return (
+    <div>
+      <div className="table-wrap" style={{ maxHeight: 300 }}>
+        <table className="table table--tight">
+          <thead><tr><th>Pair · route</th><th className="t-right">Chases</th><th className="t-right">Median life</th><th className="t-right">Open share</th><th className="t-right">Best size</th><th className="t-right">Net at best</th></tr></thead>
+          <tbody>
+            {rows.map(r => {
+              const q = quoted.get(r.key)
+              const best = q?.best
+              const pays = q?.largestPaying
+              return (
+                <tr key={r.key} className={pays ? 'tr-opp' : ''}>
+                  <td>
+                    <span className="pair">{r.symbol || r.pair}</span>
+                    <span className="td-sub tri-legs">{venuesOf(r.route).map((v, i) => <span key={i} className="venue" style={{ '--c': dexVar(v), '--c-text': dexTextVar(v) }}><i />{v}</span>)}</span>
+                  </td>
+                  <td className="t-right num">{r.chases}</td>
+                  <td className="t-right num">{r.medianLifetimeBlocks ?? '—'} blk<span className="td-sub">{secs(r.medianLifetimeMs)}</span></td>
+                  <td className="t-right num">{Number.isFinite(Number(r.openShare)) ? `${Math.round(Number(r.openShare) * 100)}%` : '—'}</td>
+                  <td className="t-right num">{best ? `${best.sizeEth} ETH` : q ? '—' : <span className="muted">not quoted</span>}<span className="td-sub">{pays ? `pays to ${pays.sizeEth} ETH${q.crossoverEth ? ` · zero ≈ ${q.crossoverEth}` : ''}` : q ? (q.error && !best ? q.error : 'nothing pays') : ''}</span></td>
+                  <td className={`t-right num ${best && best.netEth > 0 ? 'good' : 'muted'}`}>{best ? eth(best.netEth, 6) : '—'}<span className="td-sub">{q && Number.isFinite(Number(q.netSpreadPctNow)) ? `now ${pct(q.netSpreadPctNow)}` : ''}</span></td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+      <div className="heat-legend">
+        <span className="num">{ps?.at ? `quoted ${when(ps.at)} at ${(ps.settings?.ladderEth || []).join(' / ')} ETH · every ${Math.round((ps.settings?.everyMs || 600000) / 60000)} min · top ${ps.settings?.top ?? 3}` : `ranked from the chase log · first quotes ${Math.round((ps?.settings?.everyMs || 600000) / 60000)} min after the monitor starts`}</span>
+        <span className="num">score = chases × median blocks × (1 + open share)</span>
+      </div>
+    </div>
+  )
+}
+
 export default function ChasePanel() {
   const edge = useSelector(s => s.bot.edge)
   const infra = useSelector(s => s.bot.readings?.infra)
   const tri = edge?.triangles
   const chases = edge?.chases
+  const ps = edge?.persistence
+  const paying = (ps?.quoted || []).filter(q => q.largestPaying).length
   const positive = (tri?.list || []).filter(r => r.netPct > 0).length
   const ours = infra?.endpoints?.find(e => e.label === 'configured')
   return (
@@ -174,6 +218,7 @@ export default function ChasePanel() {
           {tri?.list?.length ? <span className={`pill ${positive ? 'pill--good' : ''}`}>{tri.list.length} triangle{tri.list.length === 1 ? '' : 's'} · {positive} positive after fees</span> : null}
           {chases?.summary?.count ? <span className="pill">{chases.summary.count} chase{chases.summary.count === 1 ? '' : 's'} · median {chases.summary.medianLifetimeBlocks} blocks</span> : chases?.active ? <span className="pill pill--signal">chasing {chases.active.symbol}</span> : null}
           {ours?.ok ? <span className="pill">wire {Math.round(ours.callMs)} ms</span> : null}
+          {ps?.quoted?.length ? <span className={`pill ${paying ? 'pill--good' : ''}`}>{ps.quoted.length} persistent route{ps.quoted.length === 1 ? '' : 's'} · {paying} paying</span> : null}
         </span>
       </div>
       <div className="readings readings--three">
@@ -181,10 +226,12 @@ export default function ChasePanel() {
         <div className="readings-cell"><h3 className="edge-h3">Lifetimes · how long a dislocation stays open, in blocks</h3><Lifetimes chases={chases} blocksPerPoll={infra?.blocksPerPoll} /></div>
         <div className="readings-cell"><h3 className="edge-h3">The wire · how fast this machine hears Arbitrum</h3><Wire infra={infra} /></div>
       </div>
+      <div className="readings-cell" style={{ marginTop: 18 }}><h3 className="edge-h3">Persistent routes · the ones that keep reopening, quoted up to 10 ETH</h3><Persistent ps={ps} /></div>
       <Explain>
         <p>The edge study asks whether the same pair is priced apart on two venues. These three readings ask what it would take to <b>act</b> on that, measured instead of argued, before a wallet is funded.</p>
         <p><b>Triangles.</b> Three pairs that share corners form a cycle: WETH → USDC → ARB → WETH. Each leg is taken on its best venue after that pool's fee, and the product of the three rates says what one unit comes back as. Positive after fees means the three markets disagree with each other at that block; the bot then quotes the whole cycle at the size ladder, like the two-leg trade, and says whether it would have cleared gas. A triangle never needs two venues for the same pair, so it is the first <b>multi-hop</b> route, with the same monitor-only rule.</p>
         <p><b>Lifetimes.</b> A poll reads every venue once every 15 seconds; Arbitrum makes a block about every quarter second. When a route crosses the chase floor after fees, the bot re-reads that pair's venues as fast as the RPC answers, labels each sample with its block, stops when the route falls back under the floor, then asks <code>eth_getLogs</code> who closed it: a swap on one of the venues in the closing block, or drift. If most dislocations outlive a poll plus a transaction, a careful poller can take them; if they close in a block or two, only block-level infrastructure ever will — a sequencer feed, a co-located node, a <b>backrun</b> in the same block as the swap that opened it. The histogram marks where one poll lands.</p>
+        <p><b>Persistent routes.</b> Most dislocations close in a few blocks; a handful of routes reopen chase after chase and are still open when the budget runs out. Those are ranked by chases × median lifetime, weighted up by the share still open (an open chase only says the route lived <i>at least</i> that long). Every ten minutes the top three are quoted at 0.5, 1, 2, 5 and 10 ETH-equivalent with the same quoter as the size ladder, after gas and the flash-loan fee. <b>Best size</b> is the rung with the highest net; <b>pays to</b> is the largest rung still positive, and <b>zero ≈</b> is where price impact has eaten the spread, between two rungs. <b>Now</b> is the route's after-fee spread at the moment it was quoted: a negative reading means the route was shut then, so the ladder is what it would cost to force it.</p>
         <p><b>The wire.</b> Nightly, the probe times the configured RPC against public ones, checks whose head is freshest, and watches the block cadence for a few seconds. A private or co-located endpoint earns its cost only if the lifetimes say the race is lost on the wire; this is the number to compare against.</p>
       </Explain>
     </section>
