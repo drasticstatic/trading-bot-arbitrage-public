@@ -24,7 +24,7 @@ export default function CensusPanel() {
           <h2 className="h2"><i className="ph-duotone ph-fish-simple" aria-hidden="true" />The wider net</h2>
           <span className="meta">{census ? `${census.poolsSeen} pools censused ${new Date(census.generatedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })} · ${census.pairsWithTwoVenues} pairs priced on two or more venues above ${usd(census.minPoolUsd)} per pool` : 'no census has run yet'}</span>
         </div>
-        {census ? <span className="row"><span className={`pill ${positive.length ? 'pill--good' : ''}`}>{positive.length} {positive.length === 1 ? 'pair' : 'pairs'} apart after fees right now</span>{census.runs ? <span className="pill" title={census.since ? `since ${new Date(census.since).toLocaleString()}` : ''}>{census.runs} {census.runs === 1 ? 'run' : 'runs'} remembered</span> : null}</span> : null}
+        {census ? <span className="row"><span className={`pill ${positive.length ? 'pill--good' : ''}`}>{positive.length} {positive.length === 1 ? 'pair' : 'pairs'} apart after fees right now</span>{census.runs ? <span className="pill" title={census.since ? `since ${new Date(census.since).toLocaleString()}` : ''}>{census.runs} {census.runs === 1 ? 'run' : 'runs'} remembered</span> : null}{census.missingDexTally && census.missingDexTally.length ? <span className="pill" title={census.missingDexTally.map(t => `${t.dex}: ${t.rows} row${t.rows === 1 ? '' : 's'}, ${t.apartRows} apart after fees`).join(' · ')}>next adapter: {census.missingDexTally[0].dex}</span> : null}</span> : null}
       </div>
       {!census ? (
         <div className="empty">Run <code>node scripts/pair-census.js</code> on the bot's machine, or wait for the nightly report. The census reads a public listing of Arbitrum's top pools and asks where the same pair is priced differently on two venues after fees. Nothing is traded or changed.</div>
@@ -37,7 +37,7 @@ export default function CensusPanel() {
               </thead>
               <tbody>
                 {rows.map(r => (
-                  <tr key={r.pair} className={r.netPct > 0 ? 'tr-opp' : ''}>
+                  <tr key={`${r.pair}|${(r.tokens || []).join('|')}`} className={r.netPct > 0 ? 'tr-opp' : ''}>
                     <td><span className="pair">{r.pair}</span><span className="td-sub">{r.pools} pools · {r.venues.join(', ')}</span></td>
                     <td>
                       <span className="route">
@@ -45,7 +45,7 @@ export default function CensusPanel() {
                         <span className="arrow">→</span>
                         <span className="venue" style={{ '--c': dexVar(r.rich.dex), '--c-text': dexTextVar(r.rich.dex) }}><i />{r.rich.name}</span>
                       </span>
-                      <span className="td-sub">{r.cheap.dex} {usd(r.cheap.reserveUsd)} · {r.rich.dex} {usd(r.rich.reserveUsd)}</span>
+                      <span className="td-sub">{r.cheap.dex} {usd(r.cheap.reserveUsd)} · {r.rich.dex} {usd(r.rich.reserveUsd)}{r.missingDex && r.missingDex.length ? ` · no adapter: ${r.missingDex.join(', ')}` : ''}</span>
                     </td>
                     <td className={`t-right num ${r.netPct > 0 ? 'good' : 'muted'}`}>{pct(r.netPct)}</td>
                     <td className="t-right num muted">{pct(r.grossPct)} · {Number(r.feesPct).toFixed(2)}%</td>
@@ -62,6 +62,7 @@ export default function CensusPanel() {
           <Explain>
             <p>The bot measures seven pairs precisely, every poll, in one block. This table asks a different question first: <b>across every liquid pool on Arbitrum, where is the same pair priced differently on two venues right now?</b> It reads GeckoTerminal's public listing (the network's top pools plus each tradable DEX's own top pools), groups pools by pair, and takes the richest and cheapest price minus both pools' fees.</p>
             <p>A listing's prices are seconds to a minute old, so a positive number here is a <b>candidate</b>, not a trade: the next step is adding the pair to <code>config.json</code> so the same-block multicall and the quoted round trip judge it properly. The <b>thin leg</b> is the smaller of the two pools, which caps the size; the ranking weights divergence by that depth so a thin pool's wild price does not top the list. <b>live</b> marks pairs the bot already watches. <b>Apart in</b> counts how many of the recent runs (hourly while the bot runs, and nightly) found the pair apart after fees: a one-off is noise, a pair apart run after run is the one to add.</p>
+            <p>Pools are grouped by token <b>address</b>, so two tokens that share a symbol are never compared as one pair. <b>No adapter</b> under a route names the DEX a leg sits on that the bot cannot price yet; <b>next adapter</b> is the DEX that turns up under the most rows. Uniswap V4, Aero Slipstream, Trader Joe, Curve and Balancer are priced read-only: they show in the screener and the venue map, and are never quoted or traded.</p>
           </Explain>
         </>
       )}
