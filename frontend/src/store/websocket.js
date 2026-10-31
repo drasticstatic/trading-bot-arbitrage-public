@@ -26,7 +26,8 @@ let ws = null
 let reconnectTimeout = null
 let snapshotLoaded = false
 
-// Remote access (SOP-IT-003 step 4): the page is opened once as https://<host>/?token=<BOT_API_TOKEN>.
+// Remote access (SOP-IT-003 step 4): the page is opened once as http://<this-mac>:5050/?token=<BOT_API_TOKEN>
+// (widened binding plus token; never a reverse tunnel, which arrives as loopback: RUNBOOK.md).
 // The token is kept for this tab only (sessionStorage), taken out of the address bar at once so it
 // does not linger in history, bookmarks or a screenshot, then sent on the socket URL (?token=, which
 // is all a browser WebSocket can carry) and as Authorization: Bearer on every /api fetch. On loopback
