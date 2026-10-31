@@ -504,6 +504,7 @@ export default function EdgeStudyPanel() {
             {edgeSnapshotAt ? `Snapshot from ${new Date(edgeSnapshotAt).toLocaleString()} · ` : ''}Live Arbitrum, monitor only · {edge.polls} polls{edge.lastBlock ? ` · block ${edge.lastBlock}` : ''}
             {edge.gasPriceGwei ? ` · gas ${Number(edge.gasPriceGwei).toFixed(3)} gwei` : ''}
             {edge.wethUsd ? ` · ETH ${fmtUsd(edge.wethUsd)}` : ''}
+            {edge.heartbeat ? ` · last tick ${new Date(edge.lastTickAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' })}${edge.rpcHost ? ` via ${edge.rpcHost}` : ''} · ${edge.heartbeat.pairs} pairs · ${edge.heartbeat.pools} pools` : ''}
             {stale ? <span className="edge-stale"> · no poll for {fmtHours((Date.now() - edge.lastTickAt) / 3600000)}</span> : null}
           </div>
         </div>
