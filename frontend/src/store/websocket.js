@@ -26,6 +26,42 @@ let ws = null
 let reconnectTimeout = null
 let snapshotLoaded = false
 
+// Remote access (SOP-IT-003 step 4): the page is opened once as https://<host>/?token=<BOT_API_TOKEN>.
+// The token is kept for this tab only (sessionStorage), taken out of the address bar at once so it
+// does not linger in history, bookmarks or a screenshot, then sent on the socket URL (?token=, which
+// is all a browser WebSocket can carry) and as Authorization: Bearer on every /api fetch. On loopback
+// no token is needed and none is sent.
+const TOKEN_KEY = 'botApiToken'
+function captureToken() {
+  let token = null
+  try {
+    const url = new URL(window.location.href)
+    const fromUrl = url.searchParams.get('token')
+    if (fromUrl) {
+      token = fromUrl
+      try { window.sessionStorage.setItem(TOKEN_KEY, fromUrl) } catch { /* storage blocked: keep it in memory for this load */ }
+      url.searchParams.delete('token')
+      try { window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`) } catch { /* no history API */ }
+    }
+  } catch { /* no window (tests) */ }
+  if (!token) { try { token = window.sessionStorage.getItem(TOKEN_KEY) } catch { token = null } }
+  return token || null
+}
+const apiToken = typeof window !== 'undefined' ? captureToken() : null
+
+/** fetch() for the bot's own /api routes: adds the bearer token when the page was opened with one. */
+export function apiFetch(path, options = {}) {
+  if (!apiToken || !/^\/api(\/|\?|$)/.test(String(path))) return fetch(path, options)
+  const headers = new Headers(options.headers || {})
+  if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${apiToken}`)
+  return fetch(path, { ...options, headers })
+}
+
+function withToken(wsUrl) {
+  if (!apiToken) return wsUrl
+  return `${wsUrl}${wsUrl.includes('?') ? '&' : '?'}token=${encodeURIComponent(apiToken)}`
+}
+
 // The public mirror has no bot behind it. The daily report publishes a snapshot of the edge study
 // (frontend/public/edge/latest.json → <base>/edge/latest.json); load it so the page shows the real
 // study instead of an empty shell. Aggregates and public pool prices only.
@@ -33,7 +69,7 @@ let snapshotLoaded = false
 let readingsTimer = null
 export async function fetchReadings(dispatch) {
   if (isStaticHost()) return
-  const get = (p) => fetch(p).then(r => (r.ok ? r.json() : null)).catch(() => null)
+  const get = (p) => apiFetch(p).then(r => (r.ok ? r.json() : null)).catch(() => null)
   const [hours, scatter, alerts, census, infra, frontier] = await Promise.all([get('/api/edge/hours?days=7'), get('/api/edge/scatter?limit=1500'), get('/api/alerts/history?days=7'), get('/api/edge/census'), get('/api/edge/infra'), get('/api/edge/frontier')])
   dispatch(setReadings({ hours, scatter, alerts, census, infra, frontier }))
 }
@@ -80,7 +116,7 @@ export async function loadLineage(dispatch) {
 
 // REST (same origin; the Vite dev server proxies /api to :5050). None of this exists on the public demo.
 async function apiGet(path) {
-  const res = await fetch(path, { cache: 'no-store' })
+  const res = await apiFetch(path, { cache: 'no-store' })
   if (!res.ok) {
     let msg = `${res.status}`
     try { msg = (await res.json()).error || msg } catch { /* ignore */ }
@@ -134,7 +170,7 @@ export function connectWebSocket(dispatch) {
     wsUrl = `${protocol}//${window.location.host}`
   }
 
-  ws = new WebSocket(wsUrl)
+  ws = new WebSocket(withToken(wsUrl))
 
   ws.onopen = () => {
     console.log('WebSocket connected')
