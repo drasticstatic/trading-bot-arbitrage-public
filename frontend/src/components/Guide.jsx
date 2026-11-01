@@ -78,7 +78,7 @@ export default function Guide() {
 
       <h3 className="h3" style={{ marginTop: 16 }}>Run it yourself</h3>
       <pre className="cmd">{`git clone https://github.com/drasticstatic/trading-bot-arbitrage-public && cd trading-bot-arbitrage-public
-cp .env.example .env            `}<span className="c"># add an Alchemy key; leave the wallet keys blank for monitor mode</span>{`
+echo 'ALCHEMY_API_KEY=your_alchemy_api_key_here' > .env   `}<span className="c"># your own Alchemy key; no wallet key is needed for monitor mode</span>{`
 npm install && (cd frontend && npm install && npm run build)
 EDGE_MONITOR=1 node bot.js      `}<span className="c"># serves this terminal on http://localhost:5050</span>{`
 node scripts/journal.js --days 7
