@@ -23,4 +23,4 @@ flowchart LR
 
 On every public page, pairs and venues wear **stage names**: a pair is a character such as `curious-oblique-egret`; a venue is a house, and its fee tier a ward, so `Juniper→Rowan Quay` is a route between two houses. Pool depths are scaled by a secret factor per pair. Counts, spreads in percent, gas, hours, lifetimes and outcomes are the real study. A page that would show a real name is not written.
 
-<sub><img src="assets/icons/link.svg" width="12" height="12" alt=""> Icons: [Lucide](https://lucide.dev) (ISC), see [`assets/icons/LICENSE`](assets/icons/LICENSE). Pushed at 23:58 ET each night; each PDF renders a minute after its page lands.</sub>
+<sub><img src="assets/icons/link.svg" width="12" height="12" alt=""> Icons: [Phosphor](https://github.com/phosphor-icons/core) (MIT), see [`assets/icons/LICENSE-phosphor`](assets/icons/LICENSE-phosphor). Pushed at 23:58 ET each night; each PDF renders a minute after its page lands.</sub>
